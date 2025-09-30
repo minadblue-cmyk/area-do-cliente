@@ -1,69 +1,50 @@
-# React + TypeScript + Vite
+﻿# Ãrea do Cliente - Code-IQ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AplicaÃ§Ã£o React para gerenciamento de clientes com autenticaÃ§Ã£o, permissÃµes e webhooks.
 
-Currently, two official plugins are available:
+## ðŸš€ Deploy
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Esta aplicaÃ§Ã£o estÃ¡ configurada para deploy via EasyPanel com Docker.
 
-## Expanding the ESLint configuration
+### PrÃ©-requisitos
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 20+
+- Docker & Docker Compose
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Deploy Local
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+\\\ash
+npm install
+npm run dev
+\\\
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Deploy via Docker
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+\\\ash
+docker compose build
+docker compose up -d
+\\\
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Acesso
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **ProduÃ§Ã£o**: http://212.85.12.183:3001
+- **Hostinger**: https://code-iq.com.br/area-do-cliente.html
+
+## ðŸ“‹ Estrutura
+
+- \/src\ - CÃ³digo fonte React/TypeScript
+- \/public\ - Assets estÃ¡ticos
+- \Dockerfile\ - Build da aplicaÃ§Ã£o
+- \docker-compose.yml\ - OrquestraÃ§Ã£o
+- \
+ginx.conf\ - ConfiguraÃ§Ã£o Nginx
+
+## ðŸ”§ Tecnologias
+
+- React 18
+- TypeScript
+- Vite
+- React Router
+- Axios
+- Tailwind CSS (ou seu framework)
+- Docker + Nginx

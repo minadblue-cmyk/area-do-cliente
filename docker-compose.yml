@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  area-cliente:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: area-cliente-app
+    ports:
+      - "3001:80"
+    volumes:
+      # Volume para dados persistentes
+      - area-cliente-data:/data
+      # Volume para logs
+      - area-cliente-logs:/var/log/nginx
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - area-cliente-network
+
+volumes:
+  area-cliente-data:
+    driver: local
+  area-cliente-logs:
+    driver: local
+
+networks:
+  area-cliente-network:
+    driver: bridge

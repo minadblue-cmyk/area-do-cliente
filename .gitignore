@@ -1,24 +1,62 @@
+﻿# Dependencies
+node_modules
+package-lock.json
+
+# Build
+dist
+build
+.cache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode
+.idea
+*.sublime-*
+
+# Temp
+*.tmp
+*.temp
+*.bak
+.tmp
+
+# Scripts PowerShell
+*.ps1
+!preparar-easypanel.ps1
+
+# Arquivos de deploy local
+*.zip
+*.tar.gz
+*.txt
+area-*.html
+deploy-*.ps1
+upload-*.ps1
+htaccess-*
+teste-*.html
+index-*.html
+assets-cliente/
+
+# Docker local (mantÃ©m apenas configs)
+docker-compose.override.yml
+
+# Markdown de instruÃ§Ãµes locais
+INSTRUCOES_*.md
+RESUMO_*.md
+CORRECOES_*.md
