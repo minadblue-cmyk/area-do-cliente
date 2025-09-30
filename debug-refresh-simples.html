@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Refresh Simples</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Refresh Simples</h1>
+        
+        <div class="section">
+            <h2>1. Teste de Criação e Verificação</h2>
+            <button onclick="testeCompleto()">Executar Teste Completo</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Agentes Existentes</h2>
+            <button onclick="verificarExistentes()">Verificar Agentes Existentes</button>
+            <div id="existentes"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testeCompleto() {
+            const resultDiv = document.getElementById('resultado')
+            resultDiv.innerHTML = '<p class="info">🔄 Executando teste completo...</p>'
+            
+            try {
+                // 1. Verificar agentes antes da criação
+                console.log('🔍 1. Verificando agentes antes da criação...')
+                const antesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                const antesData = await antesResponse.json()
+                const agentesAntes = Array.isArray(antesData) ? antesData : []
+                console.log(`📊 Agentes antes: ${agentesAntes.length}`)
+                
+                // 2. Criar novo agente
+                console.log('🔍 2. Criando novo agente...')
+                const agentId = 'DEBUG_' + Date.now()
+                const createResponse = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        agent_name: 'Debug Refresh Test',
+                        agent_type: 'debug-refresh-test',
+                        agent_id: agentId,
+                        user_id: '28',
+                        descricao: 'Teste de debug para refresh',
+                        icone: '🔧',
+                        cor: 'bg-orange-500',
+                        ativo: true
+                    })
+                })
+                
+                if (!createResponse.ok) {
+                    throw new Error(`Erro na criação: ${createResponse.status}`)
+                }
+                
+                const createData = await createResponse.json()
+                console.log('✅ Agente criado:', createData)
+                
+                // 3. Aguardar e verificar se aparece
+                console.log('🔍 3. Aguardando 3 segundos...')
+                await new Promise(resolve => setTimeout(resolve, 3000))
+                
+                // 4. Verificar agentes após criação
+                console.log('🔍 4. Verificando agentes após criação...')
+                const depoisResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                const depoisData = await depoisResponse.json()
+                const agentesDepois = Array.isArray(depoisData) ? depoisData : []
+                console.log(`📊 Agentes depois: ${agentesDepois.length}`)
+                
+                // 5. Procurar pelo agente criado
+                const agenteEncontrado = agentesDepois.find(agente => 
+                    agente.nome === 'Debug Refresh Test' || 
+                    agente.agent_id === agentId ||
+                    agente.id === agentId
+                )
+                
+                // 6. Resultado
+                resultDiv.innerHTML = `
+                    <h3 class="${agenteEncontrado ? 'success' : 'error'}">${agenteEncontrado ? '✅' : '❌'} Resultado do Teste</h3>
+                    <p><strong>Agentes antes:</strong> ${agentesAntes.length}</p>
+                    <p><strong>Agentes depois:</strong> ${agentesDepois.length}</p>
+                    <p><strong>Diferença:</strong> ${agentesDepois.length - agentesAntes.length}</p>
+                    <p><strong>Agente encontrado:</strong> ${agenteEncontrado ? '✅ Sim' : '❌ Não'}</p>
+                    
+                    ${agenteEncontrado ? `
+                        <p><strong>Nome:</strong> ${agenteEncontrado.nome}</p>
+                        <p><strong>ID:</strong> ${agenteEncontrado.id || agenteEncontrado.agent_id}</p>
+                    ` : ''}
+                    
+                    <h4>Dados antes:</h4>
+                    <pre>${JSON.stringify(agentesAntes, null, 2)}</pre>
+                    
+                    <h4>Dados depois:</h4>
+                    <pre>${JSON.stringify(agentesDepois, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Teste</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+                console.error('Erro no teste:', error)
+            }
+        }
+
+        async function verificarExistentes() {
+            const resultDiv = document.getElementById('existentes')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando agentes existentes...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                const agentes = Array.isArray(data) ? data : []
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agentes Existentes</h3>
+                    <p><strong>Total:</strong> ${agentes.length}</p>
+                    <p><strong>Dados:</strong></p>
+                    <pre>${JSON.stringify(agentes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+            }
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            verificarExistentes()
+        }
+    </script>
+</body>
+</html>

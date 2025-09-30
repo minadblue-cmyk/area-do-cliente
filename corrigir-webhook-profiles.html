@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Webhook Profiles</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        button { padding: 10px 20px; margin: 5px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #1976d2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Webhook Profiles</h1>
+        
+        <div class="log info">
+            <h3>📋 Problema Identificado:</h3>
+            <p>O sistema está tentando acessar <code>webhook/list-profiles</code> (com 's') mas o webhook correto é <code>webhook/list-profile</code> (sem 's').</p>
+        </div>
+
+        <button onclick="limparCache()">🧹 Limpar Cache</button>
+        <button onclick="corrigirWebhook()">🔧 Corrigir Webhook</button>
+        <button onclick="testarWebhook()">🧪 Testar Webhook</button>
+        <button onclick="verificarStore()">🔍 Verificar Store</button>
+
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function limparCache() {
+            log('🧹 Limpando cache do localStorage...', 'info');
+            
+            // Limpar todos os dados relacionados
+            localStorage.removeItem('area:jwt');
+            localStorage.removeItem('area:user');
+            localStorage.removeItem('area:user_data');
+            localStorage.removeItem('area:webhooks');
+            localStorage.removeItem('area:webhook-urls');
+            
+            log('✅ Cache limpo com sucesso!', 'success');
+        }
+
+        function corrigirWebhook() {
+            log('🔧 Corrigindo webhook no localStorage...', 'info');
+            
+            try {
+                // Carregar webhooks atuais
+                const webhooksStr = localStorage.getItem('area:webhooks');
+                if (webhooksStr) {
+                    const webhooks = JSON.parse(webhooksStr);
+                    log(`📦 Webhooks encontrados: ${webhooks.length}`, 'info');
+                    
+                    // Procurar e corrigir webhook incorreto
+                    const webhookIndex = webhooks.findIndex(w => w === 'webhook/list-profiles');
+                    if (webhookIndex !== -1) {
+                        webhooks[webhookIndex] = 'webhook/list-profile';
+                        localStorage.setItem('area:webhooks', JSON.stringify(webhooks));
+                        log('✅ Webhook corrigido: webhook/list-profiles → webhook/list-profile', 'success');
+                    } else {
+                        log('ℹ️ Webhook incorreto não encontrado no array', 'info');
+                    }
+                } else {
+                    log('ℹ️ Nenhum webhook encontrado no localStorage', 'info');
+                }
+
+                // Corrigir também no webhook-urls
+                const urlsStr = localStorage.getItem('area:webhook-urls');
+                if (urlsStr) {
+                    const urls = JSON.parse(urlsStr);
+                    if (urls['webhook/list-profiles']) {
+                        urls['webhook/list-profile'] = urls['webhook/list-profiles'];
+                        delete urls['webhook/list-profiles'];
+                        localStorage.setItem('area:webhook-urls', JSON.stringify(urls));
+                        log('✅ URLs corrigidas no webhook-urls', 'success');
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Erro ao corrigir webhook: ${error.message}`, 'error');
+            }
+        }
+
+        function testarWebhook() {
+            log('🧪 Testando webhook list-profile...', 'info');
+            
+            fetch('https://n8n.code-iq.com.br/webhook/list-profile', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                log(`📡 Status da resposta: ${response.status}`, response.ok ? 'success' : 'error');
+                return response.json();
+            })
+            .then(data => {
+                log('✅ Webhook funcionando!', 'success');
+                log(`📊 Dados recebidos: ${JSON.stringify(data).substring(0, 200)}...`, 'info');
+            })
+            .catch(error => {
+                log(`❌ Erro no webhook: ${error.message}`, 'error');
+            });
+        }
+
+        function verificarStore() {
+            log('🔍 Verificando estado do store...', 'info');
+            
+            // Verificar webhooks
+            const webhooksStr = localStorage.getItem('area:webhooks');
+            if (webhooksStr) {
+                const webhooks = JSON.parse(webhooksStr);
+                log(`📦 Webhooks no localStorage: ${webhooks.length}`, 'info');
+                
+                const listProfile = webhooks.find(w => w.includes('list-profile'));
+                if (listProfile) {
+                    log(`✅ Webhook list-profile encontrado: ${listProfile}`, 'success');
+                } else {
+                    log('❌ Webhook list-profile NÃO encontrado', 'error');
+                }
+            } else {
+                log('❌ Nenhum webhook no localStorage', 'error');
+            }
+
+            // Verificar URLs
+            const urlsStr = localStorage.getItem('area:webhook-urls');
+            if (urlsStr) {
+                const urls = JSON.parse(urlsStr);
+                log(`🔗 URLs no localStorage: ${Object.keys(urls).length}`, 'info');
+                
+                if (urls['webhook/list-profile']) {
+                    log(`✅ URL list-profile encontrada: ${urls['webhook/list-profile']}`, 'success');
+                } else {
+                    log('❌ URL list-profile NÃO encontrada', 'error');
+                }
+                
+                if (urls['webhook/list-profiles']) {
+                    log(`⚠️ URL list-profiles encontrada (incorreta): ${urls['webhook/list-profiles']}`, 'error');
+                }
+            } else {
+                log('❌ Nenhuma URL no localStorage', 'error');
+            }
+        }
+
+        // Executar verificação inicial
+        window.onload = function() {
+            log('🚀 Script carregado. Clique nos botões para executar as correções.', 'info');
+            verificarStore();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Atribuição do Zeca</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Atribuição do Zeca</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Estrutura do Zeca</h2>
+            <button onclick="verificarZeca()">Verificar Zeca</button>
+            <div id="zeca-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Atribuições de Agentes</h2>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições</button>
+            <div id="atribuicoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Atribuir Zeca para Usuário Padrão</h2>
+            <button onclick="atribuirZeca()">Atribuir Zeca</button>
+            <div id="atribuir-result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verificarZeca() {
+            const resultDiv = document.getElementById('zeca-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Verificando estrutura do Zeca...</p>';
+
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                let agentes = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data;
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data;
+                }
+
+                const zeca = agentes.find(agente => agente.nome === 'Zeca');
+                if (zeca) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Zeca encontrado:</p>
+                        <pre>${JSON.stringify(zeca, null, 2)}</pre>
+                        <p class="info">🔍 Propriedades relevantes:</p>
+                        <ul>
+                            <li><strong>ID:</strong> ${zeca.id}</li>
+                            <li><strong>Nome:</strong> ${zeca.nome}</li>
+                            <li><strong>usuario_id:</strong> ${zeca.usuario_id}</li>
+                            <li><strong>atribuido_para_usuario:</strong> ${zeca.atribuido_para_usuario || 'undefined'}</li>
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Zeca não encontrado</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            const resultDiv = document.getElementById('atribuicoes-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Verificando atribuições de agentes...</p>';
+
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                console.log('Resposta de atribuições:', data);
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Resposta de atribuições:</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function atribuirZeca() {
+            const resultDiv = document.getElementById('atribuir-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Atribuindo Zeca para o usuário padrão...</p>';
+
+            try {
+                // Primeiro, buscar o ID do Zeca
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                let agentes = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data;
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data;
+                }
+
+                const zeca = agentes.find(agente => agente.nome === 'Zeca');
+                if (!zeca) {
+                    resultDiv.innerHTML = '<p class="error">❌ Zeca não encontrado</p>';
+                    return;
+                }
+
+                // Atribuir Zeca para o usuário padrão (ID 6)
+                const atribuirResponse = await fetch('https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agente_id: zeca.id,
+                        usuario_id: 6,
+                        atribuido_por: 5 // Admin
+                    })
+                });
+
+                const atribuirData = await atribuirResponse.json();
+                console.log('Resposta da atribuição:', atribuirData);
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Tentativa de atribuição:</p>
+                    <pre>${JSON.stringify(atribuirData, null, 2)}</pre>
+                    <p class="info">🔍 Dados enviados:</p>
+                    <ul>
+                        <li><strong>agente_id:</strong> ${zeca.id}</li>
+                        <li><strong>usuario_id:</strong> 6 (Usuário Padrão)</li>
+                        <li><strong>atribuido_por:</strong> 5 (Admin)</li>
+                    </ul>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

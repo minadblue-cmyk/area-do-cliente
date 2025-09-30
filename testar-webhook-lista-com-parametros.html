@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook Lista com Parâmetros</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Webhook Lista com Parâmetros</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook Lista - Joana (com parâmetros)</h2>
+            <button onclick="testarWebhookComParametros()">Testar com Parâmetros</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Diferentes Combinações</h2>
+            <button onclick="testarDiferentesCombinacoes()">Testar Combinações</button>
+            <div id="combinacoes"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar URL Final</h2>
+            <button onclick="verificarURL()">Verificar URL</button>
+            <div id="url"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarWebhookComParametros() {
+            const resultDiv = document.getElementById('resultado')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook com parâmetros obrigatórios...</p>'
+            
+            try {
+                // Parâmetros obrigatórios para PostgreSQL
+                const params = new URLSearchParams({
+                    client_id: '5',  // ID do usuário admin
+                    agente_id: '68', // ID do agente Joana
+                    workflow_id: '68',
+                    usuario_id: '5'
+                })
+                
+                const url = `https://n8n.code-iq.com.br/webhook/lista10-joana?${params.toString()}`
+                console.log('🔍 URL completa:', url)
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                
+                console.log('📡 Resposta do webhook:', response)
+                console.log('📡 Status:', response.status)
+                
+                const textResponse = await response.text()
+                console.log('📡 Resposta como texto:', textResponse)
+                
+                let jsonData = null
+                let parseError = null
+                
+                try {
+                    jsonData = JSON.parse(textResponse)
+                    console.log('📡 JSON parseado:', jsonData)
+                } catch (error) {
+                    parseError = error
+                    console.log('❌ Erro ao fazer parse do JSON:', error)
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔍 Teste com Parâmetros Obrigatórios</h3>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Content-Type:</strong> ${response.headers.get('content-type')}</p>
+                    
+                    <h4>Parâmetros Enviados:</h4>
+                    <ul>
+                        <li><strong>client_id:</strong> 5 (obrigatório para PostgreSQL)</li>
+                        <li><strong>agente_id:</strong> 68 (obrigatório para PostgreSQL)</li>
+                        <li><strong>workflow_id:</strong> 68</li>
+                        <li><strong>usuario_id:</strong> 5</li>
+                    </ul>
+                    
+                    <h4>Resposta:</h4>
+                    <pre>${textResponse}</pre>
+                    
+                    <h4>JSON Parseado:</h4>
+                    <pre>${jsonData ? JSON.stringify(jsonData, null, 2) : 'Não foi possível fazer parse do JSON'}</pre>
+                    
+                    <p class="${response.status === 200 && jsonData ? 'success' : 'error'}">
+                        ${response.status === 200 && jsonData ? '✅ Webhook funcionando com parâmetros' : '❌ Webhook com erro ou resposta inválida'}
+                    </p>
+                    
+                    ${parseError ? `<p class="error">❌ Erro de parse: ${parseError.message}</p>` : ''}
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error)
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Teste</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p class="error">❌ Verifique se o webhook está configurado corretamente no n8n</p>
+                `
+            }
+        }
+
+        async function testarDiferentesCombinacoes() {
+            const resultDiv = document.getElementById('combinacoes')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando diferentes combinações de parâmetros...</p>'
+            
+            const combinacoes = [
+                {
+                    nome: 'Apenas client_id e agente_id',
+                    params: { client_id: '5', agente_id: '68' }
+                },
+                {
+                    nome: 'Com todos os parâmetros',
+                    params: { client_id: '5', agente_id: '68', workflow_id: '68', usuario_id: '5' }
+                },
+                {
+                    nome: 'Com client_id diferente',
+                    params: { client_id: '6', agente_id: '68', workflow_id: '68', usuario_id: '5' }
+                }
+            ]
+            
+            let resultado = '<h3 class="info">🔍 Teste de Combinações</h3>'
+            
+            for (const combinacao of combinacoes) {
+                try {
+                    const params = new URLSearchParams(combinacao.params)
+                    const url = `https://n8n.code-iq.com.br/webhook/lista10-joana?${params.toString()}`
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: { 
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    
+                    const textResponse = await response.text()
+                    let jsonData = null
+                    try {
+                        jsonData = JSON.parse(textResponse)
+                    } catch (parseError) {
+                        // Ignorar erro de parse
+                    }
+                    
+                    resultado += `
+                        <div class="agent-card">
+                            <h4>${combinacao.nome}</h4>
+                            <p><strong>URL:</strong> ${url}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Resposta:</strong> ${textResponse || '(vazia)'}</p>
+                            <p class="${response.status === 200 ? 'success' : 'error'}">
+                                ${response.status === 200 ? '✅ OK' : '❌ Erro'}
+                            </p>
+                        </div>
+                    `
+                    
+                } catch (error) {
+                    resultado += `
+                        <div class="agent-card">
+                            <h4>${combinacao.nome}</h4>
+                            <p class="error">❌ Erro: ${error.message}</p>
+                        </div>
+                    `
+                }
+            }
+            
+            resultDiv.innerHTML = resultado
+        }
+
+        function verificarURL() {
+            const resultDiv = document.getElementById('url')
+            
+            const params = new URLSearchParams({
+                client_id: '5',
+                agente_id: '68',
+                workflow_id: '68',
+                usuario_id: '5'
+            })
+            
+            const url = `https://n8n.code-iq.com.br/webhook/lista10-joana?${params.toString()}`
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔍 URL Final</h3>
+                <p><strong>URL completa:</strong></p>
+                <pre>${url}</pre>
+                
+                <h4>Parâmetros:</h4>
+                <ul>
+                    <li><strong>client_id:</strong> 5 (obrigatório para PostgreSQL WHERE l.client_id = $3)</li>
+                    <li><strong>agente_id:</strong> 68 (obrigatório para PostgreSQL WHERE l.agente_id = $4)</li>
+                    <li><strong>workflow_id:</strong> 68 (parâmetro adicional)</li>
+                    <li><strong>usuario_id:</strong> 5 (parâmetro adicional)</li>
+                </ul>
+                
+                <p class="info">💡 Esta URL deve funcionar corretamente com o PostgreSQL</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarWebhookComParametros()
+            verificarURL()
+        }
+    </script>
+</body>
+</html>

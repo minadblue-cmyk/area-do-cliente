@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Admin - Ver Todos os Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste Admin - Ver Todos os Agentes</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Cenários de Teste</h3>
+            <ul>
+                <li><strong>Usuário Normal:</strong> Deve ver apenas seus próprios agentes</li>
+                <li><strong>Administrador:</strong> Deve ver TODOS os agentes</li>
+                <li><strong>Validação:</strong> Verificar se `canViewAll` e `canManage` funcionam</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste Usuário Normal (ID 6)</h3>
+            <button onclick="testarUsuarioNormal()">Testar Usuário Normal</button>
+            <div id="resultadoNormal"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste Administrador (ID 5)</h3>
+            <button onclick="testarAdministrador()">Testar Administrador</button>
+            <div id="resultadoAdmin"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste (simulando syncedAgents)
+        const syncedAgents = {
+            "65": {
+                "id": 65,
+                "nome": "João",
+                "descricao": "",
+                "icone": "🤖",
+                "cor": "bg-pink-500",
+                "ativo": true,
+                "usuario_id": 6,
+                "status_atual": "stopped"
+            },
+            "68": {
+                "id": 68,
+                "nome": "Joana",
+                "descricao": "joana",
+                "icone": "🎯",
+                "cor": "bg-yellow-500",
+                "ativo": true,
+                "usuario_id": 5,
+                "status_atual": "stopped"
+            },
+            "69": {
+                "id": 69,
+                "nome": "Teste Agente",
+                "descricao": "Agente de teste",
+                "icone": "🤖",
+                "cor": "bg-blue-500",
+                "ativo": true,
+                "usuario_id": 6,
+                "status_atual": "stopped"
+            }
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function testarFiltro(userData, agentPermissions, tipoUsuario) {
+            log(`🔍 Testando filtro para ${tipoUsuario}...`)
+            
+            const newAgentTypes = {}
+            
+            Object.entries(syncedAgents).forEach(([agentId, agentData]) => {
+                log(`🔍 Processando agente: ${agentData.nome} (usuario_id: ${agentData.usuario_id})`)
+                log(`🔍 Permissões: canViewAll=${agentPermissions.canViewAll}, canManage=${agentPermissions.canManage}, canViewOwn=${agentPermissions.canViewOwn}`)
+                
+                // Aplicar filtro de permissões (lógica do frontend)
+                const shouldShowAgent = (() => {
+                    // Se pode ver todos os agentes, mostrar todos
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        log(`✅ ${agentData.nome}: Mostrando (canViewAll/canManage)`)
+                        return true
+                    }
+                    
+                    // Se pode ver apenas seus próprios agentes, filtrar por user_id
+                    if (agentPermissions.canViewOwn) {
+                        const userId = parseInt(userData.id)
+                        const matches = agentData.user_id === userId || agentData.usuario_id === userId
+                        log(`🔍 ${agentData.nome}: Comparando ${agentData.usuario_id} === ${userId} = ${matches}`)
+                        return matches
+                    }
+                    
+                    // Se não tem permissão específica, não mostrar nenhum
+                    log(`❌ ${agentData.nome}: Sem permissão específica`)
+                    return false
+                })()
+                
+                if (shouldShowAgent) {
+                    newAgentTypes[agentId] = {
+                        id: agentId,
+                        name: agentData.nome,
+                        description: agentData.descricao || 'Agente de prospecção',
+                        icon: agentData.icone || '🤖',
+                        color: agentData.cor || 'bg-blue-500',
+                        webhook: 'webhook-generic'
+                    }
+                    log(`✅ ${agentData.nome}: Adicionado ao dynamicAgentTypes`)
+                } else {
+                    log(`❌ ${agentData.nome}: Filtrado`)
+                }
+            })
+            
+            log(`🔍 Agentes filtrados para ${tipoUsuario}: ${Object.keys(newAgentTypes).length} de ${Object.keys(syncedAgents).length}`)
+            
+            return {
+                agentTypes: newAgentTypes,
+                count: Object.keys(newAgentTypes).length,
+                total: Object.keys(syncedAgents).length
+            }
+        }
+
+        function testarUsuarioNormal() {
+            log('🔍 Testando usuário normal (ID 6)...')
+            
+            // Simular usuário normal
+            const userData = { id: "6", name: "Teste de Dashboard" }
+            
+            // Simular permissões de usuário normal
+            const agentPermissions = {
+                canViewAll: false,  // Não é admin
+                canManage: false,   // Não pode gerenciar todos
+                canViewOwn: true    // Pode ver seus próprios
+            }
+            
+            const resultado = testarFiltro(userData, agentPermissions, "Usuário Normal")
+            
+            const resultadoDiv = document.getElementById('resultadoNormal')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado Usuário Normal:</h4>
+                <p><strong>Permissões:</strong> canViewAll=${agentPermissions.canViewAll}, canManage=${agentPermissions.canManage}, canViewOwn=${agentPermissions.canViewOwn}</p>
+                <p><strong>Agentes filtrados:</strong> ${resultado.count} de ${resultado.total}</p>
+                <p><strong>Agentes que devem aparecer:</strong></p>
+                <ul>
+                    ${Object.values(resultado.agentTypes).map(agent => 
+                        `<li>✅ ${agent.name} (ID: ${agent.id})</li>`
+                    ).join('')}
+                </ul>
+                <p><strong>Resultado esperado:</strong> Apenas agentes do usuário 6 (João e Teste Agente)</p>
+                <p><strong>Status:</strong> ${resultado.count === 2 ? '✅ CORRETO' : '❌ INCORRETO'}</p>
+            `
+            
+            if (resultado.count === 2) {
+                resultadoDiv.className = 'test-section success'
+            } else {
+                resultadoDiv.className = 'test-section error'
+            }
+        }
+
+        function testarAdministrador() {
+            log('🔍 Testando administrador (ID 5)...')
+            
+            // Simular administrador
+            const userData = { id: "5", name: "Administrator Code-IQ" }
+            
+            // Simular permissões de administrador
+            const agentPermissions = {
+                canViewAll: true,   // Admin pode ver todos
+                canManage: true,    // Admin pode gerenciar todos
+                canViewOwn: true    // Admin também pode ver seus próprios
+            }
+            
+            const resultado = testarFiltro(userData, agentPermissions, "Administrador")
+            
+            const resultadoDiv = document.getElementById('resultadoAdmin')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado Administrador:</h4>
+                <p><strong>Permissões:</strong> canViewAll=${agentPermissions.canViewAll}, canManage=${agentPermissions.canManage}, canViewOwn=${agentPermissions.canViewOwn}</p>
+                <p><strong>Agentes filtrados:</strong> ${resultado.count} de ${resultado.total}</p>
+                <p><strong>Agentes que devem aparecer:</strong></p>
+                <ul>
+                    ${Object.values(resultado.agentTypes).map(agent => 
+                        `<li>✅ ${agent.name} (ID: ${agent.id}, usuario_id: ${syncedAgents[agent.id].usuario_id})</li>`
+                    ).join('')}
+                </ul>
+                <p><strong>Resultado esperado:</strong> TODOS os agentes (João, Joana e Teste Agente)</p>
+                <p><strong>Status:</strong> ${resultado.count === 3 ? '✅ CORRETO' : '❌ INCORRETO'}</p>
+            `
+            
+            if (resultado.count === 3) {
+                resultadoDiv.className = 'test-section success'
+            } else {
+                resultadoDiv.className = 'test-section error'
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique nos botões para testar os cenários.')
+        }
+    </script>
+</body>
+</html>

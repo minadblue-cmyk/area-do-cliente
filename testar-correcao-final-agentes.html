@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Final - Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção Final - Agentes</h1>
+        
+        <div class="section">
+            <h2>1. Testar Parsing Corrigido</h2>
+            <button onclick="testarParsingCorrigido()">Testar Parsing Corrigido</button>
+            <div id="parsing"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Filtro com Dados Reais</h2>
+            <button onclick="testarFiltroReal()">Testar Filtro Real</button>
+            <div id="filtro"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar na Aplicação</h2>
+            <button onclick="verificarAplicacao()">Verificar Aplicação</button>
+            <div id="aplicacao"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarParsingCorrigido() {
+            const resultDiv = document.getElementById('parsing')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando parsing corrigido...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('📡 Resposta do webhook:', data)
+                
+                // Lógica corrigida: verificar se é array com objeto dentro
+                let agentesData = []
+                
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    console.log('✅ Formato correto detectado: Array com objeto')
+                    agentesData = data[0].data
+                } else if (data.success && Array.isArray(data.data)) {
+                    console.log('✅ Formato fallback detectado: Objeto direto')
+                    agentesData = data.data
+                } else {
+                    console.log('❌ Formato não reconhecido')
+                }
+                
+                console.log('📊 Agentes extraídos:', agentesData.length)
+                console.log('📊 Agentes:', agentesData)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔧 Parsing Corrigido</h3>
+                    <p><strong>Status da resposta:</strong> ${response.status}</p>
+                    <p><strong>Tipo da resposta:</strong> ${typeof data}</p>
+                    <p><strong>É array:</strong> ${Array.isArray(data)}</p>
+                    <p><strong>Primeiro item success:</strong> ${data[0]?.success || 'N/A'}</p>
+                    <p><strong>Primeiro item data length:</strong> ${data[0]?.data?.length || 'N/A'}</p>
+                    
+                    <h4>Agentes extraídos:</h4>
+                    <p><strong>Quantidade:</strong> ${agentesData.length}</p>
+                    <ul>
+                        ${agentesData.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>usuario_id: ${agente.usuario_id}
+                                <br>ativo: ${agente.ativo ? 'Sim' : 'Não'}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesData.length === 3 ? 'success' : 'error'}">
+                        ${agentesData.length === 3 ? 
+                            '✅ CORRETO: Parsing funcionando - 3 agentes extraídos' : 
+                            '❌ INCORRETO: Parsing não funcionando - ' + agentesData.length + ' agentes extraídos'}
+                    </p>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no parsing:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarFiltroReal() {
+            const resultDiv = document.getElementById('filtro')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando filtro com dados reais...</p>'
+            
+            try {
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                
+                // Extrair agentes com lógica corrigida
+                let agentes = []
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data
+                }
+                
+                // Testar filtro para diferentes usuários
+                const usuarios = [
+                    { id: 5, nome: 'Administrator Code-IQ' },
+                    { id: 6, nome: 'Usuário Elleve Padrão' },
+                    { id: 37, nome: 'Supervisor Elleve Consórcios' }
+                ]
+                
+                let resultado = '<h3 class="info">🔍 Teste de Filtro com Dados Reais</h3>'
+                resultado += `<p><strong>Total de agentes disponíveis:</strong> ${agentes.length}</p>`
+                
+                usuarios.forEach(usuario => {
+                    const agentesDoUsuario = agentes.filter(agente => agente.usuario_id === usuario.id)
+                    
+                    resultado += `
+                        <div style="margin: 15px 0; padding: 15px; background: #1e1e1e; border-radius: 5px; border-left: 4px solid #3b82f6;">
+                            <h4>${usuario.nome} (ID: ${usuario.id})</h4>
+                            <p><strong>Agentes encontrados:</strong> ${agentesDoUsuario.length}</p>
+                            <ul>
+                                ${agentesDoUsuario.map(agente => `
+                                    <li><strong>${agente.nome}</strong> (ID: ${agente.id})</li>
+                                `).join('')}
+                            </ul>
+                            <p class="${agentesDoUsuario.length > 0 ? 'success' : 'warning'}">
+                                ${agentesDoUsuario.length > 0 ? '✅ Tem agentes para ver' : '⚠️ Não tem agentes próprios'}
+                            </p>
+                        </div>
+                    `
+                })
+                
+                resultDiv.innerHTML = resultado
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarAplicacao() {
+            const resultDiv = document.getElementById('aplicacao')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔍 Verificar na Aplicação</h3>
+                <p><strong>Correção aplicada:</strong> ✅ Parsing corrigido para formato Array com objeto</p>
+                <p><strong>Lógica corrigida:</strong> ✅ Agora acessa data[0].data em vez de data.data</p>
+                
+                <h4>Próximos passos:</h4>
+                <ol>
+                    <li>Recarregar a página da aplicação</li>
+                    <li>Verificar se os agentes aparecem na tela</li>
+                    <li>Testar o filtro com diferentes usuários</li>
+                    <li>Verificar se o console não mostra mais erros de parsing</li>
+                </ol>
+                
+                <h4>Resultado esperado:</h4>
+                <ul>
+                    <li>✅ 3 agentes devem aparecer na tela</li>
+                    <li>✅ Filtro deve funcionar corretamente</li>
+                    <li>✅ Console deve mostrar "3 agentes carregados com sucesso!"</li>
+                </ul>
+                
+                <p class="success">🎉 A correção deve resolver o problema de "Nenhum agente configurado"!</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarParsingCorrigido()
+            testarFiltroReal()
+        }
+    </script>
+</body>
+</html>

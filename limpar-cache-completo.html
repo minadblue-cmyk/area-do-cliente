@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpeza Completa de Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .danger {
+            background-color: #dc3545;
+        }
+        .danger:hover {
+            background-color: #c82333;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpeza Completa de Cache - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>⚠️ ATENÇÃO:</strong> Esta página irá limpar completamente o cache do navegador e localStorage.
+        </div>
+
+        <h2>🔍 Status Atual do Cache</h2>
+        <div id="status"></div>
+
+        <h2>🛠️ Ações Disponíveis</h2>
+        <button onclick="verificarCache()">🔍 Verificar Cache Atual</button>
+        <button onclick="limparTudo()" class="danger">🧹 Limpar Tudo</button>
+        <button onclick="recarregarApp()">🔄 Recarregar App</button>
+
+        <h2>📋 Log de Ações</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function verificarCache() {
+            log('🔍 Verificando cache atual...');
+            
+            // Verificar localStorage
+            const webhooks = localStorage.getItem('flowhub:webhooks');
+            const auth = localStorage.getItem('flowhub:auth');
+            const toast = localStorage.getItem('flowhub:toast');
+            
+            log(`📦 localStorage 'flowhub:webhooks': ${webhooks ? 'EXISTE' : 'NÃO EXISTE'}`);
+            if (webhooks) {
+                try {
+                    const parsed = JSON.parse(webhooks);
+                    log(`   - Quantidade de webhooks: ${Object.keys(parsed).length}`);
+                    log(`   - Webhooks: ${Object.keys(parsed).join(', ')}`);
+                } catch (e) {
+                    log(`   - Erro ao parsear: ${e.message}`);
+                }
+            }
+            
+            log(`🔐 localStorage 'flowhub:auth': ${auth ? 'EXISTE' : 'NÃO EXISTE'}`);
+            log(`🔔 localStorage 'flowhub:toast': ${toast ? 'EXISTE' : 'NÃO EXISTE'}`);
+            
+            // Verificar sessionStorage
+            log(`📦 sessionStorage keys: ${Object.keys(sessionStorage).length}`);
+            
+            // Verificar cache do navegador
+            if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                    log(`🗄️ Service Worker caches: ${cacheNames.length}`);
+                    cacheNames.forEach(name => log(`   - ${name}`));
+                });
+            }
+            
+            log('✅ Verificação concluída!');
+        }
+
+        function limparTudo() {
+            if (!confirm('⚠️ Tem certeza que deseja limpar TODO o cache? Esta ação não pode ser desfeita!')) {
+                return;
+            }
+            
+            log('🧹 Iniciando limpeza completa...');
+            
+            try {
+                // Limpar localStorage
+                localStorage.removeItem('flowhub:webhooks');
+                localStorage.removeItem('flowhub:auth');
+                localStorage.removeItem('flowhub:toast');
+                localStorage.clear();
+                log('✅ localStorage limpo');
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                log('✅ sessionStorage limpo');
+                
+                // Limpar cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                log('✅ Cookies limpos');
+                
+                // Limpar cache do service worker
+                if ('caches' in window) {
+                    caches.keys().then(cacheNames => {
+                        return Promise.all(
+                            cacheNames.map(cacheName => {
+                                log(`🗑️ Removendo cache: ${cacheName}`);
+                                return caches.delete(cacheName);
+                            })
+                        );
+                    }).then(() => {
+                        log('✅ Service Worker caches limpos');
+                    });
+                }
+                
+                // Forçar reload sem cache
+                log('🔄 Forçando reload sem cache...');
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Erro durante limpeza: ${error.message}`);
+            }
+        }
+
+        function recarregarApp() {
+            log('🔄 Recarregando aplicação...');
+            window.location.href = 'http://localhost:5173/';
+        }
+
+        // Verificar cache automaticamente ao carregar
+        window.onload = function() {
+            verificarCache();
+        };
+    </script>
+</body>
+</html>

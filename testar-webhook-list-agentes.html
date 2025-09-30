@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook List Agentes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Webhook List Agentes</h1>
+        
+        <div class="step">
+            <h3>🔍 Teste do Webhook de Listagem</h3>
+            <button onclick="testarListagem()">🔍 Testar Listagem de Agentes</button>
+            <div id="resultado"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🔧 Instruções para Corrigir no n8n</h3>
+            <p>Se o <code>usuario_id</code> ainda estiver como <code>undefined</code>, execute esta query SQL no n8n:</p>
+            <div class="code">
+SELECT 
+    id,
+    nome,
+    descricao,
+    icone,
+    cor,
+    ativo,
+    created_at,
+    updated_at,
+    workflow_start_id,
+    workflow_status_id,
+    workflow_lista_id,
+    workflow_stop_id,
+    webhook_start_url,
+    webhook_status_url,
+    webhook_lista_url,
+    webhook_stop_url,
+    usuario_id  -- ✅ ADICIONAR ESTE CAMPO
+FROM agentes_config 
+WHERE ativo = true 
+ORDER BY created_at DESC;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testarListagem() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Testando listagem de agentes...</p>';
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes');
+                const data = await response.json();
+                
+                console.log('📥 Resposta do webhook:', data);
+                
+                let html = '<div class="step">';
+                html += '<h3>📥 Resposta do Webhook</h3>';
+                html += `<div class="code">${JSON.stringify(data, null, 2)}</div>`;
+                html += '</div>';
+                
+                if (data.data && data.data.length > 0) {
+                    html += '<div class="step">';
+                    html += '<h3>🤖 Análise dos Agentes</h3>';
+                    
+                    let todosComUsuarioId = true;
+                    let agentesComUsuarioId = 0;
+                    
+                    data.data.forEach(agent => {
+                        const temUsuarioId = agent.usuario_id !== undefined && agent.usuario_id !== null;
+                        if (temUsuarioId) agentesComUsuarioId++;
+                        if (!temUsuarioId) todosComUsuarioId = false;
+                        
+                        const statusClass = temUsuarioId ? 'success' : 'error';
+                        const statusIcon = temUsuarioId ? '✅' : '❌';
+                        
+                        html += `<div style="background: ${temUsuarioId ? '#d4edda' : '#f8d7da'}; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid ${temUsuarioId ? '#28a745' : '#dc3545'};">`;
+                        html += `<h4>${statusIcon} ${agent.nome} (ID: ${agent.id})</h4>`;
+                        html += `<p><strong>Usuario ID:</strong> ${agent.usuario_id !== undefined ? agent.usuario_id : 'undefined'}</p>`;
+                        html += `<p><strong>Ativo:</strong> ${agent.ativo ? 'Sim' : 'Não'}</p>`;
+                        html += `<p><strong>Criado em:</strong> ${agent.created_at || 'N/A'}</p>`;
+                        html += `</div>`;
+                    });
+                    
+                    html += '<div class="step">';
+                    html += '<h3>📊 Resumo</h3>';
+                    html += `<p><strong>Total de agentes:</strong> ${data.data.length}</p>`;
+                    html += `<p><strong>Agentes com usuario_id:</strong> ${agentesComUsuarioId}</p>`;
+                    html += `<p><strong>Agentes sem usuario_id:</strong> ${data.data.length - agentesComUsuarioId}</p>`;
+                    
+                    if (todosComUsuarioId) {
+                        html += '<p class="success">✅ Todos os agentes têm usuario_id definido!</p>';
+                    } else {
+                        html += '<p class="error">❌ Alguns agentes ainda não têm usuario_id definido.</p>';
+                        html += '<p class="warning">⚠️ Verifique se a query SQL inclui o campo usuario_id.</p>';
+                    }
+                    html += '</div>';
+                    
+                } else {
+                    html += '<p class="warning">⚠️ Nenhum agente encontrado</p>';
+                }
+                
+                html += '</div>';
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <div class="step">
+                        <h3>❌ Erro</h3>
+                        <p class="error">Erro ao testar webhook: ${error.message}</p>
+                        <div class="code">${error.stack}</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agente SDR Monitor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <div class="icon">🤖</div>
+        <h1>Agente SDR Monitor</h1>
+      </div>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Desconectado</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="startBtn" class="btn btn-primary">
+        ▶️ Iniciar Monitoramento
+      </button>
+      <button id="stopBtn" class="btn btn-secondary" disabled>
+        ⏹️ Parar Monitoramento
+      </button>
+      <button id="checkNowBtn" class="btn btn-outline">
+        🔍 Verificar Agora
+      </button>
+      <button id="checkFrontendBtn" class="btn btn-outline">
+        🖥️ Verificar Frontend
+      </button>
+    </div>
+
+    <!-- Status Info -->
+    <div class="status-info">
+      <div class="info-item">
+        <span class="label">Status Atual:</span>
+        <span class="value" id="currentStatus">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Última Verificação:</span>
+        <span class="value" id="lastCheck">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Intervalo:</span>
+        <span class="value" id="interval">10s</span>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings">
+      <h3>⚙️ Configurações</h3>
+      
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="soundEnabled" checked>
+          🔊 Som de Alerta
+        </label>
+      </div>
+      
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="notificationsEnabled" checked>
+          🔔 Notificações
+        </label>
+      </div>
+      
+      <div class="setting-item">
+        <label for="checkInterval">Intervalo de Verificação:</label>
+        <select id="checkInterval">
+          <option value="5000">5 segundos</option>
+          <option value="10000" selected>10 segundos</option>
+          <option value="30000">30 segundos</option>
+          <option value="60000">1 minuto</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Monitora o agente SDR em tempo real</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

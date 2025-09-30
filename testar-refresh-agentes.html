@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Refresh de Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Refresh Automático de Agentes</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Estado Atual</h2>
+            <button onclick="verificarEstado()">Verificar Estado</button>
+            <div id="estado"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Criação de Agente</h2>
+            <button onclick="testarCriacao()">Testar Criação de Agente</button>
+            <div id="criacao"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Monitorar Refresh</h2>
+            <button onclick="iniciarMonitoramento()">Iniciar Monitoramento</button>
+            <div id="monitoramento"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Ir para Configuração de Agentes</h2>
+            <button onclick="irParaAgentes()">Ir para Configuração de Agentes</button>
+            <div id="navegacao"></div>
+        </div>
+    </div>
+
+    <script>
+        let monitorando = false
+        let contadorRefresh = 0
+
+        function verificarEstado() {
+            const resultDiv = document.getElementById('estado')
+            
+            const webhooks = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+            const temAgentes = webhooks['webhook/list-agentes'] ? true : false
+            
+            resultDiv.innerHTML = `
+                <h3 class="${temAgentes ? 'success' : 'error'}">Estado Atual</h3>
+                <p><strong>webhook/list-agentes:</strong> ${temAgentes ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>URL:</strong> ${webhooks['webhook/list-agentes'] || 'N/A'}</p>
+                <p><strong>Total de webhooks:</strong> ${Object.keys(webhooks).length}</p>
+            `
+        }
+
+        async function testarCriacao() {
+            const resultDiv = document.getElementById('criacao')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando criação de agente...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        agent_name: 'Teste Refresh',
+                        agent_type: 'teste-refresh',
+                        agent_id: 'TESTE_' + Date.now(),
+                        user_id: '28', // ID do administrador
+                        descricao: 'Agente de teste para verificar refresh',
+                        icone: '🧪',
+                        cor: 'bg-purple-500',
+                        ativo: true
+                    })
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agente de Teste Criado</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p><strong>Próximo passo:</strong> Verifique se o agente aparece na lista automaticamente</p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro na Criação</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+            }
+        }
+
+        function iniciarMonitoramento() {
+            const resultDiv = document.getElementById('monitoramento')
+            
+            if (monitorando) {
+                monitorando = false
+                resultDiv.innerHTML = '<p class="info">⏹️ Monitoramento parado</p>'
+                return
+            }
+            
+            monitorando = true
+            contadorRefresh = 0
+            
+            resultDiv.innerHTML = '<p class="info">🔄 Monitorando refresh automático...</p>'
+            
+            // Simular monitoramento de refresh
+            const interval = setInterval(() => {
+                if (!monitorando) {
+                    clearInterval(interval)
+                    return
+                }
+                
+                contadorRefresh++
+                resultDiv.innerHTML = `
+                    <p class="info">🔄 Monitorando refresh automático... (${contadorRefresh}s)</p>
+                    <p>Se um agente foi criado, ele deve aparecer automaticamente na lista</p>
+                `
+                
+                if (contadorRefresh >= 10) {
+                    clearInterval(interval)
+                    monitorando = false
+                    resultDiv.innerHTML = `
+                        <p class="warning">⏰ Monitoramento finalizado (10s)</p>
+                        <p>Se o agente não apareceu, pode haver um problema no refresh automático</p>
+                    `
+                }
+            }, 1000)
+        }
+
+        function irParaAgentes() {
+            const resultDiv = document.getElementById('navegacao')
+            resultDiv.innerHTML = '<p class="info">🔄 Redirecionando...</p>'
+            
+            // Redirecionar para configuração de agentes
+            window.location.href = '/agentes-config'
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔄 Redirecionando para Configuração de Agentes</h3>
+                <p>Teste criar um novo agente e verifique se ele aparece automaticamente na lista</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            verificarEstado()
+        }
+    </script>
+</body>
+</html>

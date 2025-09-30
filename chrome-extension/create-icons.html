@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Ícones da Extensão</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 1px solid #444;
+            margin: 10px;
+            background: white;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .preview {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .icon-preview {
+            text-align: center;
+        }
+        .icon-preview h3 {
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Criador de Ícones - Agente SDR Monitor</h1>
+        <p>Clique no botão abaixo para gerar os ícones da extensão:</p>
+        <button onclick="generateIcons()">🎨 Gerar Ícones</button>
+        <button onclick="downloadAll()">📥 Baixar Todos</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Preview dos Ícones</h2>
+        <div class="preview">
+            <div class="icon-preview">
+                <h3>16x16</h3>
+                <canvas id="icon16" width="16" height="16"></canvas>
+                <br><button onclick="downloadIcon('icon16', 16)">Baixar</button>
+            </div>
+            <div class="icon-preview">
+                <h3>32x32</h3>
+                <canvas id="icon32" width="32" height="32"></canvas>
+                <br><button onclick="downloadIcon('icon32', 32)">Baixar</button>
+            </div>
+            <div class="icon-preview">
+                <h3>48x48</h3>
+                <canvas id="icon48" width="48" height="48"></canvas>
+                <br><button onclick="downloadIcon('icon48', 48)">Baixar</button>
+            </div>
+            <div class="icon-preview">
+                <h3>128x128</h3>
+                <canvas id="icon128" width="128" height="128"></canvas>
+                <br><button onclick="downloadIcon('icon128', 128)">Baixar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateIcons() {
+            const sizes = [16, 32, 48, 128];
+            
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`icon${size}`);
+                const ctx = canvas.getContext('2d');
+                
+                // Limpar canvas
+                ctx.clearRect(0, 0, size, size);
+                
+                // Calcular escala
+                const scale = size / 128;
+                
+                // Desenhar ícone
+                drawRobotIcon(ctx, size, scale);
+            });
+            
+            console.log('✅ Ícones gerados com sucesso!');
+        }
+        
+        function drawRobotIcon(ctx, size, scale) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            
+            // Background circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size * 0.45, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fill();
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+            
+            // Robot head
+            const headWidth = size * 0.5;
+            const headHeight = size * 0.375;
+            const headX = centerX - headWidth / 2;
+            const headY = centerY - headHeight / 2;
+            
+            ctx.beginPath();
+            ctx.roundRect(headX, headY, headWidth, headHeight, 6 * scale);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fill();
+            
+            // Robot eyes
+            const eyeSize = size * 0.047;
+            ctx.beginPath();
+            ctx.arc(centerX - size * 0.125, centerY - size * 0.125, eyeSize, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + size * 0.125, centerY - size * 0.125, eyeSize, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            
+            // Robot mouth
+            const mouthWidth = size * 0.1875;
+            const mouthHeight = size * 0.03125;
+            const mouthX = centerX - mouthWidth / 2;
+            const mouthY = centerY + size * 0.0625;
+            
+            ctx.beginPath();
+            ctx.roundRect(mouthX, mouthY, mouthWidth, mouthHeight, 2 * scale);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            
+            // Antenna
+            ctx.beginPath();
+            ctx.moveTo(centerX, headY);
+            ctx.lineTo(centerX, headY - size * 0.125);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3 * scale;
+            ctx.stroke();
+            
+            // Antenna tip
+            ctx.beginPath();
+            ctx.arc(centerX, headY - size * 0.125, size * 0.03125, 0, 2 * Math.PI);
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+            
+            // Status indicator (play button)
+            const statusX = centerX + size * 0.25;
+            const statusY = centerY - size * 0.25;
+            const statusSize = size * 0.0625;
+            
+            ctx.beginPath();
+            ctx.arc(statusX, statusY, statusSize, 0, 2 * Math.PI);
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+            
+            // Play symbol
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `${size * 0.08}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('▶', statusX, statusY);
+        }
+        
+        function downloadIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = `icon${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function downloadAll() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach(size => {
+                setTimeout(() => {
+                    downloadIcon(`icon${size}`, size);
+                }, size * 10); // Delay para evitar bloqueio
+            });
+        }
+        
+        // Gerar ícones automaticamente ao carregar
+        window.onload = function() {
+            generateIcons();
+        };
+    </script>
+</body>
+</html>

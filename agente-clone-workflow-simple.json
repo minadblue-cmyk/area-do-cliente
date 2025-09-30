@@ -1,0 +1,150 @@
+{
+  "name": "Agente Clone - Simples",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente-simple",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-create-simple",
+      "name": "Webhook Create Simple",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar dados do agente\nconst body = $input.first().json.body;\n\nconst agentName = body.agent_name || 'Agente Padrão';\nconst agentType = body.agent_type || 'agentePadrao';\nconst agentId = body.agent_id || 'PADRAO123456789';\nconst userId = body.user_id || '1';\n\nconsole.log('📊 Dados normalizados:', { agentName, agentType, agentId, userId });\n\nreturn {\n  json: {\n    agentName,\n    agentType,\n    agentId,\n    userId\n  }\n};"
+      },
+      "id": "normalize-data-simple",
+      "name": "Normalizar Dados Simple",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow\nconst data = $input.first().json;\n\nconst workflowData = {\n  name: `Agente SDR - Start - ${data.agentName}`,\n  nodes: [\n    {\n      id: 'manual-trigger',\n      name: 'Manual Trigger',\n      type: 'n8n-nodes-base.manualTrigger',\n      typeVersion: 1,\n      position: [100, 100],\n      parameters: {}\n    }\n  ],\n  connections: {},\n  active: false,\n  settings: {},\n  tags: ['Agente', data.agentName, 'Start']\n};\n\nconsole.log('🔧 Workflow data preparado:', workflowData);\n\nreturn {\n  json: {\n    workflowData,\n    agentName: data.agentName,\n    agentType: data.agentType,\n    agentId: data.agentId\n  }\n};"
+      },
+      "id": "prepare-workflow-simple",
+      "name": "Preparar Workflow Simple",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-workflow-simple",
+      "name": "Create Workflow Simple",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultado\nconst workflowResult = $input.first().json;\nconst agentData = $node['prepare-workflow-simple'].json;\n\nconst result = {\n  success: true,\n  message: `Agente ${agentData.agentName} criado com sucesso!`,\n  agent: {\n    name: agentData.agentName,\n    type: agentData.agentType,\n    id: agentData.agentId\n  },\n  workflow: {\n    id: workflowResult.id || 'N/A',\n    name: workflowResult.name || 'N/A',\n    success: !!workflowResult.id\n  },\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('📊 Resultado final:', result);\n\nreturn { json: result };"
+      },
+      "id": "consolidate-result-simple",
+      "name": "Consolidar Resultado Simple",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-success-simple",
+      "name": "Respond Success Simple",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Create Simple": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados Simple",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados Simple": {
+      "main": [
+        [
+          {
+            "node": "Preparar Workflow Simple",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Workflow Simple": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow Simple",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Workflow Simple": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado Simple",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultado Simple": {
+      "main": [
+        [
+          {
+            "node": "Respond Success Simple",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-19T16:00:00.000Z",
+  "versionId": "1"
+}
+

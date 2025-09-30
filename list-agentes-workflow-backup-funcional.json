@@ -1,0 +1,193 @@
+{
+  "name": "Lista todos Agentes",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "list-agentes",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "2b8a2272-f976-4bd6-89bf-324a89aeae60",
+      "name": "Webhook Listar Agentes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        96
+      ],
+      "webhookId": "0f928282-1c11-4569-8153-ccefbae9fd77"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agentes_config",
+          "mode": "list",
+          "cachedResultName": "agentes_config"
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "created_at",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7cc37982-228a-4ce6-9a9d-92fa9e51e121",
+      "name": "PostgreSQL - Consultar Agentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        48,
+        96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "75625c4b-c2fc-4dbe-977f-2b6ed0f6d20f",
+      "name": "Respond Agentes",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3187ed9f-27cd-45b1-9132-5040238e8509",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "072596d4-4756-4f95-9ec3-53f98adefcf4",
+              "name": "=total",
+              "value": "={{ Array.isArray($json) ? $json.length : 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "13bf259e-cd1c-497f-8e44-e895c08bf29c",
+              "name": "data",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "afc2f6e9-08e2-4442-9dfa-ba1718255d43",
+              "name": "message",
+              "value": "Agentes encontrados",
+              "type": "string"
+            },
+            {
+              "id": "1c723801-f017-4ecf-a2c1-a1f200b6f0d5",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        96
+      ],
+      "id": "ee379210-7b71-4990-b9b6-d9bf547b8027",
+      "name": "Prepara Json"
+    }
+  ],
+  "pinData": {
+    "Webhook Listar Agentes": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.code-iq.com.br",
+            "content-type": "application/json",
+            "x-forwarded-for": "191.220.223.65",
+            "x-forwarded-host": "n8n.code-iq.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "c9d5d40fca21",
+            "x-real-ip": "191.220.223.65",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "webhookUrl": "https://n8n.code-iq.com.br/webhook/list-agentes",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Listar Agentes": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Consultar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Consultar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Prepara Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepara Json": {
+      "main": [
+        [
+          {
+            "node": "Respond Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c5807b5f-0c95-42b5-a3f7-8739da2a88bc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e390a7cf83b11ca128a2252ed89e7c1ee590debb7c2457ed87a7ff09e87ea108"
+  },
+  "id": "AUAT2yGMuw9PCDwW",
+  "tags": []
+}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Upload com Atribuição</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Upload com Atribuição</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Atribuições Atuais</h2>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições</button>
+            <div id="atribuicoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Atribuir Agente Joana Também</h2>
+            <button onclick="atribuirJoana()">Atribuir Agente Joana (68) para Usuário 37</button>
+            <div id="joana-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Upload Page</h2>
+            <button onclick="testarUpload()">Abrir Upload Page</button>
+            <div id="upload-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Verificar Logs de Debug</h2>
+            <p>Quando abrir a página de upload, verifique o console (F12) para ver os logs de debug:</p>
+            <ul>
+                <li>Procure por "🔍 Filtrando agente:"</li>
+                <li>Procure por "Supervisor - mostrando todos os agentes"</li>
+                <li>Procure por "Agentes filtrados: X de Y"</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+
+            const response = await fetch(url, config)
+            
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText} - ${errorText}`)
+            }
+
+            const text = await response.text()
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            const resultDiv = document.getElementById('atribuicoes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando atribuições...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agente-atribuicoes', {
+                    method: 'GET'
+                })
+                
+                let atribuicoes = []
+                if (Array.isArray(response.data)) {
+                    atribuicoes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    atribuicoes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const atribuicoesUsuario37 = atribuicoes.filter(attr => attr.usuario_id == 37)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Atribuições Verificadas</h3>
+                    <p><strong>Total de atribuições:</strong> ${atribuicoes.length}</p>
+                    <p><strong>Atribuições para usuário 37:</strong> ${atribuicoesUsuario37.length}</p>
+                    
+                    <h4>Atribuições para Usuário 37:</h4>
+                    <ul>
+                        ${atribuicoesUsuario37.map(attr => `
+                            <li><strong>${attr.agente_nome || 'Agente'}</strong> (Agente ID: ${attr.agente_id}) - Atribuído por: ${attr.atribuido_por_nome || attr.atribuido_por}</li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Dados Completos:</h4>
+                    <pre>${JSON.stringify(atribuicoesUsuario37, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar atribuições:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function atribuirJoana() {
+            const resultDiv = document.getElementById('joana-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Atribuindo agente Joana...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 68, // Joana
+                        usuario_id: 37, // Supervisor Elleve Consórcios
+                        atribuido_por: 37 // Supervisor Elleve Consórcios
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agente Joana Atribuído</h3>
+                    <p><strong>Agente:</strong> Joana (ID: 68)</p>
+                    <p><strong>Usuário destino:</strong> Supervisor Elleve Consórcios (ID: 37)</p>
+                    <p><strong>Atribuído por:</strong> Supervisor Elleve Consórcios (ID: 37)</p>
+                    
+                    <h4>Resposta:</h4>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao atribuir Joana:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function testarUpload() {
+            const resultDiv = document.getElementById('upload-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Abrindo página de upload...</p>'
+            
+            // Abrir a página de upload em nova aba
+            window.open('http://localhost:5174/upload', '_blank')
+            
+            resultDiv.innerHTML = `
+                <h3 class="success">✅ Página de Upload Aberta</h3>
+                <p><strong>Instruções:</strong></p>
+                <ol>
+                    <li>Faça login com: <strong>minadblue@gmail.com</strong> / <strong>123456</strong></li>
+                    <li>Verifique se os agentes aparecem na seção "Agente de Prospecção"</li>
+                    <li>Abra o console (F12) e verifique os logs de debug</li>
+                    <li>Procure por mensagens como:</li>
+                    <ul>
+                        <li>"🔍 Filtrando agente: João (usuario_id: 6)"</li>
+                        <li>"🔍 Filtrando agente: Joana (usuario_id: 5)"</li>
+                        <li>"Supervisor - mostrando todos os agentes"</li>
+                        <li>"Agentes filtrados: 2 de 2"</li>
+                    </ul>
+                </ol>
+                
+                <p><strong>Resultado esperado:</strong> Os agentes João e Joana devem aparecer na página de upload.</p>
+            `
+        }
+
+        // Auto-executar verificação inicial
+        window.onload = function() {
+            verificarAtribuicoes()
+        }
+    </script>
+</body>
+</html>

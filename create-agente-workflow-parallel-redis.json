@@ -1,0 +1,532 @@
+{
+  "name": "Create Agente Parallel Redis",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente-parallel",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-1648, 432],
+      "webhookId": "create-agente-parallel-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name || 'Agente Padrão' }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type || 'agentePadrao' }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id || 'PADRAO123456789' }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.user_id || '1' }}",
+              "type": "string"
+            },
+            {
+              "id": "icone",
+              "name": "icone",
+              "value": "={{ $json.body.icone || '🤖' }}",
+              "type": "string"
+            },
+            {
+              "id": "cor",
+              "name": "cor",
+              "value": "={{ $json.body.cor || 'bg-blue-500' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizacao",
+      "name": "Normalização",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1360, 432]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agente-config-nome",
+              "name": "agenteConfig.nome",
+              "value": "={{ $json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "agente-config-icone",
+              "name": "agenteConfig.icone",
+              "value": "={{ $json.icone }}",
+              "type": "string"
+            },
+            {
+              "id": "agente-config-cor",
+              "name": "agenteConfig.cor",
+              "value": "={{ $json.cor }}",
+              "type": "string"
+            },
+            {
+              "id": "agente-config-ativo",
+              "name": "agenteConfig.ativo",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "agente-config-created-at",
+              "name": "agenteConfig.created_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "agente-config-updated-at",
+              "name": "agenteConfig.updated_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "preparar-insercao-db",
+      "name": "Preparar Inserção DB",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1120, 432]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Criar 4 workflows em paralelo - cada um com seu próprio contador\nconst agentType = $('Normalização').item.json.agentType;\nconst agentName = $('Normalização').item.json.agentName;\n\n// Definir os 4 tipos de workflow com seus templates\nconst workflowConfigs = [\n  {\n    type: 'start',\n    templateId: 'eBcColwirndBaFZX',\n    displayName: 'Start'\n  },\n  {\n    type: 'status', \n    templateId: 'ZWeNlGbLyv0HkXvq',\n    displayName: 'Status'\n  },\n  {\n    type: 'lista',\n    templateId: 'piyABVIDxK9OoLYB', \n    displayName: 'Lista'\n  },\n  {\n    type: 'stop',\n    templateId: 'wBDZdXsfY8GYYUYg',\n    displayName: 'Stop'\n  }\n];\n\n// Retornar array para processamento paralelo\nreturn workflowConfigs.map(config => ({\n  json: {\n    agentType: agentType,\n    agentName: agentName,\n    webhookType: config.type,\n    templateId: config.templateId,\n    displayName: config.displayName,\n    workflowName: `Agente SDR - ${config.displayName} - ${agentName}`,\n    webhookPath: `${config.type}-${agentType}`\n  }\n}));"
+      },
+      "id": "preparar-workflows-paralelo",
+      "name": "Preparar Workflows Paralelo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-880, 432]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $json.agentType,\n  \"webhookType\": $json.webhookType\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "obter-contador-redis",
+      "name": "Obter Contador Redis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-640, 432]
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.templateId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "id": "buscar-template",
+      "name": "Buscar Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-400, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aplicar contador único do Redis ao workflow\nconst templateData = $json;\nconst counterData = $('Obter Contador Redis').item.json;\nconst workflowData = $('Preparar Workflows Paralelo').item.json;\nconst counter = counterData.counter;\n\nconsole.log(`🔢 Aplicando contador ${counter} para ${workflowData.webhookType}`);\n\nconst clonedWorkflow = {\n  name: `${workflowData.workflowName}-${counter}`,\n  settings: templateData.settings || {},\n  nodes: templateData.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      console.log(`🔧 Modificando webhook: ${node.name}`);\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `${workflowData.webhookPath}-${counter}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: templateData.connections || {}\n};\n\nreturn {\n  json: {\n    workflowData: clonedWorkflow,\n    counter: counter,\n    webhookType: workflowData.webhookType,\n    templateId: workflowData.templateId\n  }\n};"
+      },
+      "id": "preparar-workflow-clonado",
+      "name": "Preparar Workflow Clonado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 432]
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "id": "limpar-dados-workflow",
+      "name": "Limpar Dados Workflow",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 432]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "id": "clonar-workflow",
+      "name": "Clonar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "id": "ativar-workflow",
+      "name": "Ativar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultados de todos os 4 workflows criados\nconst allResults = $input.all();\nconst agentData = $('Normalização').item.json;\n\nconsole.log(`📊 Consolidando ${allResults.length} workflows criados`);\n\n// Extrair informações dos workflows criados\nconst workflows = allResults.map((result, index) => {\n  const workflowInfo = result.json;\n  const counterData = result.counter || (index + 1);\n  const webhookType = result.webhookType || ['start', 'status', 'lista', 'stop'][index];\n  \n  return {\n    id: workflowInfo.id,\n    name: workflowInfo.name,\n    webhookType: webhookType,\n    counter: counterData,\n    webhookPath: `${webhookType}-${agentData.agentType}-${counterData}`,\n    status: 'ativo'\n  };\n});\n\n// Preparar resposta consolidada\nconst response = {\n  success: true,\n  message: `${workflows.length} workflows criados com sucesso`,\n  agentName: agentData.agentName,\n  agentType: agentData.agentType,\n  agentId: agentData.agentId,\n  workflows: workflows,\n  summary: {\n    totalWorkflows: workflows.length,\n    activeWorkflows: workflows.filter(w => w.status === 'ativo').length,\n    webhookTypes: workflows.map(w => w.webhookType)\n  },\n  timestamp: new Date().toISOString(),\n  executionId: $execution.id\n};\n\nconsole.log('✅ Resposta consolidada:', JSON.stringify(response, null, 2));\nreturn response;"
+      },
+      "id": "consolidar-resultados",
+      "name": "Consolidar Resultados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 432]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1040, 432]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agentes_config",
+          "mode": "list",
+          "cachedResultName": "agentes_config"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ativo": "={{ $json.agenteConfig.ativo }}",
+            "nome": "={{ $json.agenteConfig.nome }}",
+            "workflow_id": "={{ $('Consolidar Resultados').item.json.workflows[0].id }}",
+            "webhook_url": "={{ $('Consolidar Resultados').item.json.workflows[0].webhookPath }}",
+            "descricao": "=Agente {{ $json.agenteConfig.nome }} para prospecção de leads",
+            "icone": "={{ $json.agenteConfig.icone }}",
+            "cor": "={{ $json.agenteConfig.cor }}",
+            "created_at": "={{ $json.agenteConfig.created_at }}",
+            "updated_at": "={{ $json.agenteConfig.updated_at }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "webhook_url",
+              "displayName": "webhook_url",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descricao",
+              "displayName": "descricao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "icone",
+              "displayName": "icone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cor",
+              "displayName": "cor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ativo",
+              "displayName": "ativo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "inserir-agente-config",
+      "name": "Inserir Agente Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 432],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização": {
+      "main": [
+        [
+          {
+            "node": "Preparar Inserção DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Inserção DB": {
+      "main": [
+        [
+          {
+            "node": "Preparar Workflows Paralelo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Workflows Paralelo": {
+      "main": [
+        [
+          {
+            "node": "Obter Contador Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter Contador Redis": {
+      "main": [
+        [
+          {
+            "node": "Buscar Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Template": {
+      "main": [
+        [
+          {
+            "node": "Preparar Workflow Clonado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Workflow Clonado": {
+      "main": [
+        [
+          {
+            "node": "Limpar Dados Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Dados Workflow": {
+      "main": [
+        [
+          {
+            "node": "Clonar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Ativar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultados": {
+      "main": [
+        [
+          {
+            "node": "Inserir Agente Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "parallel-redis-v1",
+  "meta": {
+    "instanceId": "parallel-redis-instance"
+  },
+  "id": "PARALLEL-REDIS-WORKFLOW",
+  "tags": ["redis", "parallel", "agente"]
+}

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Usuário Atual</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Usuário Atual</h1>
+        
+        <div class="step">
+            <h3>📊 Verificar Dados do Usuário Logado</h3>
+            <button onclick="verificarUsuarioAtual()">🔍 Verificar Usuário Atual</button>
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verificarUsuarioAtual() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Verificando usuário atual...</p>';
+            
+            try {
+                // Verificar dados no localStorage
+                const userDataStr = localStorage.getItem('area:user_data');
+                const userName = localStorage.getItem('area:user');
+                const token = localStorage.getItem('area:jwt');
+                
+                let html = '<div class="step">';
+                html += '<h3>📋 Dados do Usuário no localStorage</h3>';
+                html += `<p><strong>Nome:</strong> ${userName || 'Não encontrado'}</p>`;
+                html += `<p><strong>Token:</strong> ${token ? 'Presente' : 'Não encontrado'}</p>`;
+                
+                if (userDataStr) {
+                    const userData = JSON.parse(userDataStr);
+                    html += `<p><strong>ID:</strong> ${userData.id || 'Não encontrado'}</p>`;
+                    html += `<p><strong>Perfil ID:</strong> ${userData.perfil_id || 'Não encontrado'}</p>`;
+                    html += `<p><strong>Perfil Nome:</strong> ${userData.perfil || 'Não encontrado'}</p>`;
+                    html += `<p><strong>Total de Permissões:</strong> ${userData.permissions ? userData.permissions.length : 0}</p>`;
+                    
+                    if (userData.permissions && userData.permissions.length > 0) {
+                        html += '<h4>🔑 Permissões do Usuário:</h4>';
+                        userData.permissions.forEach(perm => {
+                            html += `<div style="background: #f8f9fa; padding: 5px; margin: 2px 0; border-radius: 3px;">✅ ${perm}</div>`;
+                        });
+                    }
+                } else {
+                    html += '<p class="error">❌ Dados do usuário não encontrados no localStorage</p>';
+                }
+                html += '</div>';
+                
+                // Verificar se é o perfil 32
+                if (userDataStr) {
+                    const userData = JSON.parse(userDataStr);
+                    if (userData.perfil_id === 32) {
+                        html += '<div class="step">';
+                        html += '<h3>✅ Confirmação: Usuário com Perfil 32</h3>';
+                        html += '<p>Este usuário deveria ter acesso APENAS a:</p>';
+                        html += '<ul>';
+                        html += '<li>✅ Dashboard</li>';
+                        html += '<li>✅ Upload de Arquivo</li>';
+                        html += '<li>✅ Teste de Agente</li>';
+                        html += '<li>✅ Saudação Personalizada</li>';
+                        html += '</ul>';
+                        html += '<p>E NÃO deveria ter acesso a:</p>';
+                        html += '<ul>';
+                        html += '<li>❌ Usuários</li>';
+                        html += '<li>❌ Empresas</li>';
+                        html += '<li>❌ Gerenciamento de Perfis</li>';
+                        html += '<li>❌ Configurar Webhooks</li>';
+                        html += '<li>❌ Configurar Agentes</li>';
+                        html += '</ul>';
+                        html += '</div>';
+                    } else {
+                        html += '<div class="step">';
+                        html += `<h3>⚠️ Usuário com Perfil ${userData.perfil_id}</h3>`;
+                        html += '<p>Este não é o perfil 32 que você queria testar.</p>';
+                        html += '</div>';
+                    }
+                }
+                
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <p class="error">❌ Erro: ${error.message}</p>
+                    <div class="code">${error.stack}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

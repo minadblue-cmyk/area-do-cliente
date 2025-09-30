@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook Atribuir Agente</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .test-case { background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Webhook Atribuir Agente</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Webhook Existe</h2>
+            <button onclick="verificarWebhook()">Verificar Webhook</button>
+            <div id="webhook-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Diferentes Payloads</h2>
+            
+            <div class="test-case">
+                <h3>Teste 1: Payload Básico</h3>
+                <button onclick="testarPayload1()">Testar Payload 1</button>
+                <div id="payload1-result"></div>
+            </div>
+
+            <div class="test-case">
+                <h3>Teste 2: Payload com Dados Completos</h3>
+                <button onclick="testarPayload2()">Testar Payload 2</button>
+                <div id="payload2-result"></div>
+            </div>
+
+            <div class="test-case">
+                <h3>Teste 3: Payload com Tipos Corretos</h3>
+                <button onclick="testarPayload3()">Testar Payload 3</button>
+                <div id="payload3-result"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Agentes Disponíveis</h2>
+            <button onclick="verificarAgentes()">Verificar Agentes</button>
+            <div id="agentes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Verificar Usuários Disponíveis</h2>
+            <button onclick="verificarUsuarios()">Verificar Usuários</button>
+            <div id="usuarios-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+            console.log(`🔧 Config:`, config)
+
+            const response = await fetch(url, config)
+            
+            console.log(`📡 Response status: ${response.status}`)
+            console.log(`📡 Response headers:`, Object.fromEntries(response.headers.entries()))
+            
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.log(`❌ Error response:`, errorText)
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText} - ${errorText}`)
+            }
+
+            const text = await response.text()
+            console.log(`📄 Response text:`, text)
+            
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                console.log(`⚠️ Não é JSON, retornando texto:`, text)
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function verificarWebhook() {
+            const resultDiv = document.getElementById('webhook-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando webhook...</p>'
+            
+            try {
+                // Testar se o webhook responde com parâmetros corretos
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 65,
+                        usuario_id: 37,
+                        atribuido_por: 28
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Webhook Responde</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar webhook:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarPayload1() {
+            const resultDiv = document.getElementById('payload1-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando payload 1...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 65,
+                        usuario_id: 37,
+                        atribuido_por: 28
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Payload 1 Testado</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no payload 1:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarPayload2() {
+            const resultDiv = document.getElementById('payload2-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando payload 2...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 65,
+                        usuario_id: 37,
+                        atribuido_por: 28,
+                        data_atribuicao: new Date().toISOString(),
+                        observacoes: 'Teste de atribuição via frontend'
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Payload 2 Testado</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no payload 2:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarPayload3() {
+            const resultDiv = document.getElementById('payload3-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando payload 3...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: parseInt('65'),
+                        usuario_id: parseInt('37'),
+                        atribuido_por: parseInt('28')
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Payload 3 Testado</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no payload 3:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarAgentes() {
+            const resultDiv = document.getElementById('agentes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando agentes...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agentes', {
+                    method: 'GET'
+                })
+                
+                let agentes = []
+                if (Array.isArray(response.data)) {
+                    agentes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    agentes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const agenteJoao = agentes.find(agente => agente.id == 65)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agentes Encontrados</h3>
+                    <p><strong>Total de agentes:</strong> ${agentes.length}</p>
+                    <p><strong>Agente João (ID 65):</strong> ${agenteJoao ? 'Encontrado' : 'Não encontrado'}</p>
+                    
+                    ${agenteJoao ? `
+                        <h4>Dados do Agente João:</h4>
+                        <pre>${JSON.stringify(agenteJoao, null, 2)}</pre>
+                    ` : ''}
+                    
+                    <h4>Todos os Agentes:</h4>
+                    <pre>${JSON.stringify(agentes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar agentes:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarUsuarios() {
+            const resultDiv = document.getElementById('usuarios-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando usuários...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-users', {
+                    method: 'GET'
+                })
+                
+                let usuarios = []
+                if (Array.isArray(response.data)) {
+                    usuarios = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    usuarios = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const usuario37 = usuarios.find(usuario => usuario.id == 37)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Usuários Encontrados</h3>
+                    <p><strong>Total de usuários:</strong> ${usuarios.length}</p>
+                    <p><strong>Usuário 37:</strong> ${usuario37 ? 'Encontrado' : 'Não encontrado'}</p>
+                    
+                    ${usuario37 ? `
+                        <h4>Dados do Usuário 37:</h4>
+                        <pre>${JSON.stringify(usuario37, null, 2)}</pre>
+                    ` : ''}
+                    
+                    <h4>Todos os Usuários:</h4>
+                    <pre>${JSON.stringify(usuarios, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar usuários:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar verificação inicial
+        window.onload = function() {
+            verificarWebhook()
+            verificarAgentes()
+            verificarUsuarios()
+        }
+    </script>
+</body>
+</html>

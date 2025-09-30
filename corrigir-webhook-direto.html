@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Webhook Direto</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        button { padding: 10px 20px; margin: 5px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #1976d2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Webhook Direto</h1>
+        
+        <button onclick="executarCorrecao()">🚀 Executar Correção Completa</button>
+        <button onclick="testarSistema()">🧪 Testar Sistema</button>
+
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function executarCorrecao() {
+            log('🚀 Iniciando correção completa...', 'info');
+            
+            // 1. Limpar cache
+            log('🧹 Limpando cache...', 'info');
+            localStorage.removeItem('area:jwt');
+            localStorage.removeItem('area:user');
+            localStorage.removeItem('area:user_data');
+            localStorage.removeItem('area:webhooks');
+            localStorage.removeItem('area:webhook-urls');
+            localStorage.removeItem('flowhub:webhooks');
+            log('✅ Cache limpo', 'success');
+
+            // 2. Configurar webhooks corretos
+            log('🔧 Configurando webhooks corretos...', 'info');
+            
+            const webhooksCorretos = {
+                'webhook-login': 'https://n8n.code-iq.com.br/webhook/login',
+                'webhook-me': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/me',
+                'webhook/list-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission',
+                'webhook/list-profile': 'https://n8n.code-iq.com.br/webhook/list-profile',
+                'webhook/create-profile': 'https://n8n.code-iq.com.br/webhook/create-profile',
+                'webhook/edit-profile': 'https://n8n.code-iq.com.br/webhook/edit-profile',
+                'webhook/delete-profile': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-profile',
+                'webhook/assign-user-profiles': 'https://n8n.code-iq.com.br/webhook/assign-user-profiles',
+                'webhook-create-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-permission',
+                'webhook/list-permissions': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permissions',
+                'webhook-delete-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-permission',
+                'webhook/list-permission-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission-users',
+                'webhook/list-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users',
+                'webhook-criar-usuario': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-user',
+                'webhook/edit-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/edit-users',
+                'webhook/delete-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-users',
+                'webhook/list-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-company',
+                'webhook-criar-empresa': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-company',
+                'webhook/edit-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/edit-company',
+                'webhook/delete-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-company',
+                'webhook-upload': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/upload',
+                'webhook-listar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/listar-saudacao',
+                'webhook-salvar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/salvar-saudacao',
+                'webhook-deletar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/deletar-saudacao',
+                'webhook-agente-recebimento': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/seleciona-saudacao',
+                'webhook-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/atualiza-saudacao',
+                'webhook-lista-saudacoes': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/lista-saudacoes',
+                'webhook-controle-agente': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/controle-do-agente',
+                'webhook/list-agentes': 'https://n8n.code-iq.com.br/webhook/list-agentes',
+                'webhook/create-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+                'webhook/update-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+                'webhook/delete-agente': 'https://n8n.code-iq.com.br/webhook/delete-agente',
+                'webhook-agente-prospeccao-quente': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/agente-prospeccao-quente',
+                'webhook/agente-fria': 'https://n8n.code-iq.com.br/webhook/agente-fria'
+            };
+
+            localStorage.setItem('flowhub:webhooks', JSON.stringify(webhooksCorretos));
+            log('✅ Webhooks configurados corretamente', 'success');
+
+            // 3. Testar webhook específico
+            log('🧪 Testando webhook list-profile...', 'info');
+            testarWebhook();
+        }
+
+        function testarWebhook() {
+            fetch('https://n8n.code-iq.com.br/webhook/list-profile', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                log(`📡 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                return response.json();
+            })
+            .then(data => {
+                log('✅ Webhook list-profile funcionando!', 'success');
+                log(`📊 Dados recebidos: ${JSON.stringify(data).substring(0, 200)}...`, 'info');
+            })
+            .catch(error => {
+                log(`❌ Erro no webhook: ${error.message}`, 'error');
+            });
+        }
+
+        function testarSistema() {
+            log('🧪 Testando sistema completo...', 'info');
+            
+            // Testar login
+            fetch('https://n8n.code-iq.com.br/webhook/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: 'admin@code-iq.com.br',
+                    password: 'F0rm@T10'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                log('✅ Login funcionando!', 'success');
+                log(`👤 Usuário: ${data.nome}`, 'info');
+                
+                // Testar permissões
+                return fetch('https://n8n.code-iq.com.br/webhook/list-profile', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                log('✅ Perfis carregados!', 'success');
+                log(`📊 Perfis: ${data.length} encontrados`, 'info');
+            })
+            .catch(error => {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+            });
+        }
+
+        // Executar verificação inicial
+        window.onload = function() {
+            log('🚀 Script carregado. Clique em "Executar Correção Completa" para corrigir o sistema.', 'info');
+        };
+    </script>
+</body>
+</html>

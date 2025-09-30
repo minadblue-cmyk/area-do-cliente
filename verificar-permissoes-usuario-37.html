@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Permissões - Usuário 37</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .permission { display: flex; justify-content: space-between; align-items: center; padding: 8px; margin: 4px 0; background: #333; border-radius: 4px; }
+        .permission.has { background: #065f46; }
+        .permission.missing { background: #7f1d1d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Permissões - Usuário 37</h1>
+        
+        <div class="section">
+            <h2>1. Login e Dados do Usuário</h2>
+            <button onclick="fazerLogin()">Fazer Login</button>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Permissões do Perfil</h2>
+            <button onclick="verificarPermissoes()">Verificar Permissões</button>
+            <div id="permissoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Perfil Específico</h2>
+            <button onclick="verificarPerfil()">Verificar Perfil</button>
+            <div id="perfil-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Testar Permissões de Agente</h2>
+            <button onclick="testarPermissoesAgente()">Testar Permissões de Agente</button>
+            <div id="agente-permissoes-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+        const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+
+        let userData = null
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('webhook-')) {
+                // Webhooks com hífen vão para LAVO
+                url = `${N8N_LAVO_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+
+            const response = await fetch(url, config)
+            
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`)
+            }
+
+            const text = await response.text()
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function fazerLogin() {
+            const resultDiv = document.getElementById('login-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Fazendo login...</p>'
+            
+            try {
+                const response = await callWebhook('webhook-login', {
+                    method: 'POST',
+                    data: {
+                        email: 'minadblue@gmail.com',
+                        senha: '123456'
+                    }
+                })
+                
+                console.log('🔐 Resposta do login:', response)
+                
+                if (response.data && response.data.success) {
+                    userData = response.data.data
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Login Bem-sucedido</h3>
+                        <p><strong>Usuário:</strong> ${userData.nome}</p>
+                        <p><strong>ID:</strong> ${userData.id}</p>
+                        <p><strong>Perfil:</strong> ${userData.perfil}</p>
+                        <p><strong>Perfil ID:</strong> ${userData.perfil_id}</p>
+                        
+                        <h4>Dados Completos:</h4>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    `
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Falha no login</p>
+                        <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                    `
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro no login:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarPermissoes() {
+            const resultDiv = document.getElementById('permissoes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando permissões...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-permission', {
+                    method: 'GET'
+                })
+                
+                console.log('🔑 Resposta das permissões:', response)
+                
+                let permissoes = []
+                if (Array.isArray(response.data)) {
+                    permissoes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    permissoes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                // Filtrar permissões relacionadas a agentes
+                const permissoesAgente = permissoes.filter(perm => 
+                    perm.nome_permissao && perm.nome_permissao.toLowerCase().includes('agente')
+                )
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Permissões Encontradas</h3>
+                    <p><strong>Total de permissões:</strong> ${permissoes.length}</p>
+                    <p><strong>Permissões de agente:</strong> ${permissoesAgente.length}</p>
+                    
+                    <h4>Permissões de Agente:</h4>
+                    <pre>${JSON.stringify(permissoesAgente, null, 2)}</pre>
+                    
+                    <h4>Todas as Permissões:</h4>
+                    <pre>${JSON.stringify(permissoes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar permissões:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarPerfil() {
+            const resultDiv = document.getElementById('perfil-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando perfil...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-profile', {
+                    method: 'GET'
+                })
+                
+                console.log('👤 Resposta dos perfis:', response)
+                
+                let perfis = []
+                if (Array.isArray(response.data)) {
+                    perfis = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    perfis = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                // Encontrar o perfil do usuário atual
+                const perfilUsuario = perfis.find(perfil => perfil.id == userData?.perfil_id)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Perfis Encontrados</h3>
+                    <p><strong>Total de perfis:</strong> ${perfis.length}</p>
+                    <p><strong>Perfil do usuário (ID ${userData?.perfil_id}):</strong> ${perfilUsuario ? 'Encontrado' : 'Não encontrado'}</p>
+                    
+                    ${perfilUsuario ? `
+                        <h4>Perfil do Usuário:</h4>
+                        <pre>${JSON.stringify(perfilUsuario, null, 2)}</pre>
+                    ` : ''}
+                    
+                    <h4>Todos os Perfis:</h4>
+                    <pre>${JSON.stringify(perfis, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar perfil:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarPermissoesAgente() {
+            const resultDiv = document.getElementById('agente-permissoes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando permissões de agente...</p>'
+            
+            if (!userData) {
+                resultDiv.innerHTML = '<p class="error">❌ Faça login primeiro</p>'
+                return
+            }
+            
+            try {
+                // Simular as permissões que o frontend verifica
+                const permissoesTeste = [
+                    'visualizar_status_do_agente',
+                    'iniciar_agente',
+                    'parar_agente',
+                    'pausar_agente',
+                    'retomar_agente',
+                    'administrar_agente_de_outros_usuários',
+                    'atribuir_agentes_usuarios'
+                ]
+                
+                // Buscar permissões do perfil
+                const response = await callWebhook('webhook/list-permission', {
+                    method: 'GET'
+                })
+                
+                let permissoes = []
+                if (Array.isArray(response.data)) {
+                    permissoes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    permissoes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                // Buscar perfil do usuário
+                const perfilResponse = await callWebhook('webhook/list-profile', {
+                    method: 'GET'
+                })
+                
+                let perfis = []
+                if (Array.isArray(perfilResponse.data)) {
+                    perfis = perfilResponse.data.map(item => item.data || item)
+                } else if (perfilResponse.data && perfilResponse.data.data) {
+                    perfis = Array.isArray(perfilResponse.data.data) ? perfilResponse.data.data : [perfilResponse.data.data]
+                }
+                
+                const perfilUsuario = perfis.find(perfil => perfil.id == userData.perfil_id)
+                
+                let html = '<h3 class="success">✅ Teste de Permissões de Agente</h3>'
+                
+                if (perfilUsuario) {
+                    html += `<p><strong>Perfil:</strong> ${perfilUsuario.nome_perfil}</p>`
+                    html += `<p><strong>ID do Perfil:</strong> ${perfilUsuario.id}</p>`
+                    
+                    // Verificar cada permissão
+                    permissoesTeste.forEach(permNome => {
+                        const temPermissao = perfilUsuario.permissoes && perfilUsuario.permissoes.some(perm => 
+                            perm.nome_permissao === permNome
+                        )
+                        
+                        html += `
+                            <div class="permission ${temPermissao ? 'has' : 'missing'}">
+                                <span>${permNome}</span>
+                                <span>${temPermissao ? '✅ TEM' : '❌ NÃO TEM'}</span>
+                            </div>
+                        `
+                    })
+                    
+                    html += `
+                        <h4>Permissões do Perfil:</h4>
+                        <pre>${JSON.stringify(perfilUsuario.permissoes, null, 2)}</pre>
+                    `
+                } else {
+                    html += '<p class="error">❌ Perfil do usuário não encontrado</p>'
+                }
+                
+                resultDiv.innerHTML = html
+                
+            } catch (error) {
+                console.error('❌ Erro ao testar permissões:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar login
+        window.onload = function() {
+            fazerLogin()
+        }
+    </script>
+</body>
+</html>

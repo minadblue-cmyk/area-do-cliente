@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpeza Direta de Webhooks</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #dc2626; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpeza Direta de Webhooks</h1>
+        
+        <div class="section">
+            <h2>1. Estado Atual</h2>
+            <button onclick="mostrarEstado()">Mostrar Estado Atual</button>
+            <div id="estado"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Limpeza Forçada</h2>
+            <button onclick="limpezaForcada()" class="danger">🧹 LIMPEZA FORÇADA</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Teste Final</h2>
+            <button onclick="testeFinal()">Teste Final</button>
+            <div id="teste"></div>
+        </div>
+    </div>
+
+    <script>
+        // Webhooks essenciais
+        const WEBHOOKS_ESSENCIAIS = {
+            'webhook-login': 'https://n8n.code-iq.com.br/webhook/login',
+            'webhook-me': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/me',
+            'webhook/list-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users',
+            'webhook-criar-usuario': 'https://n8n.code-iq.com.br/webhook/create-user',
+            'webhook/edit-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/edit-users',
+            'webhook/delete-users': 'https://n8n.code-iq.com.br/webhook/delete-users',
+            'webhook/list-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission',
+            'webhook/list-profile': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-profile',
+            'webhook/assign-user-profiles': 'https://n8n.code-iq.com.br/webhook/assign-user-profiles',
+            'webhook/delete-profile': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-profile',
+            'webhook-dashboard': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/dashboard',
+            'webhook/list-agentes': 'https://n8n.code-iq.com.br/webhook/list-agentes',
+            'webhook/create-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+            'webhook/update-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+            'webhook/delete-agente': 'https://n8n.code-iq.com.br/webhook/delete-agente',
+            'webhook/list-agente-atribuicoes': 'https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes',
+            'webhook/atribuir-agente-usuario': 'https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario',
+            'webhook/remover-atribuicao-agente': 'https://n8n.code-iq.com.br/webhook/remover-atribuicao-agente',
+            'webhook-upload': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/upload',
+            'webhook/list-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-company',
+            'webhook-criar-empresa': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-company',
+            'webhook/edit-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/edit-company',
+            'webhook/delete-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-company',
+            'webhook-listar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/listar-saudacao',
+            'webhook-salvar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/salvar-saudacao',
+            'webhook-agente-recebimento': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/seleciona-saudacao'
+        };
+
+        function mostrarEstado() {
+            const resultDiv = document.getElementById('estado')
+            
+            const webhooks = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+            const totalWebhooks = Object.keys(webhooks).length
+            const temDashboard = webhooks['webhook-dashboard'] ? true : false
+            
+            resultDiv.innerHTML = `
+                <h3 class="${temDashboard ? 'success' : 'error'}">Estado Atual</h3>
+                <p><strong>Total de webhooks:</strong> ${totalWebhooks}</p>
+                <p><strong>webhook-dashboard:</strong> ${temDashboard ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>URLs disponíveis:</strong></p>
+                <pre>${JSON.stringify(webhooks, null, 2)}</pre>
+            `
+        }
+
+        function limpezaForcada() {
+            const resultDiv = document.getElementById('resultado')
+            resultDiv.innerHTML = '<p class="info">🔄 Iniciando limpeza forçada...</p>'
+            
+            try {
+                // 1. Limpar completamente o localStorage
+                console.log('🧹 Limpando localStorage...')
+                localStorage.clear()
+                
+                // 2. Aguardar um pouco
+                setTimeout(() => {
+                    // 3. Salvar apenas webhooks essenciais
+                    console.log('💾 Salvando webhooks essenciais...')
+                    localStorage.setItem('flowhub:webhooks', JSON.stringify(WEBHOOKS_ESSENCIAIS))
+                    
+                    // 4. Verificar se foi salvo corretamente
+                    const webhooksSalvos = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+                    const temDashboard = webhooksSalvos['webhook-dashboard'] ? true : false
+                    
+                    resultDiv.innerHTML = `
+                        <h3 class="${temDashboard ? 'success' : 'error'}">${temDashboard ? '✅' : '❌'} Limpeza Concluída</h3>
+                        <p>• localStorage completamente limpo</p>
+                        <p>• ${Object.keys(webhooksSalvos).length} webhooks essenciais salvos</p>
+                        <p>• webhook-dashboard: ${temDashboard ? '✅ Presente' : '❌ Ausente'}</p>
+                        <p><strong>Próximo passo:</strong> Recarregue a página principal</p>
+                    `
+                    
+                    // Auto-redirecionar após 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/'
+                    }, 2000)
+                    
+                }, 500)
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function testeFinal() {
+            const resultDiv = document.getElementById('teste')
+            
+            const webhooks = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+            const temDashboard = webhooks['webhook-dashboard'] ? true : false
+            
+            resultDiv.innerHTML = `
+                <h3 class="${temDashboard ? 'success' : 'error'}">Teste Final</h3>
+                <p><strong>webhook-dashboard:</strong> ${temDashboard ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>URL:</strong> ${webhooks['webhook-dashboard'] || 'N/A'}</p>
+                <p><strong>Total de webhooks:</strong> ${Object.keys(webhooks).length}</p>
+                
+                ${temDashboard ? 
+                    '<p class="success">✅ Pronto! Agora teste o dashboard.</p>' : 
+                    '<p class="error">❌ Ainda há problema. Execute a limpeza forçada.</p>'
+                }
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            mostrarEstado()
+        }
+    </script>
+</body>
+</html>

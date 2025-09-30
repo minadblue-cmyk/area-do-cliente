@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Filtro de Agentes Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Filtro de Agentes na Página Upload</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Dados de Teste</h3>
+            <p><strong>Usuário Logado:</strong> ID 6 (Teste de Dashboard)</p>
+            <p><strong>Perfil:</strong> User Elleve Consorsios 1 - Atualizado (ID 32)</p>
+            <p><strong>Permissões ativas:</strong> iniciar_agente = true</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Permissões de Agente</h3>
+            <button onclick="testarPermissoes()">Testar Permissões</button>
+            <button onclick="testarFiltro()">Testar Filtro</button>
+            <button onclick="limparLogs()">Limpar Logs</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste (simulando resposta do webhook)
+        const agentesResponse = {
+            "success": true,
+            "message": "Agentes encontrados",
+            "data": [
+                {
+                    "id": 68,
+                    "nome": "Joana",
+                    "descricao": "joana",
+                    "icone": "🎯",
+                    "cor": "bg-yellow-500",
+                    "ativo": true,
+                    "created_at": "2025-09-23T15:47:20.352Z",
+                    "updated_at": "2025-09-23T15:47:20.352Z",
+                    "usuario_id": 5,
+                    "workflow_start_id": "jIhNd3Vv8zVtJUuY",
+                    "workflow_status_id": "Wn4VYMRnt2tN8Tgb",
+                    "workflow_lista_id": "h5WUpmVQwTh7Hgqz",
+                    "workflow_stop_id": "p5VmfMPAraqzZQYi",
+                    "webhook_start_url": "webhook/start10-joana",
+                    "webhook_status_url": "webhook/status10-joana",
+                    "webhook_lista_url": "webhook/lista10-joana",
+                    "webhook_stop_url": "webhook/stop10-joana",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                },
+                {
+                    "id": 65,
+                    "nome": "João",
+                    "descricao": "",
+                    "icone": "🤖",
+                    "cor": "bg-pink-500",
+                    "ativo": true,
+                    "created_at": "2025-09-22T14:56:17.585Z",
+                    "updated_at": "2025-09-22T14:56:17.585Z",
+                    "usuario_id": 6,
+                    "workflow_start_id": "HvamnPOgHaZY8hJO",
+                    "workflow_status_id": "d7YXwznULVPMKsnj",
+                    "workflow_lista_id": "3impsjMkqCs0q8nG",
+                    "workflow_stop_id": "MxI8hiu1Bmlni5Jq",
+                    "webhook_start_url": "webhook/start7-joao",
+                    "webhook_status_url": "webhook/status7-joao",
+                    "webhook_lista_url": "webhook/lista7-joao",
+                    "webhook_stop_url": "webhook/stop7-joao",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                },
+                {
+                    "id": 69,
+                    "nome": "Teste Agente",
+                    "descricao": "Agente de teste",
+                    "icone": "🤖",
+                    "cor": "bg-blue-500",
+                    "ativo": true,
+                    "created_at": "2025-09-23T15:50:30.013Z",
+                    "updated_at": "2025-09-23T15:50:30.013Z",
+                    "usuario_id": 6,
+                    "workflow_start_id": "bqacOThwYg61oZQp",
+                    "workflow_status_id": "erYhRbhIMzqTYpyd",
+                    "workflow_lista_id": "SVseOvnLycTWGz81",
+                    "workflow_stop_id": "ZZ2H5YUMnDsuZ5WF",
+                    "webhook_start_url": "webhook/start11-testeagente",
+                    "webhook_status_url": "webhook/status11-testeagente",
+                    "webhook_lista_url": "webhook/lista11-testeagente",
+                    "webhook_stop_url": "webhook/stop11-testeagente",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                }
+            ],
+            "total": 3,
+            "timestamp": "2025-09-23T19:03:33.884Z"
+        }
+
+        // Simular dados do usuário logado
+        const userData = {
+            id: "6", // String como vem do frontend
+            name: "Teste de Dashboard",
+            perfil_id: 32
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.textContent += `[${timestamp}] ${message}\n`
+        }
+
+        function limparLogs() {
+            document.getElementById('logs').textContent = ''
+        }
+
+        function testarPermissoes() {
+            log('🔍 Testando permissões de agente...')
+            
+            // Simular lógica do useAgentPermissions
+            const hasPermission = (permission) => {
+                // Simular permissões do usuário
+                const userPermissions = [
+                    'iniciar_agente_de_prospeco',
+                    'visualizar_saudaes',
+                    'editar_saudao',
+                    'deletar_saudao',
+                    'fazer_upload_de_arquivos',
+                    'visualizar_pgina_de_upload',
+                    'visualizar_logs_de_upload',
+                    'visualizar_status_do_agente',
+                    'parar_agente',
+                    'retomar_agente',
+                    'selecionar_saudao_para_agente',
+                    'visualizar_status_do_agente'
+                ]
+                return userPermissions.includes(permission)
+            }
+            
+            const canViewAgent = () => hasPermission('visualizar_status_do_agente')
+            const canStartAgent = () => hasPermission('iniciar_agente_de_prospeco')
+            const canStopAgent = () => hasPermission('parar_agente')
+            const isAdmin = () => false // Usuário não é admin
+            
+            // Calcular permissões como no hook
+            const canViewAgentStatus = canViewAgent()
+            const canExecuteAgent = canStartAgent() || canStopAgent()
+            const canManageAgents = isAdmin() || hasPermission('administrar_agente_de_outros_usuários')
+            
+            const agentPermissions = {
+                canView: canViewAgentStatus,
+                canCreate: canManageAgents,
+                canUpdate: canManageAgents,
+                canDelete: canManageAgents,
+                canExecute: canExecuteAgent,
+                canManage: canManageAgents,
+                canViewAll: canManageAgents,
+                canViewOwn: canViewAgentStatus,
+                canAccess: canViewAgentStatus || canExecuteAgent
+            }
+            
+            log(`📊 Permissões calculadas:`)
+            log(`  canView: ${agentPermissions.canView}`)
+            log(`  canExecute: ${agentPermissions.canExecute}`)
+            log(`  canManage: ${agentPermissions.canManage}`)
+            log(`  canViewAll: ${agentPermissions.canViewAll}`)
+            log(`  canViewOwn: ${agentPermissions.canViewOwn}`)
+            log(`  canAccess: ${agentPermissions.canAccess}`)
+            
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Permissões de Agente:</h4>
+                <ul>
+                    <li>canView: ${agentPermissions.canView}</li>
+                    <li>canExecute: ${agentPermissions.canExecute}</li>
+                    <li>canManage: ${agentPermissions.canManage}</li>
+                    <li>canViewAll: ${agentPermissions.canViewAll}</li>
+                    <li>canViewOwn: ${agentPermissions.canViewOwn}</li>
+                    <li>canAccess: ${agentPermissions.canAccess}</li>
+                </ul>
+            `
+        }
+
+        function testarFiltro() {
+            log('🔍 Testando filtro de agentes...')
+            
+            // Simular permissões (baseado no resultado anterior)
+            const agentPermissions = {
+                canViewAll: false,
+                canManage: false,
+                canViewOwn: true
+            }
+            
+            const agentesList = agentesResponse.data
+            log(`📥 Total de agentes recebidos: ${agentesList.length}`)
+            
+            // Aplicar filtro (lógica do frontend)
+            const agentesFiltrados = agentesList.filter((agente) => {
+                log(`🔍 Filtrando agente: ${agente.nome} (usuario_id: ${agente.usuario_id})`)
+                log(`🔍 Permissões: canViewAll=${agentPermissions.canViewAll}, canManage=${agentPermissions.canManage}, canViewOwn=${agentPermissions.canViewOwn}`)
+                
+                // Se pode ver todos os agentes, mostrar todos
+                if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                    log(`✅ ${agente.nome}: Mostrando (canViewAll/canManage)`)
+                    return true
+                }
+                
+                // Se pode ver apenas seus próprios agentes, filtrar por user_id
+                if (agentPermissions.canViewOwn) {
+                    const userId = parseInt(userData.id)
+                    const matches = agente.user_id === userId || agente.usuario_id === userId
+                    log(`🔍 ${agente.nome}: Comparando ${agente.usuario_id} === ${userId} = ${matches}`)
+                    return matches
+                }
+                
+                // Se não tem permissão específica, não mostrar nenhum
+                log(`❌ ${agente.nome}: Sem permissão específica`)
+                return false
+            })
+            
+            log(`✅ Agentes filtrados: ${agentesFiltrados.length} de ${agentesList.length}`)
+            
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado do Filtro:</h4>
+                <p><strong>Total de agentes:</strong> ${agentesList.length}</p>
+                <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                <p><strong>Agentes que devem aparecer:</strong></p>
+                <ul>
+                    ${agentesFiltrados.map(agente => 
+                        `<li>✅ ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</li>`
+                    ).join('')}
+                </ul>
+                <p><strong>Agentes que NÃO devem aparecer:</strong></p>
+                <ul>
+                    ${agentesList.filter(agente => !agentesFiltrados.includes(agente)).map(agente => 
+                        `<li>❌ ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</li>`
+                    ).join('')}
+                </ul>
+            `
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique nos botões para executar os testes.')
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção do Filtro</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção do Filtro</h1>
+        
+        <div class="section">
+            <h2>1. Testar com Usuário Padrão (ID: 6)</h2>
+            <button onclick="testarUsuarioPadrao()">Testar Usuário Padrão</button>
+            <div id="usuario-padrao"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar com Administrador (ID: 5)</h2>
+            <button onclick="testarAdministrador()">Testar Administrador</button>
+            <div id="administrador"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar com Supervisor (ID: 37)</h2>
+            <button onclick="testarSupervisor()">Testar Supervisor</button>
+            <div id="supervisor"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarUsuarioPadrao() {
+            const resultDiv = document.getElementById('usuario-padrao')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando usuário padrão...</p>'
+            
+            try {
+                // Simular login do usuário padrão
+                const userData = {
+                    id: "6",
+                    name: "Usuário Elleve Padrão",
+                    email: "rmacedo2005@hotmail.com",
+                    perfil_id: 32,
+                    perfil: "Perfil de Padrão de Usuário Elleve Consorsios",
+                    permissions: ['iniciar_agente', 'visualizar_status_do_agente']
+                }
+                
+                localStorage.setItem('userData', JSON.stringify(userData))
+                
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                // Aplicar filtro corrigido
+                const userId = parseInt(userData.id)
+                const agentesFiltrados = agentes.filter(agente => {
+                    // Simular lógica corrigida: apenas usuario_id === userId
+                    return agente.usuario_id === userId
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👤 Usuário Padrão (ID: 6)</h3>
+                    <p><strong>Deve ver:</strong> Apenas agentes com usuario_id = 6 (João)</p>
+                    <p><strong>Agentes encontrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o usuário padrão deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Verificação:</h4>
+                    <p class="${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 
+                            '✅ CORRETO: Usuário padrão vê apenas João' : 
+                            '❌ INCORRETO: Usuário padrão está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarAdministrador() {
+            const resultDiv = document.getElementById('administrador')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando administrador...</p>'
+            
+            try {
+                // Simular login do administrador
+                const userData = {
+                    id: "5",
+                    name: "Administrator Code-IQ",
+                    email: "admin@code-iq.com.br",
+                    perfil_id: 1,
+                    perfil: "Administrador",
+                    permissions: ['administrar_agente_de_outros_usuários']
+                }
+                
+                localStorage.setItem('userData', JSON.stringify(userData))
+                
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                // Aplicar filtro para administrador (deve ver todos)
+                const agentesFiltrados = agentes // Administrador vê todos
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👑 Administrador (ID: 5)</h3>
+                    <p><strong>Deve ver:</strong> Todos os agentes (tem permissão canViewAll)</p>
+                    <p><strong>Agentes encontrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o administrador deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Verificação:</h4>
+                    <p class="${agentesFiltrados.length === 3 ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 3 ? 
+                            '✅ CORRETO: Administrador vê todos os agentes' : 
+                            '❌ INCORRETO: Administrador está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarSupervisor() {
+            const resultDiv = document.getElementById('supervisor')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando supervisor...</p>'
+            
+            try {
+                // Simular login do supervisor
+                const userData = {
+                    id: "37",
+                    name: "Supervisor Elleve Consórcios",
+                    email: "minadblue@gmail.com",
+                    perfil_id: 42,
+                    perfil: "Supervisor Elleve Consórcios",
+                    permissions: [] // Sem permissões específicas
+                }
+                
+                localStorage.setItem('userData', JSON.stringify(userData))
+                
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                // Aplicar filtro para supervisor (sem permissões = 0 agentes)
+                const agentesFiltrados = agentes.filter(agente => {
+                    const userId = parseInt(userData.id)
+                    return agente.usuario_id === userId
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👨‍💼 Supervisor (ID: 37)</h3>
+                    <p><strong>Deve ver:</strong> Apenas agentes com usuario_id = 37 (nenhum no momento)</p>
+                    <p><strong>Agentes encontrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o supervisor deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Verificação:</h4>
+                    <p class="${agentesFiltrados.length === 0 ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 0 ? 
+                            '✅ CORRETO: Supervisor não vê nenhum agente' : 
+                            '❌ INCORRETO: Supervisor está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarUsuarioPadrao()
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Lógica Final Corrigida</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+        .agent-visible { border-left-color: #4ade80; }
+        .agent-hidden { border-left-color: #f87171; }
+        .admin-rule { background: #1e3a8a; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #60a5fa; }
+        .removed-rule { background: #7f1d1d; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Lógica Final Corrigida</h1>
+        
+        <div class="admin-rule">
+            <h2>📋 REGRA PRINCIPAL</h2>
+            <p><strong>Administrador deve ver TODOS os agentes, independente de quem criou ou atribuiu.</strong></p>
+            <p class="info">Esta é uma regra de negócio que não pode ser quebrada.</p>
+        </div>
+
+        <div class="removed-rule">
+            <h2>❌ REGRA REMOVIDA</h2>
+            <p><strong>"Criado pelo usuário" - NUNCA deve ser usada!</strong></p>
+            <p class="error">Com perfis funcionais, apenas o administrador cria agentes e os atribui aos usuários.</p>
+        </div>
+
+        <div class="section">
+            <h2>1. Simular Dados dos Agentes</h2>
+            <button onclick="simularDados()">Simular Dados</button>
+            <div id="dados"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Filtro para Cada Usuário</h2>
+            <button onclick="testarFiltro()">Testar Filtro</button>
+            <div id="filtro"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Lógica Final</h2>
+            <div id="verificacao"></div>
+        </div>
+    </div>
+
+    <script>
+        let agentes = []
+        let atribuicoes = []
+
+        function simularDados() {
+            const resultDiv = document.getElementById('dados')
+            
+            // Dados dos agentes (baseado na imagem)
+            agentes = [
+                {
+                    id: 68,
+                    nome: "Joana",
+                    usuario_id: 5, // Admin criou
+                    ativo: true,
+                    descricao: "joana"
+                },
+                {
+                    id: 65,
+                    nome: "João", 
+                    usuario_id: 5, // Admin criou (não mais 6)
+                    ativo: true,
+                    descricao: "Agente automatizado"
+                },
+                {
+                    id: 74,
+                    nome: "Zeca",
+                    usuario_id: 5, // Admin criou
+                    ativo: true,
+                    descricao: "teste de agente"
+                }
+            ]
+
+            // Dados das atribuições (baseado na imagem - Zeca tem 1 usuário atribuído)
+            atribuicoes = [
+                {
+                    agente_id: 74, // Zeca
+                    usuario_id: 6, // Usuário Padrão
+                    nome_usuario: "Usuário Elleve Padrão",
+                    email: "rmacedo2005@hotmail.com"
+                }
+            ]
+
+            resultDiv.innerHTML = `
+                <h3 class="info">📊 Dados Simulados (Lógica Corrigida)</h3>
+                <h4>Agentes (todos criados pelo Admin):</h4>
+                ${agentes.map(agente => `
+                    <div class="agent-card">
+                        <strong>${agente.nome}</strong> (ID: ${agente.id})
+                        <br>Criado por: Admin (ID: 5)
+                        <br>Status: ${agente.ativo ? 'Ativo' : 'Inativo'}
+                    </div>
+                `).join('')}
+                
+                <h4>Atribuições:</h4>
+                ${atribuicoes.map(atrib => `
+                    <div class="agent-card">
+                        <strong>Agente ID ${atrib.agente_id}</strong> → <strong>Usuário ID ${atrib.usuario_id}</strong>
+                        <br>Nome: ${atrib.nome_usuario}
+                        <br>Email: ${atrib.email}
+                    </div>
+                `).join('')}
+            `
+        }
+
+        function testarFiltro() {
+            const resultDiv = document.getElementById('filtro')
+            
+            const usuarios = [
+                { id: 5, nome: 'Administrator Code-IQ', perfil: 'Admin', isAdmin: true },
+                { id: 6, nome: 'Usuário Elleve Padrão', perfil: 'Usuário Padrão', isAdmin: false },
+                { id: 37, nome: 'Supervisor Elleve Consórcios', perfil: 'Supervisor', isAdmin: false }
+            ]
+
+            let resultado = '<h3 class="info">🔍 Teste de Filtro por Usuário (Lógica Corrigida)</h3>'
+            
+            usuarios.forEach(usuario => {
+                const agentesVisiveis = agentes.filter(agente => {
+                    // REGRA PRINCIPAL: Se é admin, sempre mostrar todos
+                    if (usuario.isAdmin) {
+                        return true
+                    }
+                    
+                    // Para usuários não-admin: verificar APENAS se o agente está atribuído para eles
+                    const atribuidoParaUsuario = atribuicoes.some(atrib => 
+                        atrib.agente_id === agente.id && atrib.usuario_id === usuario.id
+                    )
+                    
+                    return atribuidoParaUsuario
+                })
+
+                resultado += `
+                    <div style="margin: 20px 0; padding: 20px; background: #1e1e1e; border-radius: 8px; border-left: 4px solid ${usuario.isAdmin ? '#60a5fa' : '#3b82f6'};">
+                        <h4>${usuario.nome} (ID: ${usuario.id}) - ${usuario.perfil}</h4>
+                        <p><strong>É administrador:</strong> ${usuario.isAdmin ? 'Sim' : 'Não'}</p>
+                        <p><strong>Agentes visíveis:</strong> ${agentesVisiveis.length}</p>
+                        
+                        ${agentesVisiveis.length > 0 ? `
+                            <ul>
+                                ${agentesVisiveis.map(agente => {
+                                    let motivo = ''
+                                    if (usuario.isAdmin) {
+                                        motivo = 'ADMIN - vê todos'
+                                    } else {
+                                        const atribuidoParaUsuario = atribuicoes.some(atrib => 
+                                            atrib.agente_id === agente.id && atrib.usuario_id === usuario.id
+                                        )
+                                        
+                                        if (atribuidoParaUsuario) {
+                                            motivo = 'Atribuído para o usuário'
+                                        }
+                                    }
+                                    
+                                    return `
+                                        <li>
+                                            <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                            <br><span class="info">Motivo: ${motivo}</span>
+                                        </li>
+                                    `
+                                }).join('')}
+                            </ul>
+                        ` : '<p class="warning">Nenhum agente visível</p>'}
+                        
+                        <p class="${agentesVisiveis.length > 0 ? 'success' : 'warning'}">
+                            ${agentesVisiveis.length > 0 ? '✅ Tem agentes para ver' : '⚠️ Não tem agentes para ver'}
+                        </p>
+                    </div>
+                `
+            })
+
+            resultDiv.innerHTML = resultado
+        }
+
+        function verificarEsperado() {
+            const resultDiv = document.getElementById('verificacao')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📋 Verificação da Lógica Final</h3>
+                
+                <div class="admin-rule">
+                    <h4>✅ Administrador (ID: 5)</h4>
+                    <p><strong>Deve ver:</strong> TODOS os agentes (Joana, João, Zeca)</p>
+                    <p><strong>Motivo:</strong> REGRA PRINCIPAL - Admin vê todos</p>
+                    <p class="success">✅ Esta regra NÃO pode ser quebrada</p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Usuário Padrão (ID: 6)</h4>
+                    <p><strong>Deve ver:</strong> Zeca (atribuído para ele)</p>
+                    <p><strong>Não deve ver:</strong> Joana, João (não atribuídos para ele)</p>
+                    <p class="info">Motivo: Apenas agentes atribuídos para ele</p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Supervisor (ID: 37)</h4>
+                    <p><strong>Deve ver:</strong> Nenhum</p>
+                    <p class="info">Motivo: Não tem agentes atribuídos para ele</p>
+                </div>
+                
+                <div class="removed-rule">
+                    <h4>❌ REGRA REMOVIDA: "Criado pelo usuário"</h4>
+                    <p><strong>Motivo:</strong> Com perfis funcionais, apenas o administrador cria agentes</p>
+                    <p class="error">❌ Esta regra NUNCA deve ser usada</p>
+                </div>
+                
+                <h4>Resumo da Lógica Final:</h4>
+                <ol>
+                    <li><strong>Se é admin:</strong> Mostrar TODOS os agentes</li>
+                    <li><strong>Se não é admin:</strong> Mostrar apenas agentes atribuídos para ele</li>
+                    <li><strong>NUNCA:</strong> Verificar quem criou o agente</li>
+                </ol>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            simularDados()
+            testarFiltro()
+            verificarEsperado()
+        }
+    </script>
+</body>
+</html>

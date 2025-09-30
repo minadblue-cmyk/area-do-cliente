@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Usuário no Banco</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Usuário no Banco de Dados</h1>
+        
+        <div class="step">
+            <h3>📊 Verificar Usuário ID 6</h3>
+            <button onclick="verificarUsuarioBanco()">🔍 Verificar no Banco</button>
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verificarUsuarioBanco() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Verificando usuário no banco...</p>';
+            
+            try {
+                // 1. Listar todos os usuários
+                console.log('👥 Carregando usuários...');
+                const usersResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users');
+                const usersData = await usersResponse.json();
+                console.log('✅ Usuários:', usersData);
+                
+                // 2. Encontrar usuário ID 6
+                const user6 = usersData.find(u => u.id === 6);
+                console.log('🔍 Usuário ID 6:', user6);
+                
+                // 3. Carregar perfis
+                console.log('👥 Carregando perfis...');
+                const profilesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-profile');
+                const profilesData = await profilesResponse.json();
+                console.log('✅ Perfis:', profilesData);
+                
+                // 4. Encontrar perfil do usuário 6
+                const userProfile = profilesData.find(p => p.id === user6?.perfil_id);
+                console.log('🔍 Perfil do usuário 6:', userProfile);
+                
+                let html = '<div class="step">';
+                html += '<h3>📋 Dados do Usuário ID 6</h3>';
+                
+                if (user6) {
+                    html += `<p><strong>ID:</strong> ${user6.id}</p>`;
+                    html += `<p><strong>Nome:</strong> ${user6.nome}</p>`;
+                    html += `<p><strong>Email:</strong> ${user6.email}</p>`;
+                    html += `<p><strong>Perfil ID:</strong> ${user6.perfil_id}</p>`;
+                    html += `<p><strong>Empresa ID:</strong> ${user6.empresa_id}</p>`;
+                    html += `<p><strong>Ativo:</strong> ${user6.ativo ? 'Sim' : 'Não'}</p>`;
+                    html += `<p><strong>Criado em:</strong> ${user6.created_at}</p>`;
+                } else {
+                    html += '<p class="error">❌ Usuário ID 6 não encontrado</p>';
+                }
+                html += '</div>';
+                
+                if (userProfile) {
+                    html += '<div class="step">';
+                    html += '<h3>👤 Perfil do Usuário</h3>';
+                    html += `<p><strong>ID do Perfil:</strong> ${userProfile.id}</p>`;
+                    html += `<p><strong>Nome do Perfil:</strong> ${userProfile.nome_perfil}</p>`;
+                    html += `<p><strong>Descrição:</strong> ${userProfile.descricao}</p>`;
+                    html += `<p><strong>Total de Permissões:</strong> ${userProfile.permissoes ? userProfile.permissoes.length : 0}</p>`;
+                    html += '</div>';
+                    
+                    // Verificar se é o perfil 32
+                    if (userProfile.id === 32) {
+                        html += '<div class="step">';
+                        html += '<h3>✅ Confirmação: Perfil 32</h3>';
+                        html += '<p>Este usuário TEM o perfil 32, mas o login está retornando perfil 1.</p>';
+                        html += '<p class="warning">⚠️ PROBLEMA: O webhook de login está retornando dados incorretos!</p>';
+                        html += '</div>';
+                    } else {
+                        html += '<div class="step">';
+                        html += `<h3>⚠️ Perfil ${userProfile.id}</h3>`;
+                        html += '<p>Este usuário NÃO tem o perfil 32.</p>';
+                        html += '</div>';
+                    }
+                } else {
+                    html += '<div class="step">';
+                    html += '<p class="error">❌ Perfil do usuário não encontrado</p>';
+                    html += '</div>';
+                }
+                
+                // 5. Verificar se há outros usuários com perfil 32
+                const usersWithProfile32 = usersData.filter(u => u.perfil_id === 32);
+                if (usersWithProfile32.length > 0) {
+                    html += '<div class="step">';
+                    html += '<h3>👥 Usuários com Perfil 32</h3>';
+                    usersWithProfile32.forEach(user => {
+                        html += `<div style="background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 5px;">`;
+                        html += `<strong>ID:</strong> ${user.id} | <strong>Nome:</strong> ${user.nome} | <strong>Email:</strong> ${user.email}`;
+                        html += `</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <p class="error">❌ Erro: ${error.message}</p>
+                    <div class="code">${error.stack}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

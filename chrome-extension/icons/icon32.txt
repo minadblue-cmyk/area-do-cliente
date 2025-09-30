@@ -1,0 +1,23 @@
+ÍCONE 32x32 - Agente SDR Monitor
+================================
+
+Para criar o ícone PNG:
+
+1. Abra qualquer editor de imagem (Paint, GIMP, Photoshop)
+2. Crie uma imagem 32x32 pixels
+3. Use estas cores:
+   - Fundo: #1a1a1a (preto escuro)
+   - Robô: #3b82f6 (azul)
+   - Detalhes: #ffffff (branco)
+   - Status: #10b981 (verde)
+
+4. Desenhe:
+   - Círculo de fundo com borda azul (raio 14px)
+   - Retângulo azul (robô) - 16x12px
+   - 2 pontos brancos (olhos) - 3px cada
+   - Linha branca (boca) - 6x2px
+   - Linha azul (antena) - 2px de largura
+   - Ponto verde (topo da antena) - 2px
+   - Pequeno círculo verde com ▶ (status) - 4px
+
+5. Salve como icon32.png

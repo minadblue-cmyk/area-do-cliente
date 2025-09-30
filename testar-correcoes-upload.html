@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Correções Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste das Correções na Página Upload</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Correções Implementadas</h3>
+            <ul>
+                <li>✅ <strong>Sincronização de Agentes:</strong> Ocultada para clientes (apenas admins veem)</li>
+                <li>✅ <strong>Filtro de Agentes:</strong> Aplicado aos syncedAgents com permissões</li>
+                <li>✅ <strong>Segurança:</strong> Apenas agentes próprios são exibidos</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Filtro com syncedAgents</h3>
+            <button onclick="testarFiltroSyncedAgents()">Testar Filtro syncedAgents</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste (simulando syncedAgents)
+        const syncedAgents = {
+            "65": {
+                "id": 65,
+                "nome": "João",
+                "descricao": "",
+                "icone": "🤖",
+                "cor": "bg-pink-500",
+                "ativo": true,
+                "usuario_id": 6,
+                "status_atual": "stopped"
+            },
+            "68": {
+                "id": 68,
+                "nome": "Joana",
+                "descricao": "joana",
+                "icone": "🎯",
+                "cor": "bg-yellow-500",
+                "ativo": true,
+                "usuario_id": 5,
+                "status_atual": "stopped"
+            },
+            "69": {
+                "id": 69,
+                "nome": "Teste Agente",
+                "descricao": "Agente de teste",
+                "icone": "🤖",
+                "cor": "bg-blue-500",
+                "ativo": true,
+                "usuario_id": 6,
+                "status_atual": "stopped"
+            }
+        }
+
+        // Simular dados do usuário e permissões
+        const userData = {
+            id: "6",
+            name: "Teste de Dashboard",
+            perfil_id: 32
+        }
+
+        const agentPermissions = {
+            canViewAll: false,
+            canManage: false,
+            canViewOwn: true
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function testarFiltroSyncedAgents() {
+            log('🔍 Testando filtro de syncedAgents...')
+            
+            const newAgentTypes = {}
+            
+            Object.entries(syncedAgents).forEach(([agentId, agentData]) => {
+                log(`🔍 Processando agente: ${agentData.nome} (usuario_id: ${agentData.usuario_id})`)
+                
+                // Aplicar filtro de permissões (lógica corrigida)
+                const shouldShowAgent = (() => {
+                    // Se pode ver todos os agentes, mostrar todos
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        log(`✅ ${agentData.nome}: Mostrando (canViewAll/canManage)`)
+                        return true
+                    }
+                    
+                    // Se pode ver apenas seus próprios agentes, filtrar por user_id
+                    if (agentPermissions.canViewOwn) {
+                        const userId = parseInt(userData.id)
+                        const matches = agentData.user_id === userId || agentData.usuario_id === userId
+                        log(`🔍 ${agentData.nome}: Comparando ${agentData.usuario_id} === ${userId} = ${matches}`)
+                        return matches
+                    }
+                    
+                    // Se não tem permissão específica, não mostrar nenhum
+                    log(`❌ ${agentData.nome}: Sem permissão específica`)
+                    return false
+                })()
+                
+                if (shouldShowAgent) {
+                    newAgentTypes[agentId] = {
+                        id: agentId,
+                        name: agentData.nome,
+                        description: agentData.descricao || 'Agente de prospecção',
+                        icon: agentData.icone || '🤖',
+                        color: agentData.cor || 'bg-blue-500',
+                        webhook: 'webhook-generic'
+                    }
+                    log(`✅ ${agentData.nome}: Adicionado ao dynamicAgentTypes`)
+                } else {
+                    log(`❌ ${agentData.nome}: Filtrado (não pertence ao usuário)`)
+                }
+            })
+            
+            log(`🔍 Agentes filtrados por permissão: ${Object.keys(newAgentTypes).length} de ${Object.keys(syncedAgents).length}`)
+            
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado do Filtro syncedAgents:</h4>
+                <p><strong>Total de agentes sincronizados:</strong> ${Object.keys(syncedAgents).length}</p>
+                <p><strong>Agentes filtrados:</strong> ${Object.keys(newAgentTypes).length}</p>
+                <p><strong>Agentes que devem aparecer:</strong></p>
+                <ul>
+                    ${Object.values(newAgentTypes).map(agent => 
+                        `<li>✅ ${agent.name} (ID: ${agent.id})</li>`
+                    ).join('')}
+                </ul>
+                <p><strong>Agentes que NÃO devem aparecer:</strong></p>
+                <ul>
+                    ${Object.entries(syncedAgents)
+                        .filter(([id, agent]) => !newAgentTypes[id])
+                        .map(([id, agent]) => 
+                            `<li>❌ ${agent.nome} (ID: ${id}, usuario_id: ${agent.usuario_id})</li>`
+                        ).join('')}
+                </ul>
+            `
+            
+            // Verificar se o resultado está correto
+            const expectedCount = 2 // João e Teste Agente
+            const actualCount = Object.keys(newAgentTypes).length
+            
+            if (actualCount === expectedCount) {
+                log('🎉 SUCESSO: Filtro de syncedAgents funcionando corretamente!')
+                resultadoDiv.className = 'test-section success'
+            } else {
+                log(`❌ ERRO: Esperado ${expectedCount} agentes, mas encontrado ${actualCount}`)
+                resultadoDiv.className = 'test-section error'
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique em "Testar Filtro syncedAgents" para executar o teste.')
+        }
+    </script>
+</body>
+</html>

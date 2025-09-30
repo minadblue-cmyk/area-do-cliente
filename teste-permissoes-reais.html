@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Permissões Reais do Banco</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .danger-btn { background-color: #dc3545; }
+        .danger-btn:hover { background-color: #c82333; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .permission-item {
+            background-color: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+        }
+        .permission-granted {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .permission-denied {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de Permissões Reais do Banco - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Testar as permissões usando os dados reais do banco de dados.
+        </div>
+
+        <h2>🔐 Simulador de Login com Perfis Reais</h2>
+        <div class="form-group">
+            <label for="perfil">Perfil do Usuário:</label>
+            <select id="perfil">
+                <option value="Administrador">Administrador (ID: 28)</option>
+                <option value="Gestor de Empresas">Gestor de Empresas (ID: 27)</option>
+                <option value="Supervisor">Supervisor (ID: 35)</option>
+                <option value="Usuario Basico">Usuário Básico (ID: 33)</option>
+                <option value="User Elleve Consorsios 1 - Atualizado">User Elleve Consorsios (ID: 32)</option>
+                <option value="Usuario Avancado">Usuário Avançado (ID: 34)</option>
+                <option value="Dashboard Completo">Dashboard Completo (ID: 25)</option>
+                <option value="Upload e Agentes">Upload e Agentes (ID: 26)</option>
+                <option value="Somente Visualização">Somente Visualização (ID: 24)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="perfil_id">ID do Perfil:</label>
+            <input type="number" id="perfil_id" value="28" placeholder="ID do perfil">
+        </div>
+        <button onclick="simularLogin()">🔐 Simular Login</button>
+        <button onclick="testarTodasPermissoes()">🔍 Testar Todas as Permissões</button>
+        <button onclick="abrirApp()">🚀 Abrir App</button>
+
+        <h2>📊 Mapeamento de Permissões por Perfil</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Perfil</th>
+                    <th>ID</th>
+                    <th>Permissões Principais</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Administrador</td>
+                    <td>28</td>
+                    <td>Todas as permissões (73-114)</td>
+                </tr>
+                <tr>
+                    <td>Gestor de Empresas</td>
+                    <td>27</td>
+                    <td>Dashboard, Upload, Usuários, Empresas, Agentes</td>
+                </tr>
+                <tr>
+                    <td>Supervisor</td>
+                    <td>35</td>
+                    <td>Dashboard, Upload, Agentes, Usuários</td>
+                </tr>
+                <tr>
+                    <td>Usuário Básico</td>
+                    <td>33</td>
+                    <td>Dashboard, Upload, Agente (básico)</td>
+                </tr>
+                <tr>
+                    <td>User Elleve Consorsios</td>
+                    <td>32</td>
+                    <td>Saudações, Upload, Agentes (específico)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        // Mapeamento de permissões por ID (baseado no banco de dados)
+        const permissoesPorId = {
+            53: 'agente_execute',
+            54: 'saudacao_view',
+            55: 'saudacao_update',
+            56: 'saudacao_delete',
+            57: 'saudacao_select',
+            58: 'empresa_view',
+            59: 'empresa_create',
+            60: 'empresa_update',
+            61: 'empresa_delete',
+            62: 'nav_empresas',
+            63: 'perfil_view',
+            64: 'perfil_create',
+            65: 'perfil_update',
+            66: 'perfil_delete',
+            67: 'config_view',
+            73: 'dashboard_view',
+            74: 'dashboard_view_all',
+            75: 'dashboard_export',
+            76: 'dashboard_config',
+            77: 'dashboard_admin',
+            78: 'upload_view',
+            79: 'upload_create',
+            80: 'upload_manage',
+            81: 'upload_delete',
+            82: 'upload_process',
+            83: 'upload_validate',
+            84: 'upload_export',
+            85: 'upload_config',
+            86: 'upload_logs',
+            87: 'upload_admin',
+            88: 'agente_view',
+            89: 'agente_start',
+            90: 'agente_stop',
+            91: 'agente_pause',
+            92: 'agente_resume',
+            93: 'agente_config',
+            94: 'agente_logs',
+            95: 'agente_admin',
+            96: 'usuario_view',
+            97: 'usuario_create',
+            98: 'usuario_update',
+            99: 'usuario_delete',
+            100: 'usuario_view_all',
+            101: 'usuario_manage',
+            102: 'usuario_admin',
+            103: 'config_edit',
+            104: 'config_system',
+            105: 'config_webhooks',
+            106: 'config_backup',
+            107: 'config_logs',
+            108: 'config_admin',
+            109: 'webhook_view',
+            110: 'webhook_create',
+            111: 'webhook_edit',
+            112: 'webhook_delete',
+            113: 'webhook_test',
+            114: 'webhook_logs'
+        };
+
+        // Perfis e suas permissões (baseado no banco de dados)
+        const perfisPermissoes = {
+            24: [73, 78, 54, 58], // Somente Visualização
+            25: [73, 74, 75, 54, 55, 57], // Dashboard Completo
+            26: [78, 79, 80, 82, 53, 88, 89, 90], // Upload e Agentes
+            27: [62, 73, 74, 75, 78, 79, 80, 84, 96, 97, 98, 58, 59, 60, 61, 62, 88, 89, 90, 93], // Gestor de Empresas
+            28: [62, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 53, 88, 89, 90, 91, 92, 93, 94, 95, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 96, 97, 98, 99, 100, 101, 102, 67, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114], // Administrador
+            32: [54, 55, 56, 79, 78, 86, 89, 90, 92, 53, 91, 57, 88], // User Elleve Consorsios
+            33: [73, 78, 79, 88], // Usuario Basico
+            34: [73, 74, 75, 78, 79, 80, 84, 88, 89, 90, 91, 92, 54, 55, 57], // Usuario Avancado
+            35: [73, 74, 75, 76, 78, 79, 80, 81, 82, 84, 88, 89, 90, 91, 92, 93, 54, 55, 56, 57, 96, 97, 98] // Supervisor
+        };
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        function simularLogin() {
+            const perfil = document.getElementById('perfil').value;
+            const perfil_id = parseInt(document.getElementById('perfil_id').value);
+            
+            log(`🔐 Simulando login para perfil: ${perfil} (ID: ${perfil_id})`);
+            
+            // Simular dados do usuário
+            const userData = {
+                id: '1',
+                name: 'Usuário Teste',
+                mail: 'teste@code-iq.com.br',
+                perfil: perfil,
+                perfil_id: perfil_id
+            };
+            
+            // Armazenar no localStorage para o app usar
+            localStorage.setItem('area:user_data', JSON.stringify(userData));
+            localStorage.setItem('area:user', userData.name);
+            localStorage.setItem('area:jwt', 'token_teste_' + Date.now());
+            
+            addResult(`
+                <div class="status success">
+                    <strong>✅ Login simulado com sucesso!</strong><br>
+                    <strong>Perfil:</strong> ${perfil}<br>
+                    <strong>ID do Perfil:</strong> ${perfil_id}<br>
+                    <strong>Dados salvos no localStorage</strong>
+                </div>
+            `);
+            
+            // Testar permissões automaticamente
+            setTimeout(() => testarTodasPermissoes(), 1000);
+        }
+
+        function testarTodasPermissoes() {
+            const perfil = document.getElementById('perfil').value;
+            const perfil_id = parseInt(document.getElementById('perfil_id').value);
+            
+            log(`🔍 Testando permissões para perfil: ${perfil} (ID: ${perfil_id})`);
+            
+            // Obter permissões do perfil
+            const permissoesIds = perfisPermissoes[perfil_id] || [];
+            const permissoesNomes = permissoesIds.map(id => permissoesPorId[id]).filter(Boolean);
+            
+            log(`📋 Permissões do perfil: ${permissoesNomes.join(', ')}`);
+            
+            // Testar permissões do sidebar
+            const permissoesSidebar = [
+                'dashboard_view', 'upload_view', 'agente_view', 'saudacao_view',
+                'usuario_view', 'empresa_view', 'perfil_view', 'config_webhooks', 'agente_config'
+            ];
+            
+            let html = '<div class="status info"><strong>🔍 Teste de Permissões do Sidebar:</strong><br>';
+            
+            permissoesSidebar.forEach(permission => {
+                const hasAccess = permissoesNomes.includes(permission);
+                const className = hasAccess ? 'permission-granted' : 'permission-denied';
+                const icon = hasAccess ? '✅' : '❌';
+                
+                html += `<div class="permission-item ${className}">${icon} ${permission}</div>`;
+                log(`${icon} ${permission}: ${hasAccess ? 'PERMITIDO' : 'NEGADO'}`);
+            });
+            
+            html += '</div>';
+            
+            // Mostrar todas as permissões do perfil
+            html += '<div class="status info"><strong>📋 Todas as Permissões do Perfil:</strong><br>';
+            permissoesNomes.forEach(permission => {
+                html += `<div class="permission-item permission-granted">✅ ${permission}</div>`;
+            });
+            html += '</div>';
+            
+            addResult(html);
+            log('✅ Teste de permissões concluído!');
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        // Atualizar ID do perfil quando selecionar um perfil
+        document.getElementById('perfil').addEventListener('change', function() {
+            const perfilMap = {
+                'Administrador': 28,
+                'Gestor de Empresas': 27,
+                'Supervisor': 35,
+                'Usuario Basico': 33,
+                'User Elleve Consorsios 1 - Atualizado': 32,
+                'Usuario Avancado': 34,
+                'Dashboard Completo': 25,
+                'Upload e Agentes': 26,
+                'Somente Visualização': 24
+            };
+            
+            const perfilId = perfilMap[this.value];
+            if (perfilId) {
+                document.getElementById('perfil_id').value = perfilId;
+            }
+        });
+
+        // Teste automático ao carregar
+        window.onload = function() {
+            log('🔧 Página de teste carregada');
+            addResult('<div class="status info"><strong>ℹ️ Selecione um perfil e clique em "Simular Login" para testar as permissões</strong></div>');
+        };
+    </script>
+</body>
+</html>

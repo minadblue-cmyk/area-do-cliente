@@ -1,0 +1,649 @@
+{
+  "name": "Agente Clone Workflows",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "cors": {
+            "enabled": true,
+            "allowedOrigins": ["*"],
+            "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+          }
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-agente"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-action",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "create",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "switch-action",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/eBcColwirndBaFZX",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-start-workflow",
+      "name": "Get Start Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/piyABVIDxK9OoLYB",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-lista-workflow",
+      "name": "Get Lista Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/AwYrhj5Z6z4K0Mgv",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-status-workflow",
+      "name": "Get Status Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/wBDZdXsfY8GYYUYg",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-stop-workflow",
+      "name": "Get Stop Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Start\nconst startWorkflow = $input.first().json;\nconst agentName = $('Normalizar Dados').first().json.agentName;\nconst agentType = $('Normalizar Dados').first().json.agentType;\nconst agentId = $('Normalizar Dados').first().json.agentId;\n\n// Clonar workflow Start\nconst clonedStartWorkflow = {\n  ...startWorkflow,\n  name: `Agente SDR - Start - ${agentName}`,\n  active: false,\n  // Configurar pasta de destino na estrutura organizacional\n  folderId: null, // Será definido pela API do n8n\n  tags: ['Agente', agentName, 'Start']\n};\n\n// Atualizar webhook path\nconst webhookNode = clonedStartWorkflow.nodes.find(node => node.type === 'n8n-nodes-base.webhook');\nif (webhookNode) {\n  webhookNode.parameters.path = `start-${agentType}`;\n  webhookNode.webhookId = `start-${agentType}`;\n}\n\n// Atualizar workflow_id nos nodes que referenciam\nclonedStartWorkflow.nodes.forEach(node => {\n  if (node.parameters && typeof node.parameters === 'object') {\n    Object.keys(node.parameters).forEach(key => {\n      if (typeof node.parameters[key] === 'string' && node.parameters[key].includes('eBcColwirndBaFZX')) {\n        node.parameters[key] = node.parameters[key].replace('eBcColwirndBaFZX', agentId);\n      }\n    });\n  }\n});\n\nreturn {\n  json: {\n    workflow: clonedStartWorkflow,\n    type: 'start',\n    agentName,\n    agentType,\n    agentId\n  }\n};"
+      },
+      "id": "prepare-start-clone",
+      "name": "Preparar Start Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Lista\nconst listaWorkflow = $input.first().json;\nconst agentName = $('Normalizar Dados').first().json.agentName;\nconst agentType = $('Normalizar Dados').first().json.agentType;\nconst agentId = $('Normalizar Dados').first().json.agentId;\n\n// Clonar workflow Lista\nconst clonedListaWorkflow = {\n  ...listaWorkflow,\n  name: `Agente SDR - Lista Prospecção - ${agentName}`,\n  active: false,\n  // Configurar pasta de destino na estrutura organizacional\n  folderId: null, // Será definido pela API do n8n\n  tags: ['Agente', agentName, 'Lista']\n};\n\n// Atualizar webhook path\nconst webhookNode = clonedListaWorkflow.nodes.find(node => node.type === 'n8n-nodes-base.webhook');\nif (webhookNode) {\n  webhookNode.parameters.path = `lista-prospeccao-${agentType}`;\n  webhookNode.webhookId = `lista-prospeccao-${agentType}`;\n}\n\n// Atualizar workflow_id nos nodes que referenciam\nclonedListaWorkflow.nodes.forEach(node => {\n  if (node.parameters && typeof node.parameters === 'object') {\n    Object.keys(node.parameters).forEach(key => {\n      if (typeof node.parameters[key] === 'string' && node.parameters[key].includes('eBcColwirndBaFZX')) {\n        node.parameters[key] = node.parameters[key].replace('eBcColwirndBaFZX', agentId);\n      }\n    });\n  }\n});\n\nreturn {\n  json: {\n    workflow: clonedListaWorkflow,\n    type: 'lista',\n    agentName,\n    agentType,\n    agentId\n  }\n};"
+      },
+      "id": "prepare-lista-clone",
+      "name": "Preparar Lista Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Status\nconst statusWorkflow = $input.first().json;\nconst agentName = $('Normalizar Dados').first().json.agentName;\nconst agentType = $('Normalizar Dados').first().json.agentType;\nconst agentId = $('Normalizar Dados').first().json.agentId;\n\n// Clonar workflow Status\nconst clonedStatusWorkflow = {\n  ...statusWorkflow,\n  name: `Agente SDR - Status - ${agentName}`,\n  active: false,\n  // Configurar pasta de destino na estrutura organizacional\n  folderId: null, // Será definido pela API do n8n\n  tags: ['Agente', agentName, 'Status']\n};\n\n// Atualizar webhook path\nconst webhookNode = clonedStatusWorkflow.nodes.find(node => node.type === 'n8n-nodes-base.webhook');\nif (webhookNode) {\n  webhookNode.parameters.path = `status-${agentType}`;\n  webhookNode.webhookId = `status-${agentType}`;\n}\n\n// Atualizar workflow_id nos nodes que referenciam\nclonedStatusWorkflow.nodes.forEach(node => {\n  if (node.parameters && typeof node.parameters === 'object') {\n    Object.keys(node.parameters).forEach(key => {\n      if (typeof node.parameters[key] === 'string' && node.parameters[key].includes('eBcColwirndBaFZX')) {\n        node.parameters[key] = node.parameters[key].replace('eBcColwirndBaFZX', agentId);\n      }\n    });\n  }\n});\n\nreturn {\n  json: {\n    workflow: clonedStatusWorkflow,\n    type: 'status',\n    agentName,\n    agentType,\n    agentId\n  }\n};"
+      },
+      "id": "prepare-status-clone",
+      "name": "Preparar Status Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Stop\nconst stopWorkflow = $input.first().json;\nconst agentName = $('Normalizar Dados').first().json.agentName;\nconst agentType = $('Normalizar Dados').first().json.agentType;\nconst agentId = $('Normalizar Dados').first().json.agentId;\n\n// Clonar workflow Stop\nconst clonedStopWorkflow = {\n  ...stopWorkflow,\n  name: `Agente SDR - Stop - ${agentName}`,\n  active: false,\n  // Configurar pasta de destino na estrutura organizacional\n  folderId: null, // Será definido pela API do n8n\n  tags: ['Agente', agentName, 'Stop']\n};\n\n// Atualizar webhook path\nconst webhookNode = clonedStopWorkflow.nodes.find(node => node.type === 'n8n-nodes-base.webhook');\nif (webhookNode) {\n  webhookNode.parameters.path = `stop-${agentType}`;\n  webhookNode.webhookId = `stop-${agentType}`;\n}\n\n// Atualizar workflow_id nos nodes que referenciam\nclonedStopWorkflow.nodes.forEach(node => {\n  if (node.parameters && typeof node.parameters === 'object') {\n    Object.keys(node.parameters).forEach(key => {\n      if (typeof node.parameters[key] === 'string' && node.parameters[key].includes('eBcColwirndBaFZX')) {\n        node.parameters[key] = node.parameters[key].replace('eBcColwirndBaFZX', agentId);\n      }\n    });\n  }\n});\n\nreturn {\n  json: {\n    workflow: clonedStopWorkflow,\n    type: 'stop',\n    agentName,\n    agentType,\n    agentId\n  }\n};"
+      },
+      "id": "prepare-stop-clone",
+      "name": "Preparar Stop Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "name": "nodes",
+              "value": "={{ $json.workflow.nodes }}"
+            },
+            {
+              "name": "connections",
+              "value": "={{ $json.workflow.connections }}"
+            },
+            {
+              "name": "active",
+              "value": "={{ $json.workflow.active }}"
+            },
+            {
+              "name": "settings",
+              "value": "={{ $json.workflow.settings }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-start-workflow",
+      "name": "Create Start Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "name": "nodes",
+              "value": "={{ $json.workflow.nodes }}"
+            },
+            {
+              "name": "connections",
+              "value": "={{ $json.workflow.connections }}"
+            },
+            {
+              "name": "active",
+              "value": "={{ $json.workflow.active }}"
+            },
+            {
+              "name": "settings",
+              "value": "={{ $json.workflow.settings }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-lista-workflow",
+      "name": "Create Lista Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "name": "nodes",
+              "value": "={{ $json.workflow.nodes }}"
+            },
+            {
+              "name": "connections",
+              "value": "={{ $json.workflow.connections }}"
+            },
+            {
+              "name": "active",
+              "value": "={{ $json.workflow.active }}"
+            },
+            {
+              "name": "settings",
+              "value": "={{ $json.workflow.settings }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-status-workflow",
+      "name": "Create Status Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "name": "nodes",
+              "value": "={{ $json.workflow.nodes }}"
+            },
+            {
+              "name": "connections",
+              "value": "={{ $json.workflow.connections }}"
+            },
+            {
+              "name": "active",
+              "value": "={{ $json.workflow.active }}"
+            },
+            {
+              "name": "settings",
+              "value": "={{ $json.workflow.settings }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTFiNjVlMy01YzNlLTQ0MWYtYmQ4OS0xNDMzMGFmYTcxZGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU5ODc5fQ.eBj-NuMEosvbmc_UBwJfrdIKC8wnLXznpTO4wtddUfI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-stop-workflow",
+      "name": "Create Stop Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultados da criação dos workflows\nconst startResult = $('Create Start Workflow').first().json;\nconst listaResult = $('Create Lista Workflow').first().json;\nconst statusResult = $('Create Status Workflow').first().json;\nconst stopResult = $('Create Stop Workflow').first().json;\n\nconst agentName = $('Normalizar Dados').first().json.agentName;\nconst agentType = $('Normalizar Dados').first().json.agentType;\nconst agentId = $('Normalizar Dados').first().json.agentId;\n\nconst results = {\n  success: true,\n  message: `Agente ${agentName} criado com sucesso!`,\n  agent: {\n    name: agentName,\n    type: agentType,\n    id: agentId\n  },\n  workflows: {\n    start: {\n      id: startResult.id,\n      name: startResult.name,\n      webhook: `start-${agentType}`\n    },\n    lista: {\n      id: listaResult.id,\n      name: listaResult.name,\n      webhook: `lista-prospeccao-${agentType}`\n    },\n    status: {\n      id: statusResult.id,\n      name: statusResult.name,\n      webhook: `status-${agentType}`\n    },\n    stop: {\n      id: stopResult.id,\n      name: stopResult.name,\n      webhook: `stop-${agentType}`\n    }\n  },\n  timestamp: new Date().toISOString()\n};\n\nreturn { json: results };"
+      },
+      "id": "consolidate-results",
+      "name": "Consolidar Resultados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 350]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Get Start Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Lista Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Status Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Start Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Lista Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Status Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Stop Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Start Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Start Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Lista Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Lista Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Status Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Status Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Stop Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultados": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-19T16:00:00.000Z",
+  "versionId": "1"
+}

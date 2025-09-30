@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Mapeamento de Permissões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 400px; }
+        .permission-item { margin: 5px 0; padding: 5px; background: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Mapeamento de Permissões</h1>
+        
+        <div class="section info">
+            <h3>📋 Teste de Mapeamento:</h3>
+            <button onclick="testarMapeamento()">Testar Mapeamento</button>
+            <button onclick="limparCache()">Limpar Cache</button>
+            <button onclick="abrirApp()">Abrir App</button>
+        </div>
+
+        <div id="resultado" class="section" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <pre id="resultado-texto"></pre>
+        </div>
+
+        <div id="permissoes-admin" class="section" style="display: none;">
+            <h3>🔑 Permissões do Administrador:</h3>
+            <div id="permissoes-lista"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarMapeamento() {
+            const resultado = document.getElementById('resultado');
+            const resultadoTexto = document.getElementById('resultado-texto');
+            const permissoesAdmin = document.getElementById('permissoes-admin');
+            const permissoesLista = document.getElementById('permissoes-lista');
+            
+            try {
+                console.log('🔍 Iniciando teste de mapeamento...');
+                
+                // 1. Carregar permissões
+                const permissionsUrl = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission';
+                const permissionsResponse = await fetch(permissionsUrl, { method: 'GET' });
+                
+                if (!permissionsResponse.ok) {
+                    throw new Error(`Erro HTTP nas permissões: ${permissionsResponse.status}`);
+                }
+                
+                const permissionsData = await permissionsResponse.json();
+                console.log('✅ Dados das permissões:', permissionsData);
+                
+                // 2. Carregar perfis
+                const profilesUrl = 'https://n8n.code-iq.com.br/webhook/list-profile';
+                const profilesResponse = await fetch(profilesUrl, { method: 'GET' });
+                
+                if (!profilesResponse.ok) {
+                    throw new Error(`Erro HTTP nos perfis: ${profilesResponse.status}`);
+                }
+                
+                const profilesData = await profilesResponse.json();
+                console.log('✅ Dados dos perfis:', profilesData);
+                
+                // 3. Encontrar perfil do administrador (ID 28)
+                const adminProfile = profilesData.find(profile => profile.id === 28);
+                console.log('🔍 Perfil do administrador:', adminProfile);
+                
+                if (!adminProfile) {
+                    throw new Error('Perfil do administrador não encontrado');
+                }
+                
+                // 4. Mapear permissões do administrador
+                const permissions = permissionsData.data || permissionsData || [];
+                const adminPermissionIds = adminProfile.permissoes.filter(id => id !== null);
+                
+                console.log('🔍 IDs das permissões do admin:', adminPermissionIds);
+                
+                const adminPermissionNames = adminPermissionIds
+                    .map(id => permissions.find(p => p.id === id)?.nome)
+                    .filter(Boolean);
+                
+                console.log('🔍 Nomes das permissões do admin:', adminPermissionNames);
+                
+                // 5. Verificar permissões específicas
+                const permissoesEspecificas = [
+                    'visualizar_dashboard',
+                    'visualizar_pgina_de_upload',
+                    'visualizar_status_do_agente',
+                    'visualizar_saudaes',
+                    'visualizar_usurios',
+                    'visualizar_empresas',
+                    'visualizar_perfis',
+                    'configurar_webhooks',
+                    'configurar_parmetros_do_agente'
+                ];
+                
+                const permissoesEncontradas = permissoesEspecificas.map(permissao => ({
+                    permissao,
+                    temAcesso: adminPermissionNames.includes(permissao)
+                }));
+                
+                console.log('🔍 Verificação de permissões específicas:', permissoesEncontradas);
+                
+                // 6. Exibir resultado
+                const resultadoFinal = {
+                    adminProfile: {
+                        id: adminProfile.id,
+                        nome: adminProfile.nome_perfil,
+                        totalPermissoes: adminPermissionIds.length
+                    },
+                    permissoes: {
+                        total: adminPermissionNames.length,
+                        nomes: adminPermissionNames
+                    },
+                    verificacaoEspecifica: permissoesEncontradas
+                };
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = JSON.stringify(resultadoFinal, null, 2);
+                
+                // 7. Exibir lista de permissões
+                permissoesAdmin.style.display = 'block';
+                permissoesLista.innerHTML = adminPermissionNames
+                    .map(permissao => `<div class="permission-item">✅ ${permissao}</div>`)
+                    .join('');
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = 'Erro: ' + error.message;
+            }
+        }
+        
+        function limparCache() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                alert('✅ Cache limpo com sucesso!');
+                console.log('🧹 Cache limpo');
+                
+            } catch (error) {
+                alert('❌ Erro ao limpar cache: ' + error.message);
+                console.error('Erro ao limpar cache:', error);
+            }
+        }
+        
+        function abrirApp() {
+            window.open('http://localhost:5174', '_blank');
+        }
+        
+        // Testar automaticamente ao carregar
+        window.addEventListener('load', () => {
+            console.log('🔍 Página de teste carregada');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Login Simples</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste de Login Simples</h1>
+        
+        <div class="section info">
+            <h3>📋 Teste de Login:</h3>
+            <input type="email" id="email" placeholder="Email" value="administrador@code-iq.com.br">
+            <input type="password" id="password" placeholder="Senha" value="123456">
+            <br>
+            <button onclick="testarLogin()">Testar Login</button>
+            <button onclick="limparCache()">Limpar Cache</button>
+            <button onclick="abrirApp()">Abrir App</button>
+        </div>
+
+        <div id="resultado" class="section" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <pre id="resultado-texto"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function testarLogin() {
+            const resultado = document.getElementById('resultado');
+            const resultadoTexto = document.getElementById('resultado-texto');
+            
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                console.log('🔐 Testando login com:', { email, password: '***' });
+                
+                // Testar webhook de login
+                const loginUrl = 'https://n8n.code-iq.com.br/webhook/login';
+                const loginResponse = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                console.log('📡 Resposta do login:', loginResponse.status);
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Erro HTTP: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                console.log('✅ Dados do login:', loginData);
+                
+                // Testar webhook de permissões
+                const permissionsUrl = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission';
+                const permissionsResponse = await fetch(permissionsUrl, {
+                    method: 'GET'
+                });
+                
+                console.log('📡 Resposta das permissões:', permissionsResponse.status);
+                
+                if (!permissionsResponse.ok) {
+                    throw new Error(`Erro HTTP nas permissões: ${permissionsResponse.status}`);
+                }
+                
+                const permissionsData = await permissionsResponse.json();
+                console.log('✅ Dados das permissões:', permissionsData);
+                
+                // Testar webhook de perfis
+                const profilesUrl = 'https://n8n.code-iq.com.br/webhook/list-profile';
+                const profilesResponse = await fetch(profilesUrl, {
+                    method: 'GET'
+                });
+                
+                console.log('📡 Resposta dos perfis:', profilesResponse.status);
+                
+                if (!profilesResponse.ok) {
+                    throw new Error(`Erro HTTP nos perfis: ${profilesResponse.status}`);
+                }
+                
+                const profilesData = await profilesResponse.json();
+                console.log('✅ Dados dos perfis:', profilesData);
+                
+                const resultado = {
+                    login: {
+                        status: 'success',
+                        data: loginData
+                    },
+                    permissions: {
+                        status: 'success',
+                        data: permissionsData
+                    },
+                    profiles: {
+                        status: 'success',
+                        data: profilesData
+                    }
+                };
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = JSON.stringify(resultado, null, 2);
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = 'Erro: ' + error.message;
+            }
+        }
+        
+        function limparCache() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                alert('✅ Cache limpo com sucesso!');
+                console.log('🧹 Cache limpo');
+                
+            } catch (error) {
+                alert('❌ Erro ao limpar cache: ' + error.message);
+                console.error('Erro ao limpar cache:', error);
+            }
+        }
+        
+        function abrirApp() {
+            window.open('http://localhost:5174', '_blank');
+        }
+        
+        // Testar automaticamente ao carregar
+        window.addEventListener('load', () => {
+            console.log('🔍 Página de teste carregada');
+        });
+    </script>
+</body>
+</html>

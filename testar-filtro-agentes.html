@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Filtro de Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Filtro de Agentes por Usuário</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Dados de Teste</h3>
+            <p><strong>Usuário Logado:</strong> ID 6 (Teste de Dashboard)</p>
+            <p><strong>Agentes Disponíveis:</strong></p>
+            <ul>
+                <li>Joana (ID 68) - usuario_id: 5 ❌ (não deve aparecer)</li>
+                <li>João (ID 65) - usuario_id: 6 ✅ (deve aparecer)</li>
+                <li>Teste Agente (ID 69) - usuario_id: 6 ✅ (deve aparecer)</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Filtragem</h3>
+            <button onclick="testarFiltro()">Testar Filtro de Agentes</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste (simulando resposta do webhook)
+        const agentesResponse = {
+            "success": true,
+            "message": "Agentes encontrados",
+            "data": [
+                {
+                    "id": 68,
+                    "nome": "Joana",
+                    "descricao": "joana",
+                    "icone": "🎯",
+                    "cor": "bg-yellow-500",
+                    "ativo": true,
+                    "created_at": "2025-09-23T15:47:20.352Z",
+                    "updated_at": "2025-09-23T15:47:20.352Z",
+                    "usuario_id": 5,
+                    "workflow_start_id": "jIhNd3Vv8zVtJUuY",
+                    "workflow_status_id": "Wn4VYMRnt2tN8Tgb",
+                    "workflow_lista_id": "h5WUpmVQwTh7Hgqz",
+                    "workflow_stop_id": "p5VmfMPAraqzZQYi",
+                    "webhook_start_url": "webhook/start10-joana",
+                    "webhook_status_url": "webhook/status10-joana",
+                    "webhook_lista_url": "webhook/lista10-joana",
+                    "webhook_stop_url": "webhook/stop10-joana",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                },
+                {
+                    "id": 65,
+                    "nome": "João",
+                    "descricao": "",
+                    "icone": "🤖",
+                    "cor": "bg-pink-500",
+                    "ativo": true,
+                    "created_at": "2025-09-22T14:56:17.585Z",
+                    "updated_at": "2025-09-22T14:56:17.585Z",
+                    "usuario_id": 6,
+                    "workflow_start_id": "HvamnPOgHaZY8hJO",
+                    "workflow_status_id": "d7YXwznULVPMKsnj",
+                    "workflow_lista_id": "3impsjMkqCs0q8nG",
+                    "workflow_stop_id": "MxI8hiu1Bmlni5Jq",
+                    "webhook_start_url": "webhook/start7-joao",
+                    "webhook_status_url": "webhook/status7-joao",
+                    "webhook_lista_url": "webhook/lista7-joao",
+                    "webhook_stop_url": "webhook/stop7-joao",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                },
+                {
+                    "id": 69,
+                    "nome": "Teste Agente",
+                    "descricao": "Agente de teste",
+                    "icone": "🤖",
+                    "cor": "bg-blue-500",
+                    "ativo": true,
+                    "created_at": "2025-09-23T15:50:30.013Z",
+                    "updated_at": "2025-09-23T15:50:30.013Z",
+                    "usuario_id": 6,
+                    "workflow_start_id": "bqacOThwYg61oZQp",
+                    "workflow_status_id": "erYhRbhIMzqTYpyd",
+                    "workflow_lista_id": "SVseOvnLycTWGz81",
+                    "workflow_stop_id": "ZZ2H5YUMnDsuZ5WF",
+                    "webhook_start_url": "webhook/start11-testeagente",
+                    "webhook_status_url": "webhook/status11-testeagente",
+                    "webhook_lista_url": "webhook/lista11-testeagente",
+                    "webhook_stop_url": "webhook/stop11-testeagente",
+                    "status_atual": "stopped",
+                    "execution_id_ativo": null
+                }
+            ],
+            "total": 3,
+            "timestamp": "2025-09-23T19:03:33.884Z"
+        }
+
+        // Simular dados do usuário logado
+        const userData = {
+            id: "6", // String como vem do frontend
+            name: "Teste de Dashboard",
+            perfil_id: 32
+        }
+
+        // Simular permissões do agente
+        const agentPermissions = {
+            canViewAll: false,  // Usuário não é admin
+            canManage: false,   // Usuário não é admin
+            canViewOwn: true    // Usuário pode ver seus próprios agentes
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function testarFiltro() {
+            log('🚀 Iniciando teste de filtro de agentes...')
+            
+            // Simular a lógica do frontend
+            const agentesList = agentesResponse.data
+            log(`📥 Total de agentes recebidos: ${agentesList.length}`)
+            
+            // Aplicar filtro (lógica corrigida do frontend)
+            const agentesFiltrados = agentesList.filter((agente) => {
+                log(`🔍 Analisando agente: ${agente.nome} (usuario_id: ${agente.usuario_id})`)
+                
+                // Se pode ver todos os agentes, mostrar todos
+                if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                    log(`✅ ${agente.nome}: Mostrando (canViewAll/canManage)`)
+                    return true
+                }
+                
+                // Se pode ver apenas seus próprios agentes, filtrar por user_id
+                if (agentPermissions.canViewOwn) {
+                    const userId = parseInt(userData.id) // Conversão para number
+                    const matches = agente.user_id === userId || agente.usuario_id === userId
+                    log(`🔍 ${agente.nome}: Comparando ${agente.usuario_id} === ${userId} = ${matches}`)
+                    return matches
+                }
+                
+                // Se não tem permissão específica, não mostrar nenhum
+                log(`❌ ${agente.nome}: Sem permissão específica`)
+                return false
+            })
+            
+            log(`✅ Agentes filtrados: ${agentesFiltrados.length} de ${agentesList.length}`)
+            
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado do Filtro:</h4>
+                <p><strong>Total de agentes:</strong> ${agentesList.length}</p>
+                <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                <p><strong>Agentes que devem aparecer:</strong></p>
+                <ul>
+                    ${agentesFiltrados.map(agente => 
+                        `<li>✅ ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</li>`
+                    ).join('')}
+                </ul>
+                <p><strong>Agentes que NÃO devem aparecer:</strong></p>
+                <ul>
+                    ${agentesList.filter(agente => !agentesFiltrados.includes(agente)).map(agente => 
+                        `<li>❌ ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</li>`
+                    ).join('')}
+                </ul>
+            `
+            
+            // Verificar se o resultado está correto
+            const expectedCount = 2 // João e Teste Agente
+            const actualCount = agentesFiltrados.length
+            
+            if (actualCount === expectedCount) {
+                log('🎉 SUCESSO: Filtro funcionando corretamente!')
+                resultadoDiv.className = 'test-section success'
+            } else {
+                log(`❌ ERRO: Esperado ${expectedCount} agentes, mas encontrado ${actualCount}`)
+                resultadoDiv.className = 'test-section error'
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique em "Testar Filtro de Agentes" para executar o teste.')
+        }
+    </script>
+</body>
+</html>

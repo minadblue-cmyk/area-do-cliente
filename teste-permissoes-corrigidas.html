@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Permissões Corrigidas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .danger-btn { background-color: #dc3545; }
+        .danger-btn:hover { background-color: #c82333; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .permission-item {
+            background-color: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+        }
+        .permission-granted {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .permission-denied {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de Permissões Corrigidas - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Testar se as permissões estão funcionando corretamente após as correções.
+        </div>
+
+        <h2>🔐 Simulador de Login</h2>
+        <div class="form-group">
+            <label for="perfil">Perfil do Usuário:</label>
+            <select id="perfil">
+                <option value="Administrador">Administrador</option>
+                <option value="Gestor">Gestor</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Usuario Basico">Usuário Básico</option>
+                <option value="User Elleve Consorsios 1 - Atualizado">User Elleve Consorsios</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="perfil_id">ID do Perfil:</label>
+            <input type="number" id="perfil_id" value="1" placeholder="ID do perfil">
+        </div>
+        <button onclick="simularLogin()">🔐 Simular Login</button>
+        <button onclick="testarTodasPermissoes()">🔍 Testar Todas as Permissões</button>
+        <button onclick="abrirApp()">🚀 Abrir App</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        function simularLogin() {
+            const perfil = document.getElementById('perfil').value;
+            const perfil_id = parseInt(document.getElementById('perfil_id').value);
+            
+            log(`🔐 Simulando login para perfil: ${perfil} (ID: ${perfil_id})`);
+            
+            // Simular dados do usuário
+            const userData = {
+                id: '1',
+                name: 'Usuário Teste',
+                mail: 'teste@code-iq.com.br',
+                perfil: perfil,
+                perfil_id: perfil_id
+            };
+            
+            // Armazenar no localStorage para o app usar
+            localStorage.setItem('area:user_data', JSON.stringify(userData));
+            localStorage.setItem('area:user', userData.name);
+            localStorage.setItem('area:jwt', 'token_teste_' + Date.now());
+            
+            addResult(`
+                <div class="status success">
+                    <strong>✅ Login simulado com sucesso!</strong><br>
+                    <strong>Perfil:</strong> ${perfil}<br>
+                    <strong>ID do Perfil:</strong> ${perfil_id}<br>
+                    <strong>Dados salvos no localStorage</strong>
+                </div>
+            `);
+            
+            // Testar permissões automaticamente
+            setTimeout(() => testarTodasPermissoes(), 1000);
+        }
+
+        function testarTodasPermissoes() {
+            const perfil = document.getElementById('perfil').value;
+            const perfil_id = parseInt(document.getElementById('perfil_id').value);
+            
+            log(`🔍 Testando permissões para perfil: ${perfil} (ID: ${perfil_id})`);
+            
+            // Definir permissões esperadas para cada perfil
+            const permissoesEsperadas = {
+                'Administrador': [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                    'nav_usuarios', 'usuario_view', 'usuario_create', 'usuario_update', 'usuario_delete',
+                    'nav_empresas', 'empresa_view', 'empresa_create', 'empresa_update', 'empresa_delete',
+                    'nav_permissoes', 'perfil_view', 'perfil_create', 'perfil_update', 'perfil_delete',
+                    'nav_webhooks', 'nav_agente', 'agente_execute'
+                ],
+                'Gestor': [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                    'nav_usuarios', 'usuario_view', 'usuario_create', 'usuario_update',
+                    'nav_empresas', 'empresa_view', 'empresa_create', 'empresa_update',
+                    'nav_permissoes', 'perfil_view', 'perfil_create', 'perfil_update', 'perfil_delete',
+                    'nav_webhooks', 'agente_execute'
+                ],
+                'Supervisor': [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                    'nav_usuarios', 'usuario_view',
+                    'nav_empresas', 'empresa_view',
+                    'nav_permissoes', 'perfil_view',
+                    'agente_execute'
+                ],
+                'Usuario Basico': [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'agente_execute'
+                ],
+                'User Elleve Consorsios 1 - Atualizado': [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                    'agente_execute', 'upload_create', 'upload_manage', 'nav_empresas', 'empresa_view'
+                ]
+            };
+            
+            const permissoesEsperadasParaPerfil = permissoesEsperadas[perfil] || [];
+            
+            // Simular verificação de permissões (baseado no código do useSimplePermissions)
+            function hasPermission(permission) {
+                // Se é admin, tem todas as permissões
+                if (perfil === 'Administrador' || perfil === 'administrador' || perfil_id === 1) {
+                    return true;
+                }
+                
+                // Permissões básicas para todos os usuários
+                const basicPermissions = [
+                    'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao', 'agente_execute'
+                ];
+                
+                if (basicPermissions.includes(permission)) {
+                    return true;
+                }
+                
+                // Permissões de gestor
+                if (perfil === 'Gestor' || perfil === 'gestor' || perfil_id === 27) {
+                    const gestorPermissions = [
+                        'nav_usuarios', 'usuario_view', 'usuario_create', 'usuario_update',
+                        'nav_empresas', 'empresa_view', 'empresa_create', 'empresa_update',
+                        'nav_permissoes', 'perfil_view', 'perfil_create', 'perfil_update', 'perfil_delete'
+                    ];
+                    return gestorPermissions.includes(permission);
+                }
+                
+                // Permissões de supervisor
+                if (perfil === 'Supervisor' || perfil === 'supervisor' || perfil_id === 35) {
+                    const supervisorPermissions = [
+                        'nav_usuarios', 'usuario_view',
+                        'nav_empresas', 'empresa_view',
+                        'nav_permissoes', 'perfil_view'
+                    ];
+                    return supervisorPermissions.includes(permission);
+                }
+                
+                // Usuário básico
+                if (perfil === 'Usuario Basico' || perfil === 'usuario_basico' || perfil_id === 33) {
+                    const basicUserPermissions = [
+                        'nav_dashboard', 'nav_upload', 'agente_view', 'agente_execute'
+                    ];
+                    return basicUserPermissions.includes(permission);
+                }
+                
+                // Perfil específico
+                if (perfil === 'User Elleve Consorsios 1 - Atualizado' || perfil_id === 32) {
+                    const limitedPermissions = [
+                        'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                        'agente_execute', 'upload_create', 'upload_manage', 'nav_empresas', 'empresa_view'
+                    ];
+                    return limitedPermissions.includes(permission);
+                }
+                
+                return false;
+            }
+            
+            // Testar todas as permissões do sidebar
+            const permissoesSidebar = [
+                'nav_dashboard', 'nav_upload', 'agente_view', 'nav_saudacao',
+                'nav_usuarios', 'nav_empresas', 'nav_permissoes', 'nav_webhooks', 'nav_agente'
+            ];
+            
+            let html = '<div class="status info"><strong>🔍 Teste de Permissões do Sidebar:</strong><br>';
+            
+            permissoesSidebar.forEach(permission => {
+                const hasAccess = hasPermission(permission);
+                const className = hasAccess ? 'permission-granted' : 'permission-denied';
+                const icon = hasAccess ? '✅' : '❌';
+                
+                html += `<div class="permission-item ${className}">${icon} ${permission}</div>`;
+                log(`${icon} ${permission}: ${hasAccess ? 'PERMITIDO' : 'NEGADO'}`);
+            });
+            
+            html += '</div>';
+            
+            // Verificar se as permissões esperadas estão corretas
+            const permissoesCorretas = permissoesEsperadasParaPerfil.every(p => hasPermission(p));
+            const permissoesIncorretas = permissoesEsperadasParaPerfil.filter(p => !hasPermission(p));
+            
+            if (permissoesCorretas) {
+                html += '<div class="status success"><strong>✅ Todas as permissões esperadas estão corretas!</strong></div>';
+            } else {
+                html += `<div class="status warning"><strong>⚠️ Algumas permissões esperadas estão incorretas:</strong><br>`;
+                permissoesIncorretas.forEach(p => {
+                    html += `<div class="permission-item permission-denied">❌ ${p}</div>`;
+                });
+                html += '</div>';
+            }
+            
+            addResult(html);
+            log('✅ Teste de permissões concluído!');
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        // Teste automático ao carregar
+        window.onload = function() {
+            log('🔧 Página de teste carregada');
+            addResult('<div class="status info"><strong>ℹ️ Selecione um perfil e clique em "Simular Login" para testar as permissões</strong></div>');
+        };
+    </script>
+</body>
+</html>

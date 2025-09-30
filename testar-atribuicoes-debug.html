@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Atribuições de Agentes</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            display: block;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .code {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Debug - Atribuições de Agentes</h1>
+            <p>Verificar se as atribuições estão sendo carregadas e exibidas corretamente</p>
+        </div>
+
+        <div class="btn" onclick="testarWebhooks()">
+            🧪 Testar Webhooks de Atribuição
+        </div>
+
+        <div class="btn btn-success" onclick="testarAtribuicao()">
+            ✅ Testar Atribuição de Agente
+        </div>
+
+        <div class="btn btn-danger" onclick="testarRemocao()">
+            ❌ Testar Remoção de Atribuição
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += `<div class="result ${type}">${logEntry}</div>`;
+            
+            console.log(logEntry);
+        }
+
+        async function testarWebhooks() {
+            log('🧪 Iniciando teste de webhooks de atribuição...', 'info');
+            
+            try {
+                // Teste 1: Listar atribuições
+                log('📋 1. Testando listagem de atribuições...', 'info');
+                const response = await fetch('/api/webhook/list-agente-atribuicoes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ usuario_id: null })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Atribuições carregadas: ${data.data?.length || 0} encontradas`, 'success');
+                    log(`📊 Dados: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+            }
+        }
+
+        async function testarAtribuicao() {
+            log('✅ Testando atribuição de agente...', 'info');
+            
+            try {
+                const response = await fetch('/api/webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agente_id: 65, // ID do agente João
+                        usuario_id: 6, // ID do usuário Teste de Dashboard
+                        atribuido_por: 5 // ID do admin
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        log('✅ Agente atribuído com sucesso!', 'success');
+                        log('🔄 Recarregando atribuições...', 'info');
+                        setTimeout(() => testarWebhooks(), 1000);
+                    } else {
+                        log(`⚠️ Atribuição falhou: ${data.message || 'Erro desconhecido'}`, 'warning');
+                    }
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+            } catch (error) {
+                log(`❌ Erro na atribuição: ${error.message}`, 'error');
+            }
+        }
+
+        async function testarRemocao() {
+            log('❌ Testando remoção de atribuição...', 'info');
+            
+            try {
+                const response = await fetch('/api/webhook/remover-atribuicao-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agente_id: 65, // ID do agente João
+                        usuario_id: 6 // ID do usuário Teste de Dashboard
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        log('✅ Atribuição removida com sucesso!', 'success');
+                        log('🔄 Recarregando atribuições...', 'info');
+                        setTimeout(() => testarWebhooks(), 1000);
+                    } else {
+                        log(`⚠️ Remoção falhou: ${data.message || 'Erro desconhecido'}`, 'warning');
+                    }
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+            } catch (error) {
+                log(`❌ Erro na remoção: ${error.message}`, 'error');
+            }
+        }
+
+        // Log inicial
+        log('📋 Página carregada. Use os botões para testar as funcionalidades.', 'info');
+    </script>
+</body>
+</html>

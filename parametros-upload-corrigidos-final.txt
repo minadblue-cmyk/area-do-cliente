@@ -1,0 +1,21 @@
+-- ✅ PARÂMETROS CORRIGIDOS FINAL: Upload sem agente_id
+-- Os leads vão para a base comum e os agentes pegam lotes
+
+{{$json.telefone}}, 
+{{$json.nome}}, 
+{{$json.canal || 'whatsapp'}}, 
+{{$json.estagio_funnel || 'topo'}}, 
+{{$json.pergunta_index !== undefined && $json.pergunta_index !== null ? $json.pergunta_index : 0}}, 
+{{$json.data_processamento || $now.toISO()}}, 
+{{$json.data_processamento || $now.toISO()}}, 
+{{$json.client_id}}, 
+{{$json.nome_cliente || $json.nome}}, 
+{{$json.fonte_prospec}}, 
+{{$json.idade}}, 
+{{$json.profissao}}, 
+{{$json.estado_civil}}, 
+{{$json.filhos}}, 
+{{$json.qtd_filhos}}, 
+{{$json.data_processamento}}, 
+{{$json.status || 'novo'}}
+-- ❌ REMOVIDO: {{$json.agente_id}} (será definido quando agente pegar o lote)

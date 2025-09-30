@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Atribuições</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background: #059669;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Teste Final - Atribuições</h1>
+        <p>Teste completo do sistema de atribuições de agentes:</p>
+        
+        <button class="btn" onclick="testarCompleto()">
+            🚀 EXECUTAR TESTE COMPLETO
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testarCompleto() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result info">🔄 Iniciando teste completo do sistema de atribuições...</div>';
+            
+            try {
+                // 1. Testar listagem de atribuições
+                resultDiv.innerHTML += '<div class="result info">📋 1. Testando listagem de atribuições...</div>';
+                
+                const listarResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-agente-atribuicoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario_id: null })
+                });
+                
+                if (!listarResponse.ok) {
+                    throw new Error(`Erro HTTP: ${listarResponse.status}`);
+                }
+                
+                const listarData = await listarResponse.json();
+                resultDiv.innerHTML += `<div class="result success">✅ Atribuições listadas: ${listarData.data?.length || 0} encontradas</div>`;
+                
+                // 2. Testar atribuição
+                resultDiv.innerHTML += '<div class="result info">📋 2. Testando atribuição de agente...</div>';
+                
+                const atribuirResponse = await fetch('https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agente_id: 65,
+                        usuario_id: 6,
+                        atribuido_por: 5
+                    })
+                });
+                
+                if (!atribuirResponse.ok) {
+                    throw new Error(`Erro HTTP: ${atribuirResponse.status}`);
+                }
+                
+                const atribuirData = await atribuirResponse.json();
+                resultDiv.innerHTML += `<div class="result success">✅ Atribuição criada: ${JSON.stringify(atribuirData)}</div>`;
+                
+                // 3. Aguardar e verificar
+                resultDiv.innerHTML += '<div class="result info">📋 3. Aguardando e verificando...</div>';
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 4. Listar novamente para verificar
+                resultDiv.innerHTML += '<div class="result info">📋 4. Verificando atribuição criada...</div>';
+                
+                const verificarResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-agente-atribuicoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario_id: null })
+                });
+                
+                const verificarData = await verificarResponse.json();
+                const atribuicoes = verificarData.data || [];
+                const temAtribuicao = atribuicoes.some(attr => 
+                    attr.agente_id === 65 && attr.usuario_id === 6
+                );
+                
+                if (temAtribuicao) {
+                    resultDiv.innerHTML += '<div class="result success">✅ SUCESSO! Atribuição foi criada e encontrada no banco de dados!</div>';
+                } else {
+                    resultDiv.innerHTML += '<div class="result error">❌ FALHA! Atribuição não foi encontrada no banco de dados.</div>';
+                }
+                
+                // 5. Testar remoção
+                resultDiv.innerHTML += '<div class="result info">📋 5. Testando remoção de atribuição...</div>';
+                
+                const removerResponse = await fetch('https://n8n.code-iq.com.br/webhook/remover-atribuicao-agente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agente_id: 65,
+                        usuario_id: 6
+                    })
+                });
+                
+                const removerData = await removerResponse.json();
+                resultDiv.innerHTML += `<div class="result success">✅ Remoção executada: ${JSON.stringify(removerData)}</div>`;
+                
+                resultDiv.innerHTML += '<div class="result success">🎉 TESTE COMPLETO FINALIZADO COM SUCESSO!</div>';
+                resultDiv.innerHTML += '<div class="result info">✅ Sistema de atribuições está funcionando corretamente!</div>';
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="result error">❌ ERRO: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

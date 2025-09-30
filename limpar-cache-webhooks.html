@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpar Cache Webhooks</title>
+</head>
+<body>
+    <h1>Limpar Cache Webhooks</h1>
+    <button onclick="limparCache()">Limpar Cache e Recarregar</button>
+    <div id="resultado"></div>
+
+    <script>
+        function limparCache() {
+            try {
+                // Limpar o localStorage
+                localStorage.removeItem('flowhub:webhooks');
+                
+                // Mostrar resultado
+                document.getElementById('resultado').innerHTML = 
+                    '<p style="color: green;">✅ Cache limpo com sucesso!</p>' +
+                    '<p>Recarregue a página do frontend para aplicar as mudanças.</p>';
+                
+                console.log('✅ Cache do localStorage limpo');
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = 
+                    '<p style="color: red;">❌ Erro ao limpar cache: ' + error.message + '</p>';
+                console.error('❌ Erro:', error);
+            }
+        }
+    </script>
+</body>
+</html>

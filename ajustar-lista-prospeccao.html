@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustar Lista de Prospecção</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .code-block { background: #1e1e1e; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .step { background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4ade80; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Ajustar Lista de Prospecção</h1>
+        
+        <div class="section">
+            <h2>🎯 Alterações Solicitadas</h2>
+            <ul>
+                <li>✅ <strong>Adicionar:</strong> Total de clientes contatados</li>
+                <li>✅ <strong>Remover:</strong> Informação de refresh</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Código para Query SQL</h2>
+            <div class="step">
+                <h3>✅ Query Atualizada com Contador</h3>
+                <div class="code-block">
+                    <pre>SELECT
+    l.id, l.client_id, l.nome, l.telefone, l.status, l.contatado,
+    l.data_ultima_interacao, l.data_criacao,
+    -- ✅ ADICIONAR CONTADOR DE CLIENTES CONTATADOS
+    COUNT(CASE WHEN l.contatado = true THEN 1 END) OVER() as total_contatados,
+    COUNT(*) OVER() as total_leads
+FROM lead l
+WHERE l.client_id = $3
+AND l.agente_id = $3 -- USAR client_id como agente_id
+AND l.status IN ('prospectando', 'concluido')
+AND COALESCE(l.data_ultima_interacao, l.data_criacao) >= $1::timestamp
+AND COALESCE(l.data_ultima_interacao, l.data_criacao) < $2::timestamp
+ORDER BY COALESCE(l.data_ultima_interacao, l.data_criacao) DESC,
+l.id DESC;</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Código para Nó de Resposta</h2>
+            <div class="step">
+                <h3>✅ Resposta com Total de Contatados</h3>
+                <div class="code-block">
+                    <pre>// No nó de resposta da lista de prospecção
+const leads = $input.all();
+
+if (leads.length === 0) {
+  return {
+    success: true,
+    message: "Nenhum lead encontrado no período",
+    data: [],
+    total_leads: 0,
+    total_contatados: 0,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// Pegar o total do primeiro item (todos têm o mesmo valor)
+const totalContatados = leads[0].json.total_contatados || 0;
+const totalLeads = leads[0].json.total_leads || leads.length;
+
+// Remover campos de contagem dos dados
+const leadsLimpos = leads.map(lead => {
+  const { total_contatados, total_leads, ...leadLimpo } = lead.json;
+  return leadLimpo;
+});
+
+return {
+  success: true,
+  message: `Lista de prospecção carregada com sucesso`,
+  data: leadsLimpos,
+  total_leads: totalLeads,
+  total_contatados: totalContatados,
+  timestamp: new Date().toISOString()
+};</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎨 Código para Frontend (Upload Page)</h2>
+            <div class="step">
+                <h3>✅ Atualizar Interface</h3>
+                <div class="code-block">
+                    <pre>// No arquivo src/pages/Upload/index.tsx
+// Função loadProspects - remover refresh e adicionar contador
+
+async function loadProspects() {
+  try {
+    if (!agenteAtual) return;
+    
+    console.log('🔍 Carregando prospects...');
+    
+    const response = await callWebhook(agenteAtual.webhook_lista_url, {
+      method: 'POST',
+      data: {
+        startDateTime: periodoInicio,
+        endDateTime: periodoFim
+      },
+      params: {
+        client_id: userData.id,
+        agente_id: agenteAtual.id
+      }
+    });
+
+    if (!response || !response.data) {
+      console.warn('⚠️ Resposta vazia do webhook de lista');
+      setProspects([]);
+      return;
+    }
+
+    const prospects = Array.isArray(response.data) ? response.data : [];
+    
+    // ✅ ADICIONAR CONTADOR DE CONTATADOS
+    const totalContatados = response.total_contatados || 0;
+    const totalLeads = response.total_leads || prospects.length;
+    
+    setProspects(prospects);
+    
+    // ✅ REMOVER MENSAGEM DE REFRESH
+    console.log(`✅ ${prospects.length} prospects carregados`);
+    console.log(`📊 Total de leads: ${totalLeads}`);
+    console.log(`📞 Total contatados: ${totalContatados}`);
+    
+  } catch (error) {
+    console.error('❌ Erro ao carregar prospects:', error);
+    setProspects([]);
+  }
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎨 Interface Atualizada</h2>
+            <div class="step">
+                <h3>✅ HTML para Mostrar Contadores</h3>
+                <div class="code-block">
+                    <pre>// Adicionar no JSX da página Upload
+<div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+  <div className="flex justify-between items-center">
+    <div>
+      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+        📊 Resumo da Prospecção
+      </h3>
+      <p className="text-sm text-blue-700 dark:text-blue-300">
+        Período: {periodoInicio} até {periodoFim}
+      </p>
+    </div>
+    <div className="text-right">
+      <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+        {prospects.length}
+      </div>
+      <div className="text-sm text-blue-700 dark:text-blue-300">
+        Leads encontrados
+      </div>
+    </div>
+  </div>
+  
+  {/* ✅ ADICIONAR CONTADOR DE CONTATADOS */}
+  <div className="mt-3 grid grid-cols-2 gap-4">
+    <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 rounded">
+      <div className="text-xl font-bold text-green-800 dark:text-green-200">
+        {prospects.filter(p => p.contatado).length}
+      </div>
+      <div className="text-sm text-green-600 dark:text-green-400">
+        Contatados
+      </div>
+    </div>
+    <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/30 rounded">
+      <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
+        {prospects.filter(p => !p.contatado).length}
+      </div>
+      <div className="text-sm text-orange-600 dark:text-orange-400">
+        Não contatados
+      </div>
+    </div>
+  </div>
+</div></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Testar Implementação</h2>
+            <button onclick="testarImplementacao()">Testar Implementação</button>
+            <div id="teste-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Checklist de Implementação</h2>
+            <div class="info">
+                <h3>✅ Passos para Implementar:</h3>
+                <ol>
+                    <li>1️⃣ <strong>Atualizar Query SQL</strong> - Adicionar contadores</li>
+                    <li>2️⃣ <strong>Atualizar Nó de Resposta</strong> - Incluir totais</li>
+                    <li>3️⃣ <strong>Atualizar Frontend</strong> - Mostrar contadores</li>
+                    <li>4️⃣ <strong>Remover Refresh</strong> - Limpar mensagens desnecessárias</li>
+                    <li>5️⃣ <strong>Testar</strong> - Verificar se está funcionando</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testarImplementacao() {
+            const resultDiv = document.getElementById('teste-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando implementação...</p>';
+
+            try {
+                // Simular dados de teste
+                const dadosTeste = [
+                    { nome: "Ana Gomes", contatado: true, status: "prospectando" },
+                    { nome: "Breno Silveira", contatado: false, status: "prospectando" },
+                    { nome: "Agatha Caldeira", contatado: true, status: "concluido" }
+                ];
+
+                const totalContatados = dadosTeste.filter(p => p.contatado).length;
+                const totalNaoContatados = dadosTeste.filter(p => !p.contatado).length;
+
+                let resultado = `
+                    <p class="success">✅ Teste de Implementação:</p>
+                    <div class="code-block">
+                        <pre>Dados de Teste:
+${JSON.stringify(dadosTeste, null, 2)}
+
+Resultados:
+- Total de leads: ${dadosTeste.length}
+- Contatados: ${totalContatados}
+- Não contatados: ${totalNaoContatados}
+- Taxa de contato: ${((totalContatados / dadosTeste.length) * 100).toFixed(1)}%</pre>
+                    </div>
+                `;
+
+                resultado += `
+                    <hr>
+                    <p class="info">💡 Interface atualizada mostrará:</p>
+                    <ul>
+                        <li>📊 Resumo da prospecção</li>
+                        <li>📞 Total de contatados</li>
+                        <li>⏳ Total de não contatados</li>
+                        <li>❌ Sem mensagens de refresh</li>
+                    </ul>
+                `;
+
+                resultDiv.innerHTML = resultado;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

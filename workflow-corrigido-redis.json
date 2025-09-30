@@ -1,0 +1,165 @@
+{
+  "name": "Create Agente - Redis Corrigido",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $('Normalização').item.json.agentType,\n  \"webhookType\": \"start\"\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 432],
+      "id": "redis-get-counter-start",
+      "name": "Redis GET Counter - Start"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $('Normalização').item.json.agentType,\n  \"webhookType\": \"status\"\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 224],
+      "id": "redis-get-counter-status",
+      "name": "Redis GET Counter - Status"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $('Normalização').item.json.agentType,\n  \"webhookType\": \"lista\"\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 464],
+      "id": "redis-get-counter-lista",
+      "name": "Redis GET Counter - Lista"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $('Normalização').item.json.agentType,\n  \"webhookType\": \"stop\"\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 704],
+      "id": "redis-get-counter-stop",
+      "name": "Redis GET Counter - Stop"
+    }
+  ],
+  "connections": {
+    "Normalização1": {
+      "main": [
+        [
+          {
+            "node": "Redis GET Counter - Start",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis GET Counter - Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis GET Counter - Lista",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis GET Counter - Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Counter - Start": {
+      "main": [
+        [
+          {
+            "node": "Busca Informações do Agente SDR - Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Counter - Status": {
+      "main": [
+        [
+          {
+            "node": "Busca Informações do Agente SDR - status-agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Counter - Lista": {
+      "main": [
+        [
+          {
+            "node": "Busca Informações do Agente SDR - lista-prospeccao-agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Counter - Stop": {
+      "main": [
+        [
+          {
+            "node": "Busca Informações do Agente SDR - Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Usuários Corretos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; border: 1px solid #444; text-align: left; }
+        th { background: #1e1e1e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Verificar Usuários Corretos</h1>
+        
+        <div class="section">
+            <h2>1. Listar Usuários via Webhook</h2>
+            <button onclick="listarUsuarios()">Listar Usuários</button>
+            <div id="usuarios"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Listar Agentes via Webhook</h2>
+            <button onclick="listarAgentes()">Listar Agentes</button>
+            <div id="agentes"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Mapeamento Correto</h2>
+            <button onclick="verificarMapeamento()">Verificar Mapeamento</button>
+            <div id="mapeamento"></div>
+        </div>
+    </div>
+
+    <script>
+        let usuariosData = []
+        let agentesData = []
+
+        async function listarUsuarios() {
+            const resultDiv = document.getElementById('usuarios')
+            resultDiv.innerHTML = '<p class="info">🔄 Listando usuários...</p>'
+            
+            try {
+                const response = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                })
+                
+                const data = await response.json()
+                console.log('Usuários response:', data)
+                
+                usuariosData = data.data || data || []
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👥 Usuários Encontrados</h3>
+                    <p><strong>Total:</strong> ${usuariosData.length}</p>
+                    
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Perfil ID</th>
+                            <th>Perfil</th>
+                        </tr>
+                        ${usuariosData.map(user => `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.nome}</td>
+                                <td>${user.email}</td>
+                                <td>${user.perfil_id}</td>
+                                <td>${user.perfil || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                    
+                    <h4>Resposta completa:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function listarAgentes() {
+            const resultDiv = document.getElementById('agentes')
+            resultDiv.innerHTML = '<p class="info">🔄 Listando agentes...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('Agentes response:', data)
+                
+                agentesData = data.data || []
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🤖 Agentes Encontrados</h3>
+                    <p><strong>Total:</strong> ${agentesData.length}</p>
+                    
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Usuário ID</th>
+                            <th>Ativo</th>
+                            <th>Descrição</th>
+                        </tr>
+                        ${agentesData.map(agente => `
+                            <tr>
+                                <td>${agente.id}</td>
+                                <td>${agente.nome}</td>
+                                <td>${agente.usuario_id}</td>
+                                <td>${agente.ativo ? 'Sim' : 'Não'}</td>
+                                <td>${agente.descricao || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                    
+                    <h4>Resposta completa:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarMapeamento() {
+            const resultDiv = document.getElementById('mapeamento')
+            
+            if (usuariosData.length === 0 || agentesData.length === 0) {
+                resultDiv.innerHTML = '<p class="warning">⚠️ Execute primeiro "Listar Usuários" e "Listar Agentes"</p>'
+                return
+            }
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔍 Mapeamento Usuários x Agentes</h3>
+                
+                <h4>Usuários:</h4>
+                <ul>
+                    ${usuariosData.map(user => `
+                        <li>
+                            <strong>ID ${user.id}:</strong> ${user.nome} (${user.email})
+                            <br>Perfil: ${user.perfil || 'N/A'} (ID: ${user.perfil_id})
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                <h4>Agentes:</h4>
+                <ul>
+                    ${agentesData.map(agente => {
+                        const usuario = usuariosData.find(u => u.id === agente.usuario_id)
+                        return `
+                            <li>
+                                <strong>${agente.nome} (ID: ${agente.id}):</strong>
+                                <br>Usuário ID: ${agente.usuario_id}
+                                <br>Pertence a: ${usuario ? usuario.nome : 'USUÁRIO NÃO ENCONTRADO'}
+                                <br>Email: ${usuario ? usuario.email : 'N/A'}
+                            </li>
+                        `
+                    }).join('')}
+                </ul>
+                
+                <h4>Mapeamento Correto:</h4>
+                <ul>
+                    <li><strong>Administrator Code-IQ (ID: 5):</strong> Deve ver agentes com usuario_id = 5</li>
+                    <li><strong>Usuário Elleve Padrão (ID: 6):</strong> Deve ver agentes com usuario_id = 6</li>
+                    <li><strong>Supervisor Elleve Consórcios (ID: 37):</strong> Deve ver agentes com usuario_id = 37</li>
+                </ul>
+                
+                <h4>Problema Identificado:</h4>
+                <p class="error">❌ O usuário padrão (ID: 6) está vendo o João (usuario_id: 6) em vez do Zeca (usuario_id: 5)</p>
+                <p class="info">ℹ️ Isso indica que há um problema na lógica de filtragem por permissões</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            listarUsuarios()
+            listarAgentes()
+        }
+    </script>
+</body>
+</html>

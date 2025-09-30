@@ -1,0 +1,148 @@
+{
+  "name": "Update Agente - Corrigido",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-agente",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-update-agente",
+      "name": "Webhook Update Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "update-agente"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar dados do agente\nconst webhookData = $('Webhook Update Agente').item.json;\n\nconsole.log('✅ Dados recebidos:', webhookData);\n\n// Validar dados obrigatórios\nif (!webhookData.id) {\n  throw new Error('ID do agente é obrigatório para atualização');\n}\n\n// Preparar dados para atualização\nconst agenteData = {\n  id: webhookData.id,\n  nome: webhookData.nome || '',\n  descricao: webhookData.descricao || '',\n  icone: webhookData.icone || '🤖',\n  cor: webhookData.cor || 'bg-blue-500',\n  ativo: webhookData.ativo !== undefined ? webhookData.ativo : true\n};\n\nconsole.log('✅ Dados normalizados para atualização:', agenteData);\n\nreturn {\n  json: agenteData\n};"
+      },
+      "id": "normalizar-dados",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agentes_config",
+          "mode": "list",
+          "cachedResultName": "agentes_config"
+        },
+        "updateKey": "id",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nome": "={{ $json.nome }}",
+            "descricao": "={{ $json.descricao }}",
+            "icone": "={{ $json.icone }}",
+            "cor": "={{ $json.cor }}",
+            "ativo": "={{ $json.ativo }}",
+            "updated_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "atualizar-agente",
+      "name": "Atualizar Agente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-consorcio",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar resultado da atualização\nconst agenteAtualizado = $('Atualizar Agente').item.json;\nconst dadosNormalizados = $('Normalizar Dados').item.json;\n\nconsole.log('✅ Agente atualizado:', agenteAtualizado);\nconsole.log('✅ Dados normalizados:', dadosNormalizados);\n\n// Verificar se a atualização foi bem-sucedida\nif (agenteAtualizado && agenteAtualizado.length > 0) {\n  const resultado = {\n    success: true,\n    message: 'Agente atualizado com sucesso',\n    data: {\n      id: dadosNormalizados.id,\n      nome: dadosNormalizados.nome,\n      descricao: dadosNormalizados.descricao,\n      icone: dadosNormalizados.icone,\n      cor: dadosNormalizados.cor,\n      ativo: dadosNormalizados.ativo,\n      updated_at: new Date().toISOString()\n    }\n  };\n  \n  console.log('✅ Resultado final:', resultado);\n  return { json: resultado };\n} else {\n  const erro = {\n    success: false,\n    message: 'Agente não encontrado ou não foi possível atualizar',\n    data: null\n  };\n  \n  console.log('❌ Erro na atualização:', erro);\n  return { json: erro };\n}"
+      },
+      "id": "processar-resultado",
+      "name": "Processar Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "responder-update",
+      "name": "Responder Update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Update Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Agente": {
+      "main": [
+        [
+          {
+            "node": "Processar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Responder Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "update-agente-corrigido",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}

@@ -1,0 +1,21 @@
+-- ✅ PARÂMETROS CORRIGIDOS PARA UPLOAD DE LEADS
+-- Inclui agente_id como parâmetro $18
+
+{{$json.telefone}}, 
+{{$json.nome}}, 
+{{$json.canal || 'whatsapp'}}, 
+{{$json.estagio_funnel || 'topo'}}, 
+{{$json.pergunta_index !== undefined && $json.pergunta_index !== null ? $json.pergunta_index : 0}}, 
+{{$json.data_processamento || $now.toISO()}}, 
+{{$json.data_processamento || $now.toISO()}}, 
+{{$json.client_id}}, 
+{{$json.nome_cliente || $json.nome}}, 
+{{$json.fonte_prospec}}, 
+{{$json.idade}}, 
+{{$json.profissao}}, 
+{{$json.estado_civil}}, 
+{{$json.filhos}}, 
+{{$json.qtd_filhos}}, 
+{{$json.data_processamento}}, 
+{{$json.status || 'novo'}}, 
+{{$json.agente_id || 81}}  -- ✅ ADICIONADO - agente_id dinâmico ou padrão 81

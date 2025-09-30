@@ -1,0 +1,380 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Flow Hub Design System - Dark Theme Focus */
+
+@layer base {
+  :root {
+    /* Dark theme primary colors */
+    --background: 220 13% 9%;
+    --foreground: 220 13% 98%;
+
+    --card: 220 13% 11%;
+    --card-foreground: 220 13% 98%;
+
+    --popover: 220 13% 11%;
+    --popover-foreground: 220 13% 98%;
+
+    --primary: 210 100% 56%;
+    --primary-foreground: 220 13% 9%;
+    --primary-glow: 210 100% 70%;
+
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 220 13% 98%;
+
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 13% 65%;
+
+    --accent: 220 13% 18%;
+    --accent-foreground: 220 13% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 13% 98%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 220 13% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 13% 9%;
+
+    --border: 220 13% 20%;
+    --input: 220 13% 15%;
+    --ring: 210 100% 56%;
+
+    --radius: 0.75rem;
+
+    /* Flow Hub specific tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 56%), hsl(210 100% 70%));
+    --gradient-card: linear-gradient(135deg, hsl(220 13% 11%), hsl(220 13% 13%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(220 13% 9%), hsl(220 13% 11%));
+    
+    --shadow-glow: 0 0 20px hsl(210 100% 56% / 0.15);
+    --shadow-card: 0 4px 20px hsl(220 13% 5% / 0.4);
+    --shadow-elevated: 0 8px 30px hsl(220 13% 5% / 0.6);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+}
+
+@layer components {
+  /* Basic UI Components */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium 
+           ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+           h-10 px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    box-shadow: 0 2px 4px hsl(var(--background) / 0.1);
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px hsl(var(--background) / 0.2);
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    box-shadow: 0 2px 4px hsl(var(--primary) / 0.3);
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+  }
+  
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+    box-shadow: 0 2px 4px hsl(var(--destructive) / 0.3);
+  }
+  
+  .btn-outline {
+    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+    box-shadow: 0 2px 4px hsl(var(--background) / 0.1);
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    box-shadow: 0 2px 4px hsl(var(--secondary) / 0.3);
+  }
+  
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px hsl(var(--secondary) / 0.4);
+  }
+  
+  .input {
+    @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm 
+           ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium 
+           file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none 
+           focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+           disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 0 1px 2px hsl(var(--background) / 0.1);
+  }
+  
+  .input:focus {
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2), 0 2px 4px hsl(var(--background) / 0.1);
+  }
+  
+  .card {
+    @apply rounded-lg border border-border bg-card text-card-foreground;
+    box-shadow: 0 4px 6px hsl(var(--background) / 0.1), 0 1px 3px hsl(var(--background) / 0.1);
+  }
+  
+  .card:hover {
+    box-shadow: 0 8px 15px hsl(var(--background) / 0.15), 0 3px 6px hsl(var(--background) / 0.1);
+  }
+  
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+  
+  .card-content {
+    @apply p-6 pt-0;
+  }
+  
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  /* Flow Hub custom components */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-accent/50;
+    box-shadow: 0 1px 2px hsl(var(--background) / 0.05);
+  }
+  
+  .sidebar-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 4px hsl(var(--background) / 0.1);
+  }
+  
+  .sidebar-item.active {
+    @apply bg-primary/10 text-primary border-l-4 border-primary;
+    box-shadow: 0 4px 8px hsl(var(--primary) / 0.2), 0 0 0 1px hsl(var(--primary) / 0.1);
+    transform: translateX(2px);
+  }
+  
+  .card-gradient {
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+  }
+  
+  .button-primary {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-200;
+  }
+  
+  .button-primary:hover {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .button-secondary {
+    @apply bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border;
+  }
+
+  .webhook-box {
+    @apply bg-accent/30 border border-border rounded-lg p-4 space-y-2;
+  }
+
+  .status-running {
+    @apply bg-success text-success-foreground;
+  }
+
+  .status-stopped {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .status-error {
+    @apply bg-destructive text-destructive-foreground;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-elevated;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 1023px) {
+    .sidebar-item {
+      @apply px-3 py-4 text-base;
+    }
+    
+    .card {
+      @apply mx-2;
+    }
+    
+    .card-content {
+      @apply p-4;
+    }
+    
+    .btn {
+      @apply px-4 py-3 text-base;
+    }
+    
+    .input {
+      @apply px-4 py-3 text-base;
+    }
+    
+    /* Touch-friendly buttons */
+    button, .btn {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better spacing for mobile */
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+    
+    .space-y-6 > * + * {
+      margin-top: 1.5rem;
+    }
+  }
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark theme scrollbar */
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Modal scroll lock styles */
+.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure modal content can scroll */
+.modal-content {
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}

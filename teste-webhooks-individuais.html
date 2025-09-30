@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhooks Individuais</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 200px; }
+        .webhook-test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste Webhooks Individuais</h1>
+        
+        <div class="section info">
+            <h3>📋 Teste Cada Webhook:</h3>
+            <button onclick="testarTodos()">Testar Todos</button>
+            <button onclick="testarLogin()">Só Login</button>
+            <button onclick="testarPermissoes()">Só Permissões</button>
+            <button onclick="testarPerfis()">Só Perfis</button>
+            <button onclick="limparCache()">Limpar Cache</button>
+        </div>
+
+        <div id="resultado" class="section" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <pre id="resultado-texto"></pre>
+        </div>
+
+        <div id="webhooks-teste" class="section" style="display: none;">
+            <h3>🔗 Testes Individuais:</h3>
+            <div id="webhooks-lista"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarWebhook(nome, url, method = 'GET', body = null) {
+            const webhookDiv = document.createElement('div');
+            webhookDiv.className = 'webhook-test';
+            webhookDiv.innerHTML = `<h4>${nome}</h4><p>Testando...</p>`;
+            document.getElementById('webhooks-lista').appendChild(webhookDiv);
+            
+            try {
+                console.log(`🔍 Testando ${nome}: ${url}`);
+                
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                console.log(`📡 ${nome} - Status: ${response.status}`);
+                
+                const responseText = await response.text();
+                console.log(`📄 ${nome} - Response:`, responseText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${responseText}`);
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error(`JSON inválido: ${e.message}. Response: ${responseText.substring(0, 100)}...`);
+                }
+                
+                webhookDiv.innerHTML = `
+                    <h4>✅ ${nome}</h4>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Dados:</strong> ${JSON.stringify(data).substring(0, 200)}...</p>
+                `;
+                webhookDiv.className = 'webhook-test success';
+                
+                return { success: true, data, response: responseText };
+                
+            } catch (error) {
+                console.error(`❌ Erro em ${nome}:`, error);
+                webhookDiv.innerHTML = `
+                    <h4>❌ ${nome}</h4>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `;
+                webhookDiv.className = 'webhook-test error';
+                
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testarTodos() {
+            document.getElementById('webhooks-teste').style.display = 'block';
+            document.getElementById('webhooks-lista').innerHTML = '';
+            
+            const resultados = {};
+            
+            // 1. Testar Login
+            resultados.login = await testarWebhook(
+                'Login', 
+                'https://n8n.code-iq.com.br/webhook/login',
+                'POST',
+                { email: 'admin@code-iq.com.br', password: '123456' }
+            );
+            
+            // 2. Testar Permissões
+            resultados.permissions = await testarWebhook(
+                'Permissões',
+                'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission'
+            );
+            
+            // 3. Testar Perfis
+            resultados.profiles = await testarWebhook(
+                'Perfis',
+                'https://n8n.code-iq.com.br/webhook/list-profile'
+            );
+            
+            // 4. Testar Usuários
+            resultados.users = await testarWebhook(
+                'Usuários',
+                'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users'
+            );
+            
+            // Mostrar resultado final
+            const resultado = document.getElementById('resultado');
+            const resultadoTexto = document.getElementById('resultado-texto');
+            
+            resultado.style.display = 'block';
+            resultadoTexto.textContent = JSON.stringify(resultados, null, 2);
+        }
+        
+        async function testarLogin() {
+            document.getElementById('webhooks-teste').style.display = 'block';
+            document.getElementById('webhooks-lista').innerHTML = '';
+            
+            const resultado = await testarWebhook(
+                'Login', 
+                'https://n8n.code-iq.com.br/webhook/login',
+                'POST',
+                { email: 'admin@code-iq.com.br', password: '123456' }
+            );
+            
+            document.getElementById('resultado').style.display = 'block';
+            document.getElementById('resultado-texto').textContent = JSON.stringify(resultado, null, 2);
+        }
+        
+        async function testarPermissoes() {
+            document.getElementById('webhooks-teste').style.display = 'block';
+            document.getElementById('webhooks-lista').innerHTML = '';
+            
+            const resultado = await testarWebhook(
+                'Permissões',
+                'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission'
+            );
+            
+            document.getElementById('resultado').style.display = 'block';
+            document.getElementById('resultado-texto').textContent = JSON.stringify(resultado, null, 2);
+        }
+        
+        async function testarPerfis() {
+            document.getElementById('webhooks-teste').style.display = 'block';
+            document.getElementById('webhooks-lista').innerHTML = '';
+            
+            const resultado = await testarWebhook(
+                'Perfis',
+                'https://n8n.code-iq.com.br/webhook/list-profile'
+            );
+            
+            document.getElementById('resultado').style.display = 'block';
+            document.getElementById('resultado-texto').textContent = JSON.stringify(resultado, null, 2);
+        }
+        
+        function limparCache() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                
+                alert('✅ Cache limpo!');
+                console.log('🧹 Cache limpo');
+                
+            } catch (error) {
+                alert('❌ Erro ao limpar cache: ' + error.message);
+            }
+        }
+        
+        // Testar automaticamente
+        window.addEventListener('load', () => {
+            console.log('🔍 Página de teste carregada');
+        });
+    </script>
+</body>
+</html>

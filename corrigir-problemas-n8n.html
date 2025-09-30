@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Problemas N8N</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .code-block { background: #1e1e1e; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .step { background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #f87171; }
+        .fix { background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4ade80; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Problemas N8N</h1>
+        
+        <div class="section">
+            <h2>🚨 Problemas Identificados</h2>
+            <div class="step">
+                <h3>❌ Problema 1: Timezone</h3>
+                <p class="error">• Variável de ambiente não aplicada</p>
+                <p class="error">• Workflow ainda mostra "America/New York"</p>
+                <p class="error">• Deveria mostrar "America/Sao_Paulo"</p>
+            </div>
+            
+            <div class="step">
+                <h3>❌ Problema 2: Execution Order</h3>
+                <p class="error">• Está vindo como "v0 (legacy)"</p>
+                <p class="error">• Deveria ser "v1"</p>
+                <p class="error">• Afeta performance e funcionalidades</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Soluções</h2>
+            
+            <div class="fix">
+                <h3>✅ Solução 1: Corrigir Variável de Ambiente</h3>
+                <p class="info">A variável pode não estar sendo lida corretamente. Tente estas alternativas:</p>
+                
+                <div class="code-block">
+                    <pre># Opção 1: Variável com nome diferente
+N8N_TIMEZONE=America/Sao_Paulo
+
+# Opção 2: Variável no formato correto
+N8N_DEFAULT_TIMEZONE=America/Sao_Paulo
+
+# Opção 3: Variável de sistema
+TZ=America/Sao_Paulo
+
+# Opção 4: Todas as variáveis juntas
+N8N_TIMEZONE=America/Sao_Paulo
+N8N_DEFAULT_TIMEZONE=America/Sao_Paulo
+TZ=America/Sao_Paulo</pre>
+                </div>
+            </div>
+
+            <div class="fix">
+                <h3>✅ Solução 2: Corrigir Execution Order no Workflow</h3>
+                <p class="info">Modifique o código de clonagem para forçar v1:</p>
+                
+                <div class="code-block">
+                    <pre>const clonedWorkflow = {
+  name: `Agente SDR - Start-${counter}`,
+  settings: {
+    ...originalWorkflow.settings,
+    // 🕐 FORÇAR TIMEZONE
+    timezone: 'America/Sao_Paulo',
+    // ⚡ FORÇAR EXECUTION ORDER V1
+    executionOrder: 'v1'
+  },
+  nodes: originalWorkflow.nodes.map(node => {
+    // ... resto do código
+  }),
+  connections: originalWorkflow.connections || {}
+};</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Testar Correções</h2>
+            <button onclick="testarTimezone()">Testar Timezone</button>
+            <button onclick="testarExecutionOrder()">Testar Execution Order</button>
+            <div id="teste-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Script de Correção Automática</h2>
+            <button onclick="gerarScriptCorrecao()">Gerar Script de Correção</button>
+            <div id="script-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔄 Atualizar Workflow de Criação</h2>
+            <button onclick="mostrarCodigoAtualizado()">Mostrar Código Atualizado</button>
+            <div id="codigo-result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarTimezone() {
+            const resultDiv = document.getElementById('teste-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando timezone...</p>';
+
+            try {
+                const timezones = ['America/Sao_Paulo', 'America/New_York', 'UTC'];
+                let resultado = '<p class="success">✅ Teste de Timezone:</p>';
+                
+                timezones.forEach(tz => {
+                    const now = new Date();
+                    const tzTime = new Date(now.toLocaleString("en-US", {timeZone: tz}));
+                    const offset = tzTime.getTimezoneOffset() / -60;
+                    
+                    resultado += `
+                        <p class="info">🌍 ${tz}: ${tzTime.toLocaleString()} (UTC${offset >= 0 ? '+' : ''}${offset})</p>
+                    `;
+                });
+
+                resultado += `
+                    <hr>
+                    <p class="warning">⚠️ Se o n8n não está aplicando a variável, use a correção manual no código</p>
+                `;
+
+                resultDiv.innerHTML = resultado;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function testarExecutionOrder() {
+            const resultDiv = document.getElementById('teste-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando execution order...</p>';
+
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/api/v1/workflows', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const workflows = await response.json();
+                    const agentWorkflows = workflows.data?.filter(w => 
+                        w.name?.includes('Agente SDR') && w.name?.includes('Start-')
+                    ) || [];
+
+                    let resultado = '<p class="success">✅ Workflows de Agentes Encontrados:</p>';
+                    
+                    agentWorkflows.forEach(workflow => {
+                        const executionOrder = workflow.settings?.executionOrder || 'não definido';
+                        const timezone = workflow.settings?.timezone || 'não definido';
+                        
+                        resultado += `
+                            <p class="info">🤖 ${workflow.name}</p>
+                            <p class="info">   • Execution Order: ${executionOrder}</p>
+                            <p class="info">   • Timezone: ${timezone}</p>
+                        `;
+                    });
+
+                    resultDiv.innerHTML = resultado;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Erro ao acessar workflows: ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        function gerarScriptCorrecao() {
+            const resultDiv = document.getElementById('script-result');
+            
+            const script = `
+// Script para corrigir timezone e execution order em workflows existentes
+async function corrigirWorkflows() {
+  try {
+    const response = await fetch('https://n8n.code-iq.com.br/api/v1/workflows');
+    const workflows = await response.json();
+    
+    const agentWorkflows = workflows.data.filter(w => 
+      w.name?.includes('Agente SDR') || 
+      w.name?.includes('Start-') || 
+      w.name?.includes('Status-') ||
+      w.name?.includes('Lista-') ||
+      w.name?.includes('Stop-')
+    );
+    
+    console.log(\`🔍 Encontrados \${agentWorkflows.length} workflows de agentes\`);
+    
+    for (const workflow of agentWorkflows) {
+      const updatedWorkflow = {
+        ...workflow,
+        settings: {
+          ...workflow.settings,
+          // 🕐 CORRIGIR TIMEZONE
+          timezone: 'America/Sao_Paulo',
+          // ⚡ CORRIGIR EXECUTION ORDER
+          executionOrder: 'v1'
+        }
+      };
+      
+      const updateResponse = await fetch(\`https://n8n.code-iq.com.br/api/v1/workflows/\${workflow.id}\`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer SEU_TOKEN_AQUI' // Substitua pelo seu token
+        },
+        body: JSON.stringify(updatedWorkflow)
+      });
+      
+      if (updateResponse.ok) {
+        console.log(\`✅ Workflow \${workflow.name} corrigido\`);
+      } else {
+        console.error(\`❌ Erro ao corrigir \${workflow.name}: \${updateResponse.status}\`);
+      }
+    }
+    
+    console.log('🎉 Correção concluída!');
+  } catch (error) {
+    console.error('❌ Erro:', error);
+  }
+}
+
+// Executar correção
+corrigirWorkflows();
+            `;
+
+            resultDiv.innerHTML = `
+                <p class="success">✅ Script de correção gerado!</p>
+                <div class="code-block">
+                    <pre>${script}</pre>
+                </div>
+                <p class="warning">⚠️ Execute este script no console do navegador após fazer login no n8n</p>
+                <p class="info">💡 Substitua 'SEU_TOKEN_AQUI' pelo token de autenticação do n8n</p>
+            `;
+        }
+
+        function mostrarCodigoAtualizado() {
+            const resultDiv = document.getElementById('codigo-result');
+            
+            const codigo = `
+// Código atualizado para "PREPARAR WORKFLOW CLONADO" (todos os tipos)
+const clonedWorkflow = {
+  name: \`Agente SDR - Start-\${counter}\`,
+  settings: {
+    ...originalWorkflow.settings,
+    // 🕐 FORÇAR TIMEZONE (não depende de variável de ambiente)
+    timezone: 'America/Sao_Paulo',
+    // ⚡ FORÇAR EXECUTION ORDER V1 (não legacy)
+    executionOrder: 'v1'
+  },
+  nodes: originalWorkflow.nodes.map(node => {
+    if (node.type === 'n8n-nodes-base.webhook') {
+      return {
+        ...node,
+        parameters: {
+          ...node.parameters,
+          path: \`start\${counter}-\${agentTypeNormalizado}\`
+        }
+      };
+    }
+    
+    // 🕐 CONFIGURAR TIMEZONE EM NÓS DE DATA
+    if (node.type === 'n8n-nodes-base.set' && node.parameters.assignments) {
+      const assignments = node.parameters.assignments.assignments || [];
+      const updatedAssignments = assignments.map(assignment => {
+        if (assignment.name && (assignment.name.includes('date') || assignment.name.includes('time'))) {
+          return {
+            ...assignment,
+            value: \`={{ $now.toISO() }}\` // Usa timezone do workflow
+          };
+        }
+        return assignment;
+      });
+      
+      return {
+        ...node,
+        parameters: {
+          ...node.parameters,
+          assignments: {
+            ...node.parameters.assignments,
+            assignments: updatedAssignments
+          }
+        }
+      };
+    }
+    
+    return node;
+  }),
+  connections: originalWorkflow.connections || {}
+};
+            `;
+
+            resultDiv.innerHTML = `
+                <p class="success">✅ Código atualizado para corrigir ambos os problemas!</p>
+                <div class="code-block">
+                    <pre>${codigo}</pre>
+                </div>
+                <p class="info">💡 Substitua o código nos nós "PREPARAR WORKFLOW CLONADO" de todos os tipos</p>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook Robusto</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Webhook Robusto</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook com Diferentes Métodos</h2>
+            <button onclick="testarMetodos()">Testar Métodos</button>
+            <div id="metodos"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar com Dados Conhecidos</h2>
+            <button onclick="testarComDadosConhecidos()">Testar com Dados Conhecidos</button>
+            <div id="dados-conhecidos"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Simular Filtro Correto</h2>
+            <button onclick="simularFiltroCorreto()">Simular Filtro Correto</button>
+            <div id="filtro-correto"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarMetodos() {
+            const resultDiv = document.getElementById('metodos')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando diferentes métodos...</p>'
+            
+            const urls = [
+                'https://n8n.code-iq.com.br/webhook/list-agentes',
+                'https://n8n.code-iq.com.br/webhook/list-agentes/',
+                'https://n8n.code-iq.com.br/webhook/list-agentes?method=GET'
+            ]
+            
+            const methods = ['GET', 'POST']
+            const headers = [
+                { 'Accept': 'application/json' },
+                { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Origin': window.location.origin }
+            ]
+            
+            let resultados = []
+            
+            for (const url of urls) {
+                for (const method of methods) {
+                    for (const headerSet of headers) {
+                        try {
+                            const response = await fetch(url, {
+                                method: method,
+                                headers: headerSet
+                            })
+                            
+                            const text = await response.text()
+                            let data = null
+                            
+                            try {
+                                data = JSON.parse(text)
+                            } catch (e) {
+                                // Ignorar erro de parsing
+                            }
+                            
+                            const agentes = data?.data || data || []
+                            
+                            resultados.push({
+                                url,
+                                method,
+                                headers: Object.keys(headerSet).join(', '),
+                                status: response.status,
+                                agentes: Array.isArray(agentes) ? agentes.length : 0,
+                                sucesso: response.ok && Array.isArray(agentes) && agentes.length > 0,
+                                dados: data
+                            })
+                            
+                        } catch (error) {
+                            resultados.push({
+                                url,
+                                method,
+                                headers: Object.keys(headerSet).join(', '),
+                                status: 'Erro',
+                                agentes: 0,
+                                sucesso: false,
+                                erro: error.message
+                            })
+                        }
+                    }
+                }
+            }
+            
+            const sucessos = resultados.filter(r => r.sucesso)
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🌐 Resultados dos Testes</h3>
+                <p><strong>Total de testes:</strong> ${resultados.length}</p>
+                <p><strong>Sucessos:</strong> ${sucessos.length}</p>
+                
+                ${sucessos.length > 0 ? `
+                    <h4>✅ Configurações que funcionam:</h4>
+                    <ul>
+                        ${sucessos.map(r => `
+                            <li>
+                                <strong>URL:</strong> ${r.url}<br>
+                                <strong>Método:</strong> ${r.method}<br>
+                                <strong>Headers:</strong> ${r.headers}<br>
+                                <strong>Agentes:</strong> ${r.agentes}
+                            </li>
+                        `).join('')}
+                    </ul>
+                ` : '<p class="error">❌ Nenhuma configuração funcionou</p>'}
+                
+                <h4>Detalhes completos:</h4>
+                <pre>${JSON.stringify(resultados, null, 2)}</pre>
+            `
+        }
+
+        function testarComDadosConhecidos() {
+            const resultDiv = document.getElementById('dados-conhecidos')
+            
+            // Dados conhecidos dos agentes
+            const agentesConhecidos = [
+                { id: 68, nome: 'Joana', usuario_id: 5, ativo: true },
+                { id: 65, nome: 'João', usuario_id: 6, ativo: true },
+                { id: 74, nome: 'Zeca', usuario_id: 5, ativo: true }
+            ]
+            
+            // Testar filtro para usuário padrão (ID: 6)
+            const userId = 6
+            const agentesFiltrados = agentesConhecidos.filter(agente => agente.usuario_id === userId)
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📊 Teste com Dados Conhecidos</h3>
+                <p><strong>Usuário:</strong> ID ${userId} (Usuário Elleve Padrão)</p>
+                <p><strong>Total de agentes:</strong> ${agentesConhecidos.length}</p>
+                <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                
+                <h4>Agentes disponíveis:</h4>
+                <ul>
+                    ${agentesConhecidos.map(agente => `
+                        <li>
+                            <strong>${agente.nome}</strong> (ID: ${agente.id})
+                            <br>usuario_id: ${agente.usuario_id}
+                            <br>Deve mostrar: ${agente.usuario_id === userId ? '✅ SIM' : '❌ NÃO'}
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                <h4>Agentes que o usuário padrão deve ver:</h4>
+                <ul>
+                    ${agentesFiltrados.map(agente => `
+                        <li>
+                            <strong>${agente.nome}</strong> (ID: ${agente.id})
+                            <br>usuario_id: ${agente.usuario_id}
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                <h4>Conclusão:</h4>
+                <p class="${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 'success' : 'error'}">
+                    ${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 
+                        '✅ CORRETO: Usuário padrão deve ver apenas João' : 
+                        '❌ INCORRETO: Resultado inesperado'}
+                </p>
+            `
+        }
+
+        function simularFiltroCorreto() {
+            const resultDiv = document.getElementById('filtro-correto')
+            
+            // Dados conhecidos
+            const agentes = [
+                { id: 68, nome: 'Joana', usuario_id: 5, ativo: true },
+                { id: 65, nome: 'João', usuario_id: 6, ativo: true },
+                { id: 74, nome: 'Zeca', usuario_id: 5, ativo: true }
+            ]
+            
+            // Simular diferentes usuários
+            const usuarios = [
+                { id: 5, nome: 'Administrator Code-IQ', perfil_id: 28 },
+                { id: 6, nome: 'Usuário Elleve Padrão', perfil_id: 32 },
+                { id: 37, nome: 'Supervisor Elleve Consórcios', perfil_id: 42 }
+            ]
+            
+            let resultado = '<h3 class="info">🔍 Simulação do Filtro Correto</h3>'
+            
+            usuarios.forEach(usuario => {
+                const agentesDoUsuario = agentes.filter(agente => agente.usuario_id === usuario.id)
+                
+                resultado += `
+                    <div style="margin: 15px 0; padding: 15px; background: #1e1e1e; border-radius: 5px; border-left: 4px solid #3b82f6;">
+                        <h4>${usuario.nome} (ID: ${usuario.id})</h4>
+                        <p><strong>Deve ver:</strong> Agentes com usuario_id = ${usuario.id}</p>
+                        <p><strong>Agentes encontrados:</strong> ${agentesDoUsuario.length}</p>
+                        <ul>
+                            ${agentesDoUsuario.map(agente => `
+                                <li><strong>${agente.nome}</strong> (ID: ${agente.id})</li>
+                            `).join('')}
+                        </ul>
+                        <p class="${agentesDoUsuario.length > 0 ? 'success' : 'warning'}">
+                            ${agentesDoUsuario.length > 0 ? '✅ Tem agentes para ver' : '⚠️ Não tem agentes próprios'}
+                        </p>
+                    </div>
+                `
+            })
+            
+            resultDiv.innerHTML = resultado
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarComDadosConhecidos()
+            simularFiltroCorreto()
+        }
+    </script>
+</body>
+</html>

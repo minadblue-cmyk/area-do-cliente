@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples - Atribuição</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Simples - Atribuição de Agente</h1>
+        
+        <div class="section">
+            <h2>Testar Atribuição</h2>
+            <button onclick="testarAtribuicao()">Atribuir Agente João (65) para Usuário 37</button>
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarAtribuicao() {
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = '<p class="info">🔄 Testando atribuição...</p>'
+            
+            try {
+                console.log('🚀 Iniciando teste de atribuição...')
+                
+                const url = 'https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario'
+                const payload = {
+                    agente_id: 65,
+                    usuario_id: 37,
+                    atribuido_por: 28
+                }
+                
+                console.log('📡 URL:', url)
+                console.log('📦 Payload:', payload)
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                })
+                
+                console.log('📡 Response status:', response.status)
+                console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+                
+                if (!response.ok) {
+                    const errorText = await response.text()
+                    console.log('❌ Error response:', errorText)
+                    throw new Error(`Erro HTTP: ${response.status} ${response.statusText} - ${errorText}`)
+                }
+                
+                const text = await response.text()
+                console.log('📄 Response text:', text)
+                
+                let data
+                try {
+                    data = JSON.parse(text)
+                } catch (jsonError) {
+                    data = text
+                }
+                
+                resultadoDiv.innerHTML = `
+                    <h3 class="success">✅ Atribuição Testada</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h4>Detalhes do Teste:</h4>
+                    <ul>
+                        <li><strong>URL:</strong> ${url}</li>
+                        <li><strong>Método:</strong> POST</li>
+                        <li><strong>Payload:</strong> ${JSON.stringify(payload)}</li>
+                        <li><strong>Status HTTP:</strong> ${response.status}</li>
+                    </ul>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error)
+                resultadoDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Teste</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Stack:</strong></p>
+                    <pre>${error.stack}</pre>
+                `
+            }
+        }
+    </script>
+</body>
+</html>

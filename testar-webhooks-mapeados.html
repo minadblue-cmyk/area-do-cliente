@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhooks Mapeados</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+        .webhook-ok { color: #4ade80; }
+        .webhook-error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Webhooks Mapeados</h1>
+        
+        <div class="section">
+            <h2>1. Testar Listagem de Agentes</h2>
+            <button onclick="testarListagem()">Testar Listagem</button>
+            <div id="listagem"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Webhooks dos Agentes</h2>
+            <button onclick="verificarWebhooks()">Verificar Webhooks</button>
+            <div id="webhooks"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Webhook de Lista</h2>
+            <button onclick="testarWebhookLista()">Testar Webhook Lista</button>
+            <div id="teste"></div>
+        </div>
+    </div>
+
+    <script>
+        let agentes = []
+
+        async function testarListagem() {
+            const resultDiv = document.getElementById('listagem')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando listagem de agentes...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('📡 Resposta do webhook:', data)
+                
+                // Extrair agentes com lógica corrigida
+                let agentesList = []
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentesList = data[0].data
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentesList = data.data
+                }
+                
+                console.log('📊 Agentes extraídos:', agentesList.length)
+                
+                // Mapear webhooks corretamente
+                agentes = agentesList.map(agente => ({
+                    ...agente,
+                    webhook_start_url: agente.webhook_start_url || `webhook/start-${agente.id}`,
+                    webhook_status_url: agente.webhook_status_url || `webhook/status-${agente.id}`,
+                    webhook_lista_url: agente.webhook_lista_url || `webhook/lista-${agente.id}`,
+                    webhook_stop_url: agente.webhook_stop_url || `webhook/stop-${agente.id}`
+                }))
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">📊 Agentes Encontrados</h3>
+                    <p><strong>Total:</strong> ${agentes.length}</p>
+                    
+                    ${agentes.map(agente => `
+                        <div class="agent-card">
+                            <h4>${agente.nome} (ID: ${agente.id})</h4>
+                            <p><strong>Status:</strong> ${agente.status_atual || 'stopped'}</p>
+                            <p><strong>Ativo:</strong> ${agente.ativo ? 'Sim' : 'Não'}</p>
+                            <p><strong>Usuário ID:</strong> ${agente.usuario_id}</p>
+                            
+                            <h5>Webhooks:</h5>
+                            <ul>
+                                <li><strong>Start:</strong> ${agente.webhook_start_url}</li>
+                                <li><strong>Status:</strong> ${agente.webhook_status_url}</li>
+                                <li><strong>Lista:</strong> ${agente.webhook_lista_url}</li>
+                                <li><strong>Stop:</strong> ${agente.webhook_stop_url}</li>
+                            </ul>
+                        </div>
+                    `).join('')}
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro na listagem:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarWebhooks() {
+            const resultDiv = document.getElementById('webhooks')
+            
+            if (agentes.length === 0) {
+                resultDiv.innerHTML = '<p class="warning">⚠️ Execute primeiro a listagem de agentes</p>'
+                return
+            }
+            
+            let resultado = '<h3 class="info">🔍 Verificação de Webhooks</h3>'
+            
+            agentes.forEach(agente => {
+                const webhooks = [
+                    { nome: 'Start', url: agente.webhook_start_url },
+                    { nome: 'Status', url: agente.webhook_status_url },
+                    { nome: 'Lista', url: agente.webhook_lista_url },
+                    { nome: 'Stop', url: agente.webhook_stop_url }
+                ]
+                
+                resultado += `
+                    <div class="agent-card">
+                        <h4>${agente.nome} (ID: ${agente.id})</h4>
+                        ${webhooks.map(webhook => `
+                            <p>
+                                <strong>${webhook.nome}:</strong> 
+                                <span class="${webhook.url.includes('undefined') ? 'webhook-error' : 'webhook-ok'}">
+                                    ${webhook.url}
+                                </span>
+                                ${webhook.url.includes('undefined') ? '❌ ERRO' : '✅ OK'}
+                            </p>
+                        `).join('')}
+                    </div>
+                `
+            })
+            
+            resultDiv.innerHTML = resultado
+        }
+
+        async function testarWebhookLista() {
+            const resultDiv = document.getElementById('teste')
+            
+            if (agentes.length === 0) {
+                resultDiv.innerHTML = '<p class="warning">⚠️ Execute primeiro a listagem de agentes</p>'
+                return
+            }
+            
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook de lista...</p>'
+            
+            try {
+                // Testar com o primeiro agente
+                const agente = agentes[0]
+                const webhookUrl = agente.webhook_lista_url
+                
+                console.log(`🔍 Testando webhook: ${webhookUrl}`)
+                
+                const response = await fetch(`https://n8n.code-iq.com.br/${webhookUrl}?usuario_id=5`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('📡 Resposta do webhook lista:', data)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔍 Teste do Webhook Lista</h3>
+                    <p><strong>Agente:</strong> ${agente.nome} (ID: ${agente.id})</p>
+                    <p><strong>Webhook:</strong> ${webhookUrl}</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <p class="${response.status === 200 ? 'success' : 'error'}">
+                        ${response.status === 200 ? '✅ Webhook funcionando' : '❌ Webhook com erro'}
+                    </p>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error)
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Teste</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p class="error">Verifique se o webhook está configurado corretamente no n8n</p>
+                `
+            }
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarListagem()
+        }
+    </script>
+</body>
+</html>

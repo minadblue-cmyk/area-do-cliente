@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Supervisor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção Supervisor</h1>
+        
+        <div class="section">
+            <h2>1. Fazer Login como Supervisor</h2>
+            <button onclick="fazerLogin()">Fazer Login</button>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Upload Page</h2>
+            <button onclick="testarUpload()">Abrir Upload Page</button>
+            <div id="upload-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Instruções</h2>
+            <p><strong>Usuário:</strong> Supervisor Elleve Consórcios</p>
+            <p><strong>Email:</strong> minadblue@gmail.com</p>
+            <p><strong>Senha:</strong> 123456</p>
+            <p><strong>Perfil ID:</strong> 42 (deve ser detectado como supervisor)</p>
+            <p><strong>Resultado esperado:</strong> Agentes João e Joana devem aparecer</p>
+        </div>
+    </div>
+
+    <script>
+        async function fazerLogin() {
+            const resultDiv = document.getElementById('login-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Fazendo login...</p>'
+            
+            try {
+                const response = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'minadblue@gmail.com',
+                        senha: '123456'
+                    })
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`)
+                }
+                
+                const data = await response.json()
+                
+                if (data.success) {
+                    const userData = data.data
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Login Bem-sucedido</h3>
+                        <p><strong>Usuário:</strong> ${userData.nome}</p>
+                        <p><strong>ID:</strong> ${userData.id}</p>
+                        <p><strong>Perfil:</strong> ${userData.perfil}</p>
+                        <p><strong>Perfil ID:</strong> ${userData.perfil_id}</p>
+                        
+                        <div class="${userData.perfil_id === 42 ? 'success' : 'error'}">
+                            <strong>Status Supervisor:</strong> ${userData.perfil_id === 42 ? '✅ DETECTADO' : '❌ NÃO DETECTADO'}
+                        </div>
+                        
+                        <h4>Dados Completos:</h4>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    `
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Falha no login</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro no login:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function testarUpload() {
+            const resultDiv = document.getElementById('upload-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Abrindo página de upload...</p>'
+            
+            // Abrir a página de upload em nova aba
+            window.open('http://localhost:5174/upload', '_blank')
+            
+            resultDiv.innerHTML = `
+                <h3 class="success">✅ Página de Upload Aberta</h3>
+                <p><strong>Instruções:</strong></p>
+                <ol>
+                    <li>Faça login com: <strong>minadblue@gmail.com</strong> / <strong>123456</strong></li>
+                    <li>Verifique se os agentes aparecem na seção "Agente de Prospecção"</li>
+                    <li>Abra o console (F12) e verifique os logs de debug</li>
+                    <li>Procure por mensagens como:</li>
+                    <ul>
+                        <li>"🔍 João: Supervisor (perfil_id 42) - mostrando todos os agentes"</li>
+                        <li>"🔍 Joana: Supervisor (perfil_id 42) - mostrando todos os agentes"</li>
+                        <li>"Agentes filtrados: 2 de 2"</li>
+                    </ul>
+                </ol>
+                
+                <p><strong>Resultado esperado:</strong> Os agentes João e Joana devem aparecer na página de upload.</p>
+            `
+        }
+
+        // Auto-executar login
+        window.onload = function() {
+            fazerLogin()
+        }
+    </script>
+</body>
+</html>

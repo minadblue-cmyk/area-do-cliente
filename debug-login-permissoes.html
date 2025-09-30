@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login e Permissões</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .danger-btn { background-color: #dc3545; }
+        .danger-btn:hover { background-color: #c82333; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .permission-item {
+            background-color: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+        }
+        .permission-granted {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .permission-denied {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Login e Permissões - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Testar o login e verificar se as permissões estão sendo carregadas corretamente.
+        </div>
+
+        <h2>🔐 Teste de Login</h2>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@code-iq.com.br" placeholder="Digite seu email">
+        </div>
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin123" placeholder="Digite sua senha">
+        </div>
+        <button onclick="testarLogin()">🔐 Testar Login</button>
+        <button onclick="testarWebhookLogin()">🔗 Testar Webhook Login</button>
+        <button onclick="testarWebhookPermissoes()">🔑 Testar Webhook Permissões</button>
+        <button onclick="testarWebhookPerfis()">👥 Testar Webhook Perfis</button>
+        <button onclick="limparDados()" class="danger-btn">🧹 Limpar Dados</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://n8n.code-iq.com.br/webhook';
+        const N8N_BASE = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook';
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        async function testarLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                addResult('<div class="status danger"><strong>❌ ERRO:</strong> Email e senha são obrigatórios!</div>');
+                return;
+            }
+
+            log('🔐 Iniciando teste de login...');
+            addResult('<div class="status info"><strong>🔄 Testando login...</strong></div>');
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook login: ${JSON.stringify(data, null, 2)}`);
+
+                if (data.token) {
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Login realizado com sucesso!</strong><br>
+                            <strong>Nome:</strong> ${data.nome || 'N/A'}<br>
+                            <strong>Email:</strong> ${data.email || 'N/A'}<br>
+                            <strong>Perfil:</strong> ${data.perfil || 'N/A'}<br>
+                            <strong>Perfil ID:</strong> ${data.perfil_id || 'N/A'}<br>
+                            <strong>Token:</strong> ${data.token ? 'Presente' : 'Ausente'}
+                        </div>
+                    `);
+                    
+                    // Armazenar dados para testes posteriores
+                    localStorage.setItem('debug_user_data', JSON.stringify(data));
+                    
+                    // Testar permissões automaticamente
+                    setTimeout(() => testarWebhookPermissoes(), 1000);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO NO LOGIN:</strong> ${data.message || 'Token não encontrado'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookLogin() {
+            log('🔗 Testando webhook de login...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'admin@code-iq.com.br', 
+                        password: 'admin123' 
+                    })
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook N8N login: ${JSON.stringify(data, null, 2)}`);
+
+                addResult(`
+                    <div class="status info">
+                        <strong>🔗 Webhook N8N Login:</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `);
+            } catch (error) {
+                log(`❌ Erro no webhook N8N: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO N8N:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPermissoes() {
+            log('🔑 Testando webhook de permissões...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-permission`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook permissões: ${JSON.stringify(data, null, 2)}`);
+
+                const permissions = data.data || data || [];
+                
+                let html = '<div class="status info"><strong>🔑 Permissões Disponíveis:</strong><br>';
+                permissions.forEach(permission => {
+                    html += `<div class="permission-item">ID: ${permission.id} - ${permission.nome}</div>`;
+                });
+                html += '</div>';
+
+                addResult(html);
+            } catch (error) {
+                log(`❌ Erro no webhook permissões: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO PERMISSÕES:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPerfis() {
+            log('👥 Testando webhook de perfis...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook perfis: ${JSON.stringify(data, null, 2)}`);
+
+                const profiles = data || [];
+                
+                let html = '<div class="status info"><strong>👥 Perfis Disponíveis:</strong><br>';
+                profiles.forEach(profile => {
+                    html += `<div class="permission-item">
+                        <strong>ID:</strong> ${profile.id}<br>
+                        <strong>Nome:</strong> ${profile.nome_perfil}<br>
+                        <strong>Descrição:</strong> ${profile.descricao || 'N/A'}<br>
+                        <strong>Permissões:</strong> ${profile.permissoes ? profile.permissoes.length : 0} permissões
+                    </div>`;
+                });
+                html += '</div>';
+
+                addResult(html);
+            } catch (error) {
+                log(`❌ Erro no webhook perfis: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO PERFIS:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function limparDados() {
+            localStorage.removeItem('debug_user_data');
+            addResult('<div class="status info"><strong>🧹 Dados limpos!</strong></div>');
+            log('🧹 Dados de debug limpos');
+        }
+
+        // Verificar se há dados salvos
+        window.onload = function() {
+            const savedData = localStorage.getItem('debug_user_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                addResult(`
+                    <div class="status info">
+                        <strong>💾 Dados salvos encontrados:</strong><br>
+                        <strong>Nome:</strong> ${data.nome || 'N/A'}<br>
+                        <strong>Perfil:</strong> ${data.perfil || 'N/A'}<br>
+                        <strong>Perfil ID:</strong> ${data.perfil_id || 'N/A'}
+                    </div>
+                `);
+            }
+        };
+    </script>
+</body>
+</html>

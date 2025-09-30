@@ -1,0 +1,156 @@
+{
+  "name": "Status Agente 1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "status-agente1",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-status-agente1",
+      "name": "Webhook Status Agente 1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workflow-id",
+              "name": "workflowId",
+              "value": "={{ $json.query.workflow_id || 'eBcColwirndBaFZX' }}",
+              "type": "string"
+            },
+            {
+              "id": "execution-id",
+              "name": "executionId",
+              "value": "={{ $json.query.execution_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "usuario-id",
+              "name": "usuarioId",
+              "value": "={{ $json.query.usuario_id || '5' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT status, iniciado_em, parado_em, execution_id, workflow_id, usuario_nome, usuario_email, finalizado_em, erro_em, mensagem_erro, duracao_segundos FROM agente_execution WHERE workflow_id = $1 AND usuario_id = $2 ORDER BY created_at DESC LIMIT 1",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "workflow_id",
+                "value": "={{ $json.workflowId }}"
+              },
+              {
+                "name": "usuario_id",
+                "value": "={{ $json.usuarioId }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "postgres-get-status",
+      "name": "PostgreSQL - Get Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determinar status do agente baseado no PostgreSQL\nconst dbStatus = $input.first().json;\n\nconsole.log('🔍 DB Status:', dbStatus);\n\nlet status = 'stopped';\nlet message = 'Agente parado';\nlet executionId = null;\nlet iniciadoEm = null;\nlet paradoEm = null;\nlet finalizadoEm = null;\nlet erroEm = null;\nlet mensagemErro = null;\nlet duracaoSegundos = null;\nlet usuarioNome = null;\nlet usuarioEmail = null;\n\n// Verificar status no banco de dados\nif (dbStatus && dbStatus.status) {\n  status = dbStatus.status;\n  message = status === 'running' ? 'Agente rodando' : 'Agente parado';\n  executionId = dbStatus.execution_id;\n  iniciadoEm = dbStatus.iniciado_em;\n  paradoEm = dbStatus.parado_em;\n  finalizadoEm = dbStatus.finalizado_em;\n  erroEm = dbStatus.erro_em;\n  mensagemErro = dbStatus.mensagem_erro;\n  duracaoSegundos = dbStatus.duracao_segundos;\n  usuarioNome = dbStatus.usuario_nome;\n  usuarioEmail = dbStatus.usuario_email;\n  console.log('✅ Status do DB:', status);\n} else {\n  console.log('⚠️ Nenhum status encontrado no DB, usando padrão: stopped');\n}\n\nreturn {\n  json: {\n    status: status,\n    message: message,\n    executionId: executionId,\n    workflowId: $('Normalizar Dados').item.json.workflowId,\n    iniciadoEm: iniciadoEm,\n    paradoEm: paradoEm,\n    finalizadoEm: finalizadoEm,\n    erroEm: erroEm,\n    mensagemErro: mensagemErro,\n    duracaoSegundos: duracaoSegundos,\n    usuarioNome: usuarioNome,\n    usuarioEmail: usuarioEmail,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "determine-status",
+      "name": "Determinar Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-status",
+      "name": "Responder Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Status Agente 1": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Get Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Get Status": {
+      "main": [
+        [
+          {
+            "node": "Determinar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determinar Status": {
+      "main": [
+        [
+          {
+            "node": "Responder Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1"
+}

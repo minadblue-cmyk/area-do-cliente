@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Atribuições - Usuário 37</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Testar Atribuições - Usuário 37</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Atribuições Atuais</h2>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições</button>
+            <div id="atribuicoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Atribuir Agente para Usuário 37</h2>
+            <button onclick="atribuirAgente()">Atribuir Agente João (65) para Usuário 37</button>
+            <div id="atribuir-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Agentes do Usuário 37</h2>
+            <button onclick="verificarAgentes()">Verificar Agentes</button>
+            <div id="agentes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Testar Login e Permissões</h2>
+            <button onclick="testarLogin()">Testar Login Usuário 37</button>
+            <div id="login-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+        const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+
+            const response = await fetch(url, config)
+            
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`)
+            }
+
+            const text = await response.text()
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            const resultDiv = document.getElementById('atribuicoes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando atribuições...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agente-atribuicoes', {
+                    method: 'GET'
+                })
+                
+                console.log('📋 Resposta das atribuições:', response)
+                
+                let atribuicoes = []
+                if (Array.isArray(response.data)) {
+                    atribuicoes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    atribuicoes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const atribuicoesUsuario37 = atribuicoes.filter(attr => attr.usuario_id == 37)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Atribuições Encontradas</h3>
+                    <p><strong>Total de atribuições:</strong> ${atribuicoes.length}</p>
+                    <p><strong>Atribuições para usuário 37:</strong> ${atribuicoesUsuario37.length}</p>
+                    
+                    <h4>Atribuições para Usuário 37:</h4>
+                    <pre>${JSON.stringify(atribuicoesUsuario37, null, 2)}</pre>
+                    
+                    <h4>Todas as Atribuições:</h4>
+                    <pre>${JSON.stringify(atribuicoes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar atribuições:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function atribuirAgente() {
+            const resultDiv = document.getElementById('atribuir-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Atribuindo agente...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 65, // João
+                        usuario_id: 37, // Supervisor Elleve Consórcios
+                        atribuido_por: 28 // Admin
+                    }
+                })
+                
+                console.log('🔗 Resposta da atribuição:', response)
+                
+                if (response.data && response.data.success) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Agente João (65) atribuído com sucesso para usuário 37!</p>
+                        <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                    `
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="warning">⚠️ Resposta inesperada:</p>
+                        <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                    `
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao atribuir agente:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarAgentes() {
+            const resultDiv = document.getElementById('agentes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando agentes...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agentes', {
+                    method: 'GET'
+                })
+                
+                console.log('🤖 Resposta dos agentes:', response)
+                
+                let agentes = []
+                if (Array.isArray(response.data)) {
+                    agentes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    agentes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const agentesUsuario37 = agentes.filter(agente => agente.usuario_id == 37)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agentes Encontrados</h3>
+                    <p><strong>Total de agentes:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes do usuário 37:</strong> ${agentesUsuario37.length}</p>
+                    
+                    <h4>Agentes do Usuário 37:</h4>
+                    <pre>${JSON.stringify(agentesUsuario37, null, 2)}</pre>
+                    
+                    <h4>Todos os Agentes:</h4>
+                    <pre>${JSON.stringify(agentes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar agentes:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarLogin() {
+            const resultDiv = document.getElementById('login-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando login...</p>'
+            
+            try {
+                const response = await callWebhook('webhook-login', {
+                    method: 'POST',
+                    data: {
+                        email: 'minadblue@gmail.com',
+                        senha: '123456'
+                    }
+                })
+                
+                console.log('🔐 Resposta do login:', response)
+                
+                if (response.data && response.data.success) {
+                    const userData = response.data.data
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ Login Bem-sucedido</h3>
+                        <p><strong>Usuário:</strong> ${userData.nome}</p>
+                        <p><strong>ID:</strong> ${userData.id}</p>
+                        <p><strong>Perfil:</strong> ${userData.perfil}</p>
+                        <p><strong>Perfil ID:</strong> ${userData.perfil_id}</p>
+                        
+                        <h4>Dados Completos:</h4>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    `
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Falha no login</p>
+                        <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                    `
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro no login:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar verificação inicial
+        window.onload = function() {
+            verificarAtribuicoes()
+        }
+    </script>
+</body>
+</html>

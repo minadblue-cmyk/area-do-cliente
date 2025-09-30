@@ -1,0 +1,49 @@
+{
+  "logged_user": {
+    "id": 6,
+    "name": "Usuário Elleve Padrão",
+    "email": "rmacedo2005@hotmail.com",
+    "empresa_id": 1
+  },
+  "data": {
+    "agente_id": 81
+  },
+  "file_info": {
+    "webhookUrl": "https://n8n.code-iq.com.br/webhook/upload",
+    "executionMode": "production"
+  },
+  "leads": [
+    {
+      "nome": "Roger Macedo da Silva",
+      "telefone": "5551984033242",
+      "email": "roger@exemplo.com",
+      "profissao": "Analista de Suporte",
+      "idade": 40,
+      "estado_civil": "Casado",
+      "filhos": true,
+      "qtd_filhos": 2,
+      "fonte_prospec": "Márcio André",
+      "data_processamento": "2025-09-26T09:02:24.422-03:00",
+      "client_id": 6,
+      "login": "Usuário Elleve Padrão",
+      "email_login": "rmacedo2005@hotmail.com",
+      "agente_id": 81
+    },
+    {
+      "nome": "Maria Silva Santos",
+      "telefone": "11987654321",
+      "email": "maria@exemplo.com",
+      "profissao": "Desenvolvedora",
+      "idade": 28,
+      "estado_civil": "Solteira",
+      "filhos": false,
+      "qtd_filhos": 0,
+      "fonte_prospec": "Indicação",
+      "data_processamento": "2025-09-26T09:05:15.123-03:00",
+      "client_id": 6,
+      "login": "Usuário Elleve Padrão",
+      "email_login": "rmacedo2005@hotmail.com",
+      "agente_id": 81
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste da Extensão</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #333;
+        }
+        .running { background: #10b981; }
+        .stopped { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Teste da Extensão Agente SDR Monitor</h1>
+        <p>Esta página simula o status do agente para testar a extensão.</p>
+        
+        <div class="status" id="status">
+            Status: <span id="statusText">stopped</span>
+        </div>
+        
+        <button onclick="setStatus('running')">▶️ Simular Agente Rodando</button>
+        <button onclick="setStatus('stopped')">⏹️ Simular Agente Parado</button>
+        <button onclick="checkLocalStorage()">🔍 Verificar localStorage</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Instruções de Teste</h2>
+        <ol>
+            <li>Abra a extensão no Chrome</li>
+            <li>Clique em "Verificar Frontend"</li>
+            <li>Clique em "Iniciar Monitoramento"</li>
+            <li>Use os botões acima para simular mudanças de status</li>
+            <li>Verifique se a extensão detecta as mudanças</li>
+        </ol>
+    </div>
+
+    <script>
+        // Simular dados do agente no localStorage
+        function setStatus(status) {
+            const agentData = {
+                'eBcColwirndBaFZX': {
+                    id: 'eBcColwirndBaFZX',
+                    name: 'Elleven Agente 1 (Maria)',
+                    type: 'eBcColwirndBaFZX',
+                    status: status,
+                    executionId: '47957',
+                    isRunning: status === 'running',
+                    isLoading: false,
+                    agentRunning: false
+                }
+            };
+            
+            localStorage.setItem('agentStatus', JSON.stringify(agentData));
+            
+            // Atualizar interface
+            document.getElementById('statusText').textContent = status;
+            document.getElementById('status').className = `status ${status}`;
+            
+            console.log(`✅ Status alterado para: ${status}`);
+            console.log('📄 localStorage atualizado:', agentData);
+        }
+        
+        function checkLocalStorage() {
+            const data = localStorage.getItem('agentStatus');
+            console.log('📄 Conteúdo do localStorage:', data);
+            alert('Verifique o console para ver o localStorage');
+        }
+        
+        // Inicializar com status parado
+        setStatus('stopped');
+    </script>
+</body>
+</html>

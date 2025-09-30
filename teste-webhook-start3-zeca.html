@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhook start3-zeca</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f1f8e9; }
+        .error { border-color: #f44336; background-color: #ffebee; }
+        .info { border-color: #2196F3; background-color: #e3f2fd; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #45a049; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .loading { color: #2196F3; }
+        .success-text { color: #4CAF50; }
+        .error-text { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Webhook start3-zeca</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Informações</h3>
+            <p><strong>URL:</strong> https://n8n.code-iq.com.br/webhook/start3-zeca</p>
+            <p><strong>Método:</strong> POST</p>
+            <p><strong>Agente:</strong> Zeca (ID: 59)</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Teste 1: Chamada Básica</h3>
+            <button onclick="testBasicCall()">Testar Chamada Básica</button>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Teste 2: Chamada com Payload Completo</h3>
+            <button onclick="testFullPayload()">Testar Payload Completo</button>
+            <div id="result2" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Teste 3: Verificar CORS</h3>
+            <button onclick="testCORS()">Testar CORS</button>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Teste 4: Comparar com webhook genérico</h3>
+            <button onclick="compareWithGeneric()">Comparar com Genérico</button>
+            <div id="result4" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const webhookUrl = 'https://n8n.code-iq.com.br/webhook/start3-zeca';
+        const genericWebhookUrl = 'https://n8n.code-iq.com.br/webhook/start-agente1';
+
+        async function testBasicCall() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.innerHTML = '<span class="loading">⏳ Testando...</span>';
+            
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'start',
+                        test: true,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.innerHTML = `<span class="success-text">✅ Sucesso!</span>\n${JSON.stringify(result, null, 2)}`;
+                resultDiv.parentElement.className = 'test-section success';
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error-text">❌ Erro:</span>\n${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testFullPayload() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.innerHTML = '<span class="loading">⏳ Testando...</span>';
+            
+            try {
+                const payload = {
+                    action: 'start',
+                    agent_type: '59',
+                    workflow_id: '59',
+                    timestamp: new Date().toISOString(),
+                    usuario_id: '5',
+                    logged_user: {
+                        id: '5',
+                        name: 'Teste',
+                        email: 'teste@exemplo.com'
+                    }
+                };
+
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                resultDiv.innerHTML = `<span class="success-text">✅ Sucesso!</span>\nPayload enviado:\n${JSON.stringify(payload, null, 2)}\n\nResposta:\n${JSON.stringify(result, null, 2)}`;
+                resultDiv.parentElement.className = 'test-section success';
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error-text">❌ Erro:</span>\n${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.innerHTML = '<span class="loading">⏳ Testando CORS...</span>';
+            
+            try {
+                // Teste de preflight
+                const response = await fetch(webhookUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+
+                resultDiv.innerHTML = `<span class="success-text">✅ CORS OK!</span>\nHeaders CORS:\n${JSON.stringify(corsHeaders, null, 2)}`;
+                resultDiv.parentElement.className = 'test-section success';
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error-text">❌ Erro CORS:</span>\n${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function compareWithGeneric() {
+            const resultDiv = document.getElementById('result4');
+            resultDiv.innerHTML = '<span class="loading">⏳ Comparando...</span>';
+            
+            try {
+                const payload = {
+                    action: 'start',
+                    test: true,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Teste webhook específico
+                const specificResponse = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const specificResult = await specificResponse.json();
+
+                // Teste webhook genérico
+                const genericResponse = await fetch(genericWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const genericResult = await genericResponse.json();
+
+                resultDiv.innerHTML = `<span class="success-text">✅ Comparação concluída!</span>\n\nWebhook Específico (start3-zeca):\n${JSON.stringify(specificResult, null, 2)}\n\nWebhook Genérico (start-agente1):\n${JSON.stringify(genericResult, null, 2)}`;
+                resultDiv.parentElement.className = 'test-section success';
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error-text">❌ Erro na comparação:</span>\n${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        // Auto-executar teste básico ao carregar
+        window.onload = function() {
+            console.log('🧪 Página de teste carregada');
+            console.log('📋 Webhook URL:', webhookUrl);
+        };
+    </script>
+</body>
+</html>

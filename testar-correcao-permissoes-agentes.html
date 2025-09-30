@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Correção Permissões Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Correção Permissões de Agentes</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Problema Identificado</h3>
+            <p><strong>Problema:</strong> `canViewOwn` estava usando `visualizar_status_do_agente = false`</p>
+            <p><strong>Solução:</strong> Mudar para usar `iniciar_agente = true`</p>
+            <p><strong>Resultado esperado:</strong> Agentes devem aparecer para usuário com `iniciar_agente = true`</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Permissões ANTES da Correção</h3>
+            <button onclick="testarAntes()">Testar ANTES</button>
+            <div id="resultadoAntes"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Permissões DEPOIS da Correção</h3>
+            <button onclick="testarDepois()">Testar DEPOIS</button>
+            <div id="resultadoDepois"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simular permissões do usuário
+        const userPermissions = {
+            'visualizar_status_do_agente': false,
+            'iniciar_agente_de_prospeco': true,
+            'parar_agente': true
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function testarAntes() {
+            log('🔍 Testando permissões ANTES da correção...')
+            
+            // Lógica ANTES da correção
+            const canViewAgent = () => userPermissions['visualizar_status_do_agente']
+            const canStartAgent = () => userPermissions['iniciar_agente_de_prospeco']
+            const canStopAgent = () => userPermissions['parar_agente']
+            const isAdmin = () => false
+            
+            const canViewAgentStatus = canViewAgent()
+            const canExecuteAgent = canStartAgent() || canStopAgent()
+            const canManageAgents = isAdmin() || userPermissions['administrar_agente_de_outros_usuários']
+            
+            const agentPermissions = {
+                canView: canViewAgentStatus,
+                canExecute: canExecuteAgent,
+                canManage: canManageAgents,
+                canViewAll: canManageAgents,
+                canViewOwn: canViewAgentStatus, // ANTES: usando canViewAgentStatus
+                canAccess: canViewAgentStatus || canExecuteAgent
+            }
+            
+            log(`📊 Permissões ANTES:`)
+            log(`  canViewAgentStatus: ${canViewAgentStatus}`)
+            log(`  canExecuteAgent: ${canExecuteAgent}`)
+            log(`  canViewOwn: ${agentPermissions.canViewOwn}`)
+            log(`  canAccess: ${agentPermissions.canAccess}`)
+            
+            const resultadoDiv = document.getElementById('resultadoAntes')
+            resultadoDiv.innerHTML = `
+                <h4>📊 ANTES da Correção:</h4>
+                <ul>
+                    <li>canViewAgentStatus: ${canViewAgentStatus} (visualizar_status_do_agente)</li>
+                    <li>canExecuteAgent: ${canExecuteAgent} (iniciar_agente + parar_agente)</li>
+                    <li>canViewOwn: ${agentPermissions.canViewOwn} ❌ (usando canViewAgentStatus)</li>
+                    <li>canAccess: ${agentPermissions.canAccess}</li>
+                </ul>
+                <p><strong>Resultado:</strong> ${agentPermissions.canViewOwn ? '✅ Agentes apareceriam' : '❌ Nenhum agente apareceria'}</p>
+            `
+            
+            if (!agentPermissions.canViewOwn) {
+                resultadoDiv.className = 'test-section error'
+            }
+        }
+
+        function testarDepois() {
+            log('🔍 Testando permissões DEPOIS da correção...')
+            
+            // Lógica DEPOIS da correção
+            const canViewAgent = () => userPermissions['visualizar_status_do_agente']
+            const canStartAgent = () => userPermissions['iniciar_agente_de_prospeco']
+            const canStopAgent = () => userPermissions['parar_agente']
+            const isAdmin = () => false
+            
+            const canViewAgentStatus = canViewAgent()
+            const canExecuteAgent = canStartAgent() || canStopAgent()
+            const canManageAgents = isAdmin() || userPermissions['administrar_agente_de_outros_usuários']
+            
+            const agentPermissions = {
+                canView: canViewAgentStatus,
+                canExecute: canExecuteAgent,
+                canManage: canManageAgents,
+                canViewAll: canManageAgents,
+                canViewOwn: canExecuteAgent, // DEPOIS: usando canExecuteAgent
+                canAccess: canViewAgentStatus || canExecuteAgent
+            }
+            
+            log(`📊 Permissões DEPOIS:`)
+            log(`  canViewAgentStatus: ${canViewAgentStatus}`)
+            log(`  canExecuteAgent: ${canExecuteAgent}`)
+            log(`  canViewOwn: ${agentPermissions.canViewOwn}`)
+            log(`  canAccess: ${agentPermissions.canAccess}`)
+            
+            const resultadoDiv = document.getElementById('resultadoDepois')
+            resultadoDiv.innerHTML = `
+                <h4>📊 DEPOIS da Correção:</h4>
+                <ul>
+                    <li>canViewAgentStatus: ${canViewAgentStatus} (visualizar_status_do_agente)</li>
+                    <li>canExecuteAgent: ${canExecuteAgent} (iniciar_agente + parar_agente)</li>
+                    <li>canViewOwn: ${agentPermissions.canViewOwn} ✅ (usando canExecuteAgent)</li>
+                    <li>canAccess: ${agentPermissions.canAccess}</li>
+                </ul>
+                <p><strong>Resultado:</strong> ${agentPermissions.canViewOwn ? '✅ Agentes apareceriam' : '❌ Nenhum agente apareceria'}</p>
+            `
+            
+            if (agentPermissions.canViewOwn) {
+                resultadoDiv.className = 'test-section success'
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique nos botões para testar as correções.')
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+{
+  "name": "Agente Stop - Dedicado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stop-agente1",
+        "options": {
+          "cors": {
+            "enabled": true,
+            "allowedOrigins": ["*"],
+            "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+          }
+        }
+      },
+      "id": "webhook-stop",
+      "name": "Webhook Stop",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "stop-agente1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-start",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "stop",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "switch-action",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "={{ $json.body.action }}"
+            },
+            {
+              "name": "agent_type",
+              "value": "={{ $json.body.agent_type }}"
+            },
+            {
+              "name": "workflow_id",
+              "value": "={{ $json.body.workflow_id }}"
+            },
+            {
+              "name": "execution_id",
+              "value": "={{ $json.body.execution_id }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $json.body.timestamp }}"
+            },
+            {
+              "name": "usuario_id",
+              "value": "={{ $json.body.usuario_id }}"
+            },
+            {
+              "name": "logged_user",
+              "value": "={{ $json.body.logged_user }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "values": {
+          "string": [
+            {
+              "name": "redis_key",
+              "value": "=agente_status:{{ $json.workflow_id }}:{{ $json.execution_id }}"
+            },
+            {
+              "name": "stop_value",
+              "value": "stopped"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-redis",
+      "name": "Preparar Redis",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "values": {
+          "string": [
+            {
+              "name": "key",
+              "value": "={{ $json.redis_key }}"
+            },
+            {
+              "name": "value",
+              "value": "={{ $json.stop_value }}"
+            },
+            {
+              "name": "expire",
+              "value": "3600"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "redis-set-stop",
+      "name": "Redis Set Stop",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.key }}",
+        "value": "={{ $json.value }}",
+        "options": {
+          "expire": "={{ $json.expire }}"
+        }
+      },
+      "id": "redis-execute",
+      "name": "Redis Execute",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "redis": {
+          "id": "redis-credentials",
+          "name": "Redis Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agente_execucoes SET status = 'stopped', parado_em = NOW() WHERE execution_id = '{{ $json.execution_id }}' AND workflow_id = '{{ $json.workflow_id }}'",
+        "options": {}
+      },
+      "id": "postgres-update",
+      "name": "PostgreSQL Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Agente parado com sucesso\", \"execution_id\": $json.execution_id, \"timestamp\": $now } }}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"Ação não reconhecida\", \"received_action\": $json.body.action } }}",
+        "options": {}
+      },
+      "id": "respond-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Stop": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Preparar Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Redis": {
+      "main": [
+        [
+          {
+            "node": "Redis Set Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Set Stop": {
+      "main": [
+        [
+          {
+            "node": "Redis Execute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Execute": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Update": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-09-19T13:30:00.000Z",
+  "versionId": "1"
+}

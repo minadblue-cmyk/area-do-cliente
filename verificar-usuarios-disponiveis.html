@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Usuários Disponíveis</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .user-item { background: #333; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Verificar Usuários Disponíveis</h1>
+        
+        <div class="section">
+            <h2>1. Listar Todos os Usuários</h2>
+            <button onclick="listarUsuarios()">Listar Usuários</button>
+            <div id="usuarios-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Atribuição com Usuário Válido</h2>
+            <button onclick="testarAtribuicao()">Testar Atribuição</button>
+            <div id="atribuicao-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+        const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+
+        let usuariosDisponiveis = []
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('webhook-')) {
+                url = `${N8N_LAVO_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+
+            const response = await fetch(url, config)
+            
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText} - ${errorText}`)
+            }
+
+            const text = await response.text()
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function listarUsuarios() {
+            const resultDiv = document.getElementById('usuarios-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Listando usuários...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-users', {
+                    method: 'GET'
+                })
+                
+                let usuarios = []
+                if (Array.isArray(response.data)) {
+                    usuarios = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    usuarios = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                usuariosDisponiveis = usuarios
+                
+                // Encontrar usuários que podem ser usados como atribuido_por (admin ou supervisor)
+                const usuariosAdmin = usuarios.filter(u => 
+                    u.perfil_id === 28 || // Admin
+                    u.perfil_id === 42 || // Supervisor Elleve Consórcios
+                    u.nome.toLowerCase().includes('admin') ||
+                    u.nome.toLowerCase().includes('supervisor')
+                )
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Usuários Encontrados</h3>
+                    <p><strong>Total de usuários:</strong> ${usuarios.length}</p>
+                    <p><strong>Usuários admin/supervisor:</strong> ${usuariosAdmin.length}</p>
+                    
+                    <h4>Usuários Admin/Supervisor (para atribuido_por):</h4>
+                    ${usuariosAdmin.map(usuario => `
+                        <div class="user-item">
+                            <strong>ID: ${usuario.id}</strong> - ${usuario.nome} (${usuario.email})
+                            <br><small>Perfil ID: ${usuario.perfil_id}</small>
+                        </div>
+                    `).join('')}
+                    
+                    <h4>Todos os Usuários:</h4>
+                    ${usuarios.map(usuario => `
+                        <div class="user-item">
+                            <strong>ID: ${usuario.id}</strong> - ${usuario.nome} (${usuario.email})
+                            <br><small>Perfil ID: ${usuario.perfil_id}</small>
+                        </div>
+                    `).join('')}
+                    
+                    <h4>Dados Completos:</h4>
+                    <pre>${JSON.stringify(usuarios, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao listar usuários:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarAtribuicao() {
+            const resultDiv = document.getElementById('atribuicao-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando atribuição...</p>'
+            
+            if (usuariosDisponiveis.length === 0) {
+                resultDiv.innerHTML = '<p class="error">❌ Liste os usuários primeiro</p>'
+                return
+            }
+            
+            // Encontrar um usuário admin válido
+            const usuarioAdmin = usuariosDisponiveis.find(u => 
+                u.perfil_id === 28 || // Admin
+                u.perfil_id === 42 || // Supervisor Elleve Consórcios
+                u.nome.toLowerCase().includes('admin') ||
+                u.nome.toLowerCase().includes('supervisor')
+            )
+            
+            if (!usuarioAdmin) {
+                resultDiv.innerHTML = '<p class="error">❌ Nenhum usuário admin encontrado</p>'
+                return
+            }
+            
+            try {
+                console.log(`🔗 Testando atribuição com usuário admin: ${usuarioAdmin.nome} (ID: ${usuarioAdmin.id})`)
+                
+                const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    data: {
+                        agente_id: 65, // João
+                        usuario_id: 37, // Supervisor Elleve Consórcios
+                        atribuido_por: usuarioAdmin.id // Usuário admin válido
+                    }
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Atribuição Testada</h3>
+                    <p><strong>Usuário admin usado:</strong> ${usuarioAdmin.nome} (ID: ${usuarioAdmin.id})</p>
+                    <p><strong>Agente:</strong> João (ID: 65)</p>
+                    <p><strong>Usuário destino:</strong> Supervisor Elleve Consórcios (ID: 37)</p>
+                    
+                    <h4>Resposta:</h4>
+                    <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro na atribuição:', error)
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro na Atribuição</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Usuário admin usado:</strong> ${usuarioAdmin.nome} (ID: ${usuarioAdmin.id})</p>
+                `
+            }
+        }
+
+        // Auto-executar listagem
+        window.onload = function() {
+            listarUsuarios()
+        }
+    </script>
+</body>
+</html>

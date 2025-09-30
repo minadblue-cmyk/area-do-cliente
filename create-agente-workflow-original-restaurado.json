@@ -1,0 +1,270 @@
+{
+  "name": "Create Agente - Original Restaurado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-agente-webhook-id"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar dados do agente\ntry {\n  const body = $input.first().json.body;\n  \n  const agentName = body.agent_name || 'Agente Padrão';\n  const agentType = body.agent_type || 'agentePadrao';\n  const agentId = body.agent_id || 'PADRAO123456789';\n  const userId = body.user_id || '1';\n  const icone = body.icone || '🤖';\n  const cor = body.cor || 'bg-blue-500';\n  \n  console.log('📊 Dados normalizados:', { agentName, agentType, agentId, userId, icone, cor });\n  \n  return {\n    json: {\n      agentName,\n      agentType,\n      agentId,\n      userId,\n      icone,\n      cor\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na normalização:', error.message);\n  return {\n    json: {\n      agentName: 'Agente Padrão',\n      agentType: 'agentePadrao',\n      agentId: 'PADRAO123456789',\n      userId: '1',\n      icone: '🤖',\n      cor: 'bg-blue-500'\n    }\n  };\n}"
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para inserção na tabela agente_config\ntry {\n  const data = $input.first().json;\n  \n  const agenteConfig = {\n    id: data.agentId,\n    nome: data.agentName,\n    workflow_id: data.agentId, // Usar o mesmo ID como workflow_id\n    webhook_url: `webhook/start-${data.agentType}`,\n    descricao: `Agente ${data.agentName} para prospecção de leads`,\n    icone: data.icone,\n    cor: data.cor,\n    ativo: true,\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  };\n  \n  console.log('📊 Dados do agente para DB:', agenteConfig);\n  \n  return {\n    json: {\n      ...data,\n      agenteConfig\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação do DB:', error.message);\n  return {\n    json: {\n      ...data,\n      error: true,\n      message: error.message\n    }\n  };\n}"
+      },
+      "id": "prepare-db-insert",
+      "name": "Preparar Inserção DB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agente_config",
+        "columns": "id, nome, workflow_id, webhook_url, descricao, icone, cor, ativo, created_at, updated_at",
+        "values": "={{ $json.agenteConfig.id }}, {{ $json.agenteConfig.nome }}, {{ $json.agenteConfig.workflow_id }}, {{ $json.agenteConfig.webhook_url }}, {{ $json.agenteConfig.descricao }}, {{ $json.agenteConfig.icone }}, {{ $json.agenteConfig.cor }}, {{ $json.agenteConfig.ativo }}, {{ $json.agenteConfig.created_at }}, {{ $json.agenteConfig.updated_at }}"
+      },
+      "id": "postgres-insert",
+      "name": "PostgreSQL - Inserir Agente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 300],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/ZWeNlGbLyv0HkXvq/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": \"Agente SDR - Status - \" + $('Normalizar Dados').item.json.agentName,\n  \"active\": false\n} }}",
+        "options": {}
+      },
+      "id": "clone-status",
+      "name": "Clonar Status Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/eBcColwirndBaFZX/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": \"Agente SDR - Start - \" + $('Normalizar Dados').item.json.agentName,\n  \"active\": false\n} }}",
+        "options": {}
+      },
+      "id": "clone-start",
+      "name": "Clonar Start Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/piyABVIDxK9OoLYB/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": \"Agente SDR - Lista Prospecção - \" + $('Normalizar Dados').item.json.agentName,\n  \"active\": false\n} }}",
+        "options": {}
+      },
+      "id": "clone-lista",
+      "name": "Clonar Lista Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/wBDZdXsfY8GYYUYg/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": \"Agente SDR - Stop - \" + $('Normalizar Dados').item.json.agentName,\n  \"active\": false\n} }}",
+        "options": {}
+      },
+      "id": "clone-stop",
+      "name": "Clonar Stop Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultado final\ntry {\n  const data = $input.first().json;\n  \n  console.log('📊 Resultado da criação do agente:', data);\n  \n  return {\n    json: {\n      success: true,\n      message: 'Agente criado com sucesso!',\n      agent: {\n        id: data.agentId,\n        name: data.agentName,\n        type: data.agentType\n      },\n      workflows: {\n        status: data.id || 'criado',\n        start: 'criado',\n        lista: 'criado',\n        stop: 'criado'\n      }\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na consolidação:', error.message);\n  return {\n    json: {\n      success: false,\n      message: 'Erro na criação do agente',\n      error: error.message\n    }\n  };\n}"
+      },
+      "id": "consolidate-result",
+      "name": "Consolidar Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-success",
+      "name": "Responder Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 350]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Preparar Inserção DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Inserção DB": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Inserir Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Inserir Agente": {
+      "main": [
+        [
+          {
+            "node": "Clonar Status Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clonar Start Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clonar Lista Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clonar Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Responder Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

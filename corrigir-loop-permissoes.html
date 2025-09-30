@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Loop de Permissões</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .danger-btn { background-color: #dc3545; }
+        .danger-btn:hover { background-color: #c82333; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Loop de Permissões - Área do Cliente</h1>
+        
+        <div class="status warning">
+            <strong>⚠️ PROBLEMA:</strong> Loop infinito entre dashboard e upload devido a permissões negadas.
+        </div>
+
+        <h2>🛠️ Ações de Correção</h2>
+        <button onclick="limparCacheCompleto()" class="danger-btn">🧹 Limpar Cache Completo</button>
+        <button onclick="configurarAdmin()">👤 Configurar Admin</button>
+        <button onclick="abrirApp()">🚀 Abrir App</button>
+        <button onclick="verificarStatus()">🔍 Verificar Status</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        function limparCacheCompleto() {
+            log('🧹 Iniciando limpeza completa do cache...');
+            
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                log('✅ localStorage limpo');
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                log('✅ sessionStorage limpo');
+                
+                // Limpar cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                log('✅ Cookies limpos');
+                
+                // Limpar cache do service worker
+                if ('caches' in window) {
+                    caches.keys().then(cacheNames => {
+                        return Promise.all(
+                            cacheNames.map(cacheName => {
+                                log(`🗑️ Removendo cache: ${cacheName}`);
+                                return caches.delete(cacheName);
+                            })
+                        );
+                    }).then(() => {
+                        log('✅ Service Worker caches limpos');
+                    });
+                }
+                
+                addResult('<div class="status success"><strong>✅ Cache limpo com sucesso!</strong></div>');
+                
+            } catch (error) {
+                log(`❌ Erro durante limpeza: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function configurarAdmin() {
+            log('👤 Configurando dados do administrador...');
+            
+            const adminData = {
+                id: '1',
+                name: 'Administrator Code-IQ',
+                mail: 'administrador@code-iq.com.br',
+                perfil: 'Administrador',
+                perfil_id: 28
+            };
+            
+            try {
+                // Armazenar no localStorage
+                localStorage.setItem('area:user_data', JSON.stringify(adminData));
+                localStorage.setItem('area:user', adminData.name);
+                localStorage.setItem('area:jwt', 'token_admin_' + Date.now());
+                
+                addResult(`
+                    <div class="status success">
+                        <strong>✅ Dados do administrador configurados!</strong><br>
+                        <strong>Nome:</strong> ${adminData.name}<br>
+                        <strong>Perfil:</strong> ${adminData.perfil}<br>
+                        <strong>Perfil ID:</strong> ${adminData.perfil_id}<br>
+                        <strong>Dados salvos no localStorage</strong>
+                    </div>
+                `);
+                
+                log('✅ Dados do administrador salvos no localStorage');
+                
+            } catch (error) {
+                log(`❌ Erro ao configurar admin: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        function verificarStatus() {
+            log('🔍 Verificando status atual...');
+            
+            const userData = localStorage.getItem('area:user_data');
+            const user = localStorage.getItem('area:user');
+            const token = localStorage.getItem('area:jwt');
+            
+            let html = '<div class="status info"><strong>📊 Status Atual:</strong><br>';
+            
+            if (userData) {
+                try {
+                    const data = JSON.parse(userData);
+                    html += `<div><strong>Usuário:</strong> ${data.name || 'N/A'}</div>`;
+                    html += `<div><strong>Perfil:</strong> ${data.perfil || 'N/A'}</div>`;
+                    html += `<div><strong>Perfil ID:</strong> ${data.perfil_id || 'N/A'}</div>`;
+                } catch (e) {
+                    html += `<div><strong>Erro ao parsear dados do usuário</strong></div>`;
+                }
+            } else {
+                html += `<div><strong>Nenhum usuário logado</strong></div>`;
+            }
+            
+            html += `<div><strong>Token:</strong> ${token ? 'Presente' : 'Ausente'}</div>`;
+            html += `<div><strong>Total de itens no localStorage:</strong> ${Object.keys(localStorage).length}</div>`;
+            
+            html += '</div>';
+            
+            addResult(html);
+            log('✅ Status verificado');
+        }
+
+        // Verificação automática ao carregar
+        window.onload = function() {
+            log('🔧 Página de correção carregada');
+            addResult('<div class="status info"><strong>ℹ️ Clique em "Limpar Cache Completo" e depois "Configurar Admin"</strong></div>');
+        };
+    </script>
+</body>
+</html>

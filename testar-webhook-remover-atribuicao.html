@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhook Remover Atribuição</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Webhook Remover Atribuição</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Informações do Teste</h3>
+            <p><strong>Webhook:</strong> webhook/remover-atribuicao-agente</p>
+            <p><strong>Método:</strong> POST</p>
+            <p><strong>URL:</strong> https://n8n.code-iq.com.br/webhook/remover-atribuicao-agente</p>
+        </div>
+
+        <div class="test-section warning">
+            <h3>⚠️ Atribuições Atuais</h3>
+            <p><strong>Usuário 6 tem 2 atribuições:</strong></p>
+            <ul>
+                <li>João (ID: 65) - Agente 1</li>
+                <li>Teste Agente (ID: 69) - Agente 2</li>
+            </ul>
+            <p><strong>Vamos remover uma delas para testar!</strong></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Configuração do Teste</h3>
+            <div>
+                <label>Agente ID para Remover:</label>
+                <select id="agenteId">
+                    <option value="65">João (ID: 65) - Agente 1</option>
+                    <option value="69">Teste Agente (ID: 69) - Agente 2</option>
+                </select>
+            </div>
+            <div>
+                <label>Usuário ID:</label>
+                <input type="number" id="usuarioId" value="6" placeholder="ID do usuário" readonly>
+            </div>
+            <button onclick="testarRemoverAtribuicao()">Testar Remover Atribuição</button>
+            <button onclick="limparResultado()">Limpar</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Resultado do Teste</h3>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Verificação Pós-Remoção</h3>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições Restantes</button>
+            <div id="verificacao"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function limparResultado() {
+            document.getElementById('resultado').innerHTML = ''
+            document.getElementById('verificacao').innerHTML = ''
+            document.getElementById('logs').innerHTML = ''
+        }
+
+        async function testarRemoverAtribuicao() {
+            log('🚀 Iniciando teste de remoção de atribuição...')
+            
+            const agenteId = document.getElementById('agenteId').value
+            const usuarioId = document.getElementById('usuarioId').value
+            
+            const payload = {
+                agente_id: parseInt(agenteId),
+                usuario_id: parseInt(usuarioId)
+            }
+            
+            log(`📋 Payload: ${JSON.stringify(payload, null, 2)}`)
+            
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = '<div class="test-section loading">⏳ Testando remoção de atribuição...</div>'
+            
+            try {
+                log('🔗 Fazendo requisição POST para o webhook...')
+                
+                const url = 'https://n8n.code-iq.com.br/webhook/remover-atribuicao-agente'
+                log(`📡 URL: ${url}`)
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                })
+                
+                log(`📊 Status da resposta: ${response.status}`)
+                log(`📊 Status OK: ${response.ok}`)
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+                
+                const data = await response.json()
+                log('✅ Resposta recebida com sucesso!')
+                log(`📊 Dados: ${JSON.stringify(data, null, 2)}`)
+                
+                // Mostrar resultado
+                resultadoDiv.innerHTML = `
+                    <div class="test-section success">
+                        <h4>✅ Atribuição Removida com Sucesso!</h4>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Success:</strong> ${data.success}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                        
+                        <h5>📋 Dados da Remoção:</h5>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        
+                        <h5>📊 Análise:</h5>
+                        <ul>
+                            <li>✅ Webhook respondendo corretamente</li>
+                            <li>✅ Estrutura JSON válida</li>
+                            <li>✅ Campo 'success' presente</li>
+                            <li>✅ Campo 'data' presente</li>
+                            <li>✅ Atribuição removida com sucesso</li>
+                        </ul>
+                        
+                        <h5>🔍 Próximos Passos:</h5>
+                        <ul>
+                            <li>Verificar se a atribuição foi removida do banco</li>
+                            <li>Testar o webhook de listagem para confirmar</li>
+                        </ul>
+                    </div>
+                `
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`)
+                
+                resultadoDiv.innerHTML = `
+                    <div class="test-section error">
+                        <h4>❌ Erro na Remoção</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Possíveis causas:</strong></p>
+                        <ul>
+                            <li>Webhook não está ativo no n8n</li>
+                            <li>URL incorreta</li>
+                            <li>Problema de CORS</li>
+                            <li>Erro na query SQL</li>
+                            <li>Atribuição não encontrada</li>
+                        </ul>
+                        <p><strong>Verifique:</strong></p>
+                        <ul>
+                            <li>Se o workflow está ativo no n8n</li>
+                            <li>Se a URL está correta</li>
+                            <li>Se a query SQL está funcionando</li>
+                            <li>Se a atribuição existe</li>
+                        </ul>
+                    </div>
+                `
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            log('🔍 Verificando atribuições restantes...')
+            
+            const verificacaoDiv = document.getElementById('verificacao')
+            verificacaoDiv.innerHTML = '<div class="test-section loading">⏳ Verificando atribuições...</div>'
+            
+            try {
+                const url = 'https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes?usuario_id=6'
+                log(`📡 URL: ${url}`)
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+                
+                const data = await response.json()
+                log('✅ Verificação concluída!')
+                log(`📊 Atribuições restantes: ${data.length || 0}`)
+                
+                verificacaoDiv.innerHTML = `
+                    <div class="test-section success">
+                        <h4>✅ Verificação Concluída!</h4>
+                        <p><strong>Atribuições restantes:</strong> ${data.length || 0}</p>
+                        <p><strong>Dados:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `
+                
+            } catch (error) {
+                log(`❌ Erro na verificação: ${error.message}`)
+                verificacaoDiv.innerHTML = `
+                    <div class="test-section error">
+                        <h4>❌ Erro na Verificação</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Configure os parâmetros e clique em "Testar Remover Atribuição".')
+        }
+    </script>
+</body>
+</html>

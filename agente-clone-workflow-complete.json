@@ -1,0 +1,1001 @@
+{
+  "name": "Clonagem de Agente - Complete",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "403de21c-240b-4c35-b862-70cf80935ff6",
+      "name": "Webhook Create Fixed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        512
+      ],
+      "webhookId": "e7d1b6e5-7bc2-44cc-bf22-c5fd337fef41"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fa99acf-f4ca-45c4-b062-aa4780b74e7c",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name || 'Agente Padrão' }}",
+              "type": "string"
+            },
+            {
+              "id": "0482ff15-f5e2-44fb-b9f7-d0426aea4e3d",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type || 'agentePadrao' }}",
+              "type": "string"
+            },
+            {
+              "id": "85775350-052c-4d18-9ad2-7a321e951e85",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id || 'PADRAO123456789' }}",
+              "type": "string"
+            },
+            {
+              "id": "d3326eab-f5f8-4ec2-9e0b-426633f54108",
+              "name": "userId",
+              "value": "={{ $json.body.user_id || '1' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1232,
+        512
+      ],
+      "id": "c494f03d-78d5-4b03-a700-602f0b80074d",
+      "name": "Normalização"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para inserção na tabela agente_config\ntry {\n  const data = $input.first().json;\n  \n  const agenteConfig = {\n    id: data.agentId,\n    nome: data.agentName,\n    workflow_id: data.agentId, // Usar o mesmo ID como workflow_id\n    webhook_url: `webhook/start-${data.agentType}`,\n    descricao: `Agente ${data.agentName} para prospecção de leads`,\n    icone: '🤖',\n    cor: 'bg-blue-500',\n    ativo: true,\n    created_at: new Date().toISOString(),\n    updated_at: new Date().toISOString()\n  };\n  \n  console.log('📊 Dados do agente para DB:', agenteConfig);\n  \n  return {\n    json: {\n      ...data,\n      agenteConfig\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação do DB:', error.message);\n  return {\n    json: {\n      ...data,\n      error: true,\n      message: error.message\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        512
+      ],
+      "id": "prepare-db-insert",
+      "name": "Preparar Inserção DB"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agente_config",
+        "columns": "id, nome, workflow_id, webhook_url, descricao, icone, cor, ativo, created_at, updated_at",
+        "values": "={{ $json.agenteConfig.id }}, {{ $json.agenteConfig.nome }}, {{ $json.agenteConfig.workflow_id }}, {{ $json.agenteConfig.webhook_url }}, {{ $json.agenteConfig.descricao }}, {{ $json.agenteConfig.icone }}, {{ $json.agenteConfig.cor }}, {{ $json.agenteConfig.ativo }}, {{ $json.agenteConfig.created_at }}, {{ $json.agenteConfig.updated_at }}"
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -688,
+        512
+      ],
+      "id": "postgres-insert",
+      "name": "PostgreSQL - Inserir Agente",
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/eBcColwirndBaFZX",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        -16
+      ],
+      "id": "119db86b-3ee2-4965-ace2-4de7578c1dd7",
+      "name": "Busca Informações do Agente SDR - Start",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6958c89a-5221-43ef-9ea2-e7a24d08686a",
+              "name": "originalWorkflow",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "efbe9f77-ad02-4938-9e83-d318f19b3d8c",
+              "name": "agentName",
+              "value": "={{ $('Normalização').item.json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "6babf94c-0890-4896-9899-1caf6cf3f5cf",
+              "name": "agentType",
+              "value": "={{ $('Normalização').item.json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "78327211-d6c3-4e3b-9d3b-c2c892f3703d",
+              "name": "agentId",
+              "value": "={{ $('Normalização').item.json.agentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -16
+      ],
+      "id": "0b7def4d-76ae-4097-affc-af785e6872a7",
+      "name": "Normaliza campos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Contador global (você pode usar Redis para persistir)\nlet agentCounter = 2; // Inicializar com 1\n\nconst originalWorkflow = $json.originalWorkflow;\nconst agentData = $('Normalização').item.json;\n\nconst clonedWorkflow = {\n  name: `Agente SDR - Start-${agentCounter}`,\n  settings: originalWorkflow.settings || {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `start${agentCounter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections || {}\n};\n\n// Incrementar para próximo agente\nagentCounter++;\n\nreturn { workflowData: clonedWorkflow };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        -16
+      ],
+      "id": "ff0c5f79-81e5-419f-a730-fefa6a734d21",
+      "name": "PREPARAR WORKFLOW CLONADO - Start"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "1fd49afb-25e9-48f6-9dc0-f4301d48fab8",
+      "name": "NODE PARA LIMPAR DADOS"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "b889b461-7ad8-4335-b00d-cc703a5fce3c",
+      "name": "Clona o fluxo Agente SDR - Start",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        -16
+      ],
+      "id": "3cd56fc0-b82b-4727-bc1e-f6a4ed9a62be",
+      "name": "Ativa o Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/AwYrhj5Z6z4K0Mgv",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        272
+      ],
+      "id": "8fa848d6-c949-4953-8051-32594291c2a0",
+      "name": "Busca Informações do Agente SDR - status-agente",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6958c89a-5221-43ef-9ea2-e7a24d08686a",
+              "name": "originalWorkflow",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "efbe9f77-ad02-4938-9e83-d318f19b3d8c",
+              "name": "agentName",
+              "value": "={{ $('Normalização').item.json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "6babf94c-0890-4896-9899-1caf6cf3f5cf",
+              "name": "agentType",
+              "value": "={{ $('Normalização').item.json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "78327211-d6c3-4e3b-9d3b-c2c892f3703d",
+              "name": "agentId",
+              "value": "={{ $('Normalização').item.json.agentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        272
+      ],
+      "id": "a34a1f4e-a576-47e8-8109-c76fab4dfe8c",
+      "name": "Normaliza campos1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Contador global (você pode usar Redis para persistir)\nlet agentCounter = 2; // Inicializar com 1\n\nconst originalWorkflow = $json.originalWorkflow;\nconst agentData = $('Normalização').item.json;\n\nconst clonedWorkflow = {\n  name: `Agente SDR - Status-${agentCounter}`,\n  settings: originalWorkflow.settings || {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `start${agentCounter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections || {}\n};\n\n// Incrementar para próximo agente\nagentCounter++;\n\nreturn { workflowData: clonedWorkflow };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        272
+      ],
+      "id": "45278f8b-2fbc-4ca9-be64-bbd45baee6f4",
+      "name": "PREPARAR WORKFLOW CLONADO1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "ebfc942e-16f1-485b-b2bf-65a196ceb725",
+      "name": "NODE PARA LIMPAR DADOS1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        272
+      ],
+      "id": "8cc4ea53-1d00-41df-a84a-a7e6394aab52",
+      "name": "Clona o fluxo Agente SDR - list-agente",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        272
+      ],
+      "id": "3b6bfa7e-d7a9-44fb-bb25-81685d9f6881",
+      "name": "Ativa o Workflow1",
+      "credentials": {
+        "id": "f3wwl4nc9cR7HUKd",
+        "name": "n8n Admin"
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/piyABVIDxK9OoLYB",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        512
+      ],
+      "id": "3f5fd30c-5514-441d-89f0-28269dec79e9",
+      "name": "Busca Informações do Agente SDR - lista-prospeccao-agente",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6958c89a-5221-43ef-9ea2-e7a24d08686a",
+              "name": "originalWorkflow",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "efbe9f77-ad02-4938-9e83-d318f19b3d8c",
+              "name": "agentName",
+              "value": "={{ $('Normalização').item.json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "6babf94c-0890-4896-9899-1caf6cf3f5cf",
+              "name": "agentType",
+              "value": "={{ $('Normalização').item.json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "78327211-d6c3-4e3b-9d3b-c2c892f3703d",
+              "name": "agentId",
+              "value": "={{ $('Normalização').item.json.agentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        512
+      ],
+      "id": "adb9b8b6-6e22-404e-949b-9f18c52a37af",
+      "name": "Normaliza campos2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Contador global (você pode usar Redis para persistir)\nlet agentCounter = 2; // Inicializar com 1\n\nconst originalWorkflow = $json.originalWorkflow;\nconst agentData = $('Normalização').item.json;\n\nconst clonedWorkflow = {\n  name: `Agente SDR - lista-prospeccao-agente-${agentCounter}`,\n  settings: originalWorkflow.settings || {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `start${agentCounter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections || {}\n};\n\n// Incrementar para próximo agente\nagentCounter++;\n\nreturn { workflowData: clonedWorkflow };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        512
+      ],
+      "id": "ce868e14-812b-4bb9-ad52-65f18d62c5b1",
+      "name": "PREPARAR WORKFLOW CLONADO - Agente SDR - lista-prospeccao-agente"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        512
+      ],
+      "id": "f4404ff7-7bc9-47b6-b6d8-1a8eede1b4c7",
+      "name": "NODE PARA LIMPAR DADOS2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        512
+      ],
+      "id": "bda704e0-68e9-4b44-a57b-df9720542a4c",
+      "name": "Clona o fluxo  Agente SDR - lista-prospeccao-agente",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        512
+      ],
+      "id": "d1443039-5972-4ad8-95b8-762763b91e2c",
+      "name": "Ativa o Workflow2",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/wBDZdXsfY8GYYUYg",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        752
+      ],
+      "id": "d2e0e32c-4f05-43d5-a744-adcb78c27006",
+      "name": "Busca Informações do Agente SDR - Stop",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6958c89a-5221-43ef-9ea2-e7a24d08686a",
+              "name": "originalWorkflow",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "efbe9f77-ad02-4938-9e83-d318f19b3d8c",
+              "name": "agentName",
+              "value": "={{ $('Normalização').item.json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "6babf94c-0890-4896-9899-1caf6cf3f5cf",
+              "name": "agentType",
+              "value": "={{ $('Normalização').item.json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "78327211-d6c3-4e3b-9d3b-c2c892f3703d",
+              "name": "agentId",
+              "value": "={{ $('Normalização').item.json.agentId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        752
+      ],
+      "id": "4dd9bf91-6334-428f-b1e2-7cf44b57de1a",
+      "name": "Normaliza campos3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Contador global (você pode usar Redis para persistir)\nlet agentCounter = 2; // Inicializar com 1\n\nconst originalWorkflow = $json.originalWorkflow;\nconst agentData = $('Normalização').item.json;\n\nconst clonedWorkflow = {\n  name: `Agente SDR - Stop-${agentCounter}`,\n  settings: originalWorkflow.settings || {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `start${agentCounter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections || {}\n};\n\n// Incrementar para próximo agente\nagentCounter++;\n\nreturn { workflowData: clonedWorkflow };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        752
+      ],
+      "id": "f259f389-266e-4b4b-b9a2-18f24716a4cf",
+      "name": "PREPARAR WORKFLOW CLONADO - Agente SDR - Stop"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        752
+      ],
+      "id": "33e04e88-c0f7-47a0-a342-11cc5d75b8c4",
+      "name": "NODE PARA LIMPAR DADOS3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        752
+      ],
+      "id": "4ea24f10-6038-42b1-a5e0-9f34d0aff6e9",
+      "name": "Clona o fluxo  Agente SDR - lista-prospeccao-agente1",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        752
+      ],
+      "id": "252c84f5-ad92-4838-b018-51aa11d94f82",
+      "name": "Ativa o Workflow3",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        960,
+        400
+      ],
+      "id": "3403a804-e09e-4cfa-87d0-32e3e8ea4367",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Create Fixed": {
+      "main": [
+        [
+          {
+            "node": "Normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização": {
+      "main": [
+        [
+          {
+            "node": "Preparar Inserção DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Inserção DB": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Inserir Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Inserir Agente": {
+      "main": [
+        [
+          {
+            "node": "Busca Informações do Agente SDR - Start",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Informações do Agente SDR - status-agente",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Informações do Agente SDR - lista-prospeccao-agente",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Informações do Agente SDR - Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Informações do Agente SDR - Start": {
+      "main": [
+        [
+          {
+            "node": "Normaliza campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza campos": {
+      "main": [
+        [
+          {
+            "node": "PREPARAR WORKFLOW CLONADO - Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARAR WORKFLOW CLONADO - Start": {
+      "main": [
+        [
+          {
+            "node": "NODE PARA LIMPAR DADOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NODE PARA LIMPAR DADOS": {
+      "main": [
+        [
+          {
+            "node": "Clona o fluxo Agente SDR - Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clona o fluxo Agente SDR - Start": {
+      "main": [
+        [
+          {
+            "node": "Ativa o Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativa o Workflow": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Informações do Agente SDR - status-agente": {
+      "main": [
+        [
+          {
+            "node": "Normaliza campos1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza campos1": {
+      "main": [
+        [
+          {
+            "node": "PREPARAR WORKFLOW CLONADO1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARAR WORKFLOW CLONADO1": {
+      "main": [
+        [
+          {
+            "node": "NODE PARA LIMPAR DADOS1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NODE PARA LIMPAR DADOS1": {
+      "main": [
+        [
+          {
+            "node": "Clona o fluxo Agente SDR - list-agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clona o fluxo Agente SDR - list-agente": {
+      "main": [
+        [
+          {
+            "node": "Ativa o Workflow1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativa o Workflow1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Informações do Agente SDR - lista-prospeccao-agente": {
+      "main": [
+        [
+          {
+            "node": "Normaliza campos2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza campos2": {
+      "main": [
+        [
+          {
+            "node": "PREPARAR WORKFLOW CLONADO - Agente SDR - lista-prospeccao-agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARAR WORKFLOW CLONADO - Agente SDR - lista-prospeccao-agente": {
+      "main": [
+        [
+          {
+            "node": "NODE PARA LIMPAR DADOS2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NODE PARA LIMPAR DADOS2": {
+      "main": [
+        [
+          {
+            "node": "Clona o fluxo  Agente SDR - lista-prospeccao-agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clona o fluxo  Agente SDR - lista-prospeccao-agente": {
+      "main": [
+        [
+          {
+            "node": "Ativa o Workflow2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativa o Workflow2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Informações do Agente SDR - Stop": {
+      "main": [
+        [
+          {
+            "node": "Normaliza campos3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza campos3": {
+      "main": [
+        [
+          {
+            "node": "PREPARAR WORKFLOW CLONADO - Agente SDR - Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARAR WORKFLOW CLONADO - Agente SDR - Stop": {
+      "main": [
+        [
+          {
+            "node": "NODE PARA LIMPAR DADOS3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NODE PARA LIMPAR DADOS3": {
+      "main": [
+        [
+          {
+            "node": "Clona o fluxo  Agente SDR - lista-prospeccao-agente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clona o fluxo  Agente SDR - lista-prospeccao-agente1": {
+      "main": [
+        [
+          {
+            "node": "Ativa o Workflow3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativa o Workflow3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3e0a5378-c5ae-4838-aa0b-b894faedac8d",
+  "meta": {
+    "instanceId": "e390a7cf83b11ca128a2252ed89e7c1ee590debb7c2457ed87a7ff09e87ea108"
+  },
+  "id": "Tt2LEfWjMjjXv8KP",
+  "tags": []
+}

@@ -1,0 +1,102 @@
+{
+  "name": "List Profiles",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "list-profiles",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-list-profiles",
+      "name": "Webhook List Profiles",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "list-profiles"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id, p.nome_perfil, p.descricao, p.created_at, p.updated_at, ARRAY_AGG(pp.permissao_id) as permissoes FROM perfis p LEFT JOIN perfil_permissoes pp ON p.id = pp.perfil_id GROUP BY p.id, p.nome_perfil, p.descricao, p.created_at, p.updated_at ORDER BY p.nome_perfil",
+        "options": {}
+      },
+      "id": "buscar-perfis",
+      "name": "Buscar Perfis",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-consorcio",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar perfis do banco\nconst perfis = $input.all();\n\nconsole.log('📋 Perfis encontrados:', perfis.length);\n\n// Mapear para o formato esperado pelo frontend\nconst perfisFormatados = perfis.map(item => {\n  const data = item.json;\n  \n  return {\n    id: parseInt(data.id),\n    nome_perfil: data.nome_perfil,\n    descricao: data.descricao,\n    created_at: data.created_at,\n    updated_at: data.updated_at,\n    permissoes: data.permissoes || []\n  };\n});\n\nconsole.log('✅ Perfis formatados:', perfisFormatados.length);\nconsole.log('✅ Primeiro perfil exemplo:', perfisFormatados[0]);\n\nreturn {\n  json: {\n    success: true,\n    message: 'Perfis listados com sucesso',\n    data: perfisFormatados,\n    total: perfisFormatados.length\n  }\n};"
+      },
+      "id": "processar-perfis",
+      "name": "Processar Perfis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "responder-perfis",
+      "name": "Responder Perfis",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook List Profiles": {
+      "main": [
+        [
+          {
+            "node": "Buscar Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Perfis": {
+      "main": [
+        [
+          {
+            "node": "Processar Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Perfis": {
+      "main": [
+        [
+          {
+            "node": "Responder Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "list-profiles",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}

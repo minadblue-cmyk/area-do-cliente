@@ -1,0 +1,590 @@
+{
+  "name": "Clonagem de Agente - Contador Fixo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-create",
+      "name": "Webhook Create Fixed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agentName",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name || 'Agente Padrão' }}",
+              "type": "string"
+            },
+            {
+              "id": "agentType",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type || 'agentePadrao' }}",
+              "type": "string"
+            },
+            {
+              "id": "agentId",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id || 'PADRAO123456789' }}",
+              "type": "string"
+            },
+            {
+              "id": "userId",
+              "name": "userId",
+              "value": "={{ $json.body.user_id || '1' }}",
+              "type": "string"
+            },
+            {
+              "id": "icone",
+              "name": "icone",
+              "value": "={{ $json.body.icone || '🤖' }}",
+              "type": "string"
+            },
+            {
+              "id": "cor",
+              "name": "cor",
+              "value": "={{ $json.body.cor || 'bg-blue-500' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "id": "normalize-data",
+      "name": "Normalização"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=agente_counter_global",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "get-counter",
+      "name": "Buscar Contador Atual",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Buscar contador atual do Redis\nconst redisData = $('Buscar Contador Atual').item.json;\nlet currentCounter = 1; // Default se não existir\n\n// Se existe no Redis, usar o valor + 1\nif (redisData && redisData.propertyName) {\n  currentCounter = parseInt(redisData.propertyName) + 1;\n} else if (redisData && redisData.value) {\n  currentCounter = parseInt(redisData.value) + 1;\n}\n\nconsole.log(`🔢 Contador atual: ${currentCounter}`);\n\n// Dados do agente\nconst agentData = $('Normalização').item.json;\n\nreturn {\n  json: {\n    ...agentData,\n    agentCounter: currentCounter,\n    nextCounter: currentCounter + 1\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "prepare-counter",
+      "name": "Preparar Contador"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=agente_counter_global",
+        "value": "={{ $json.nextCounter }}",
+        "expire": false
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "update-counter",
+      "name": "Atualizar Contador",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db-id",
+              "name": "agenteConfig.id",
+              "value": "={{ $json.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "db-nome",
+              "name": "agenteConfig.nome",
+              "value": "={{ $json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "db-workflow-id",
+              "name": "agenteConfig.workflow_id",
+              "value": "={{ $json.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "db-webhook-url",
+              "name": "agenteConfig.webhook_url",
+              "value": "=webhook/start-{{ $json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "db-descricao",
+              "name": "agenteConfig.descricao",
+              "value": "=Agente {{ $json.agentName }} para prospecção de leads",
+              "type": "string"
+            },
+            {
+              "id": "db-icone",
+              "name": "agenteConfig.icone",
+              "value": "={{ $json.icone }}",
+              "type": "string"
+            },
+            {
+              "id": "db-cor",
+              "name": "agenteConfig.cor",
+              "value": "={{ $json.cor }}",
+              "type": "string"
+            },
+            {
+              "id": "db-ativo",
+              "name": "agenteConfig.ativo",
+              "value": "true",
+              "type": "boolean"
+            },
+            {
+              "id": "db-created-at",
+              "name": "agenteConfig.created_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "db-updated-at",
+              "name": "agenteConfig.updated_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 300],
+      "id": "prepare-db-insert",
+      "name": "Preparar Inserção DB"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agente_config",
+        "columns": "id, nome, workflow_id, webhook_url, descricao, icone, cor, ativo, created_at, updated_at",
+        "values": "={{ $json.agenteConfig.id }}, {{ $json.agenteConfig.nome }}, {{ $json.agenteConfig.workflow_id }}, {{ $json.agenteConfig.webhook_url }}, {{ $json.agenteConfig.descricao }}, {{ $json.agenteConfig.icone }}, {{ $json.agenteConfig.cor }}, {{ $json.agenteConfig.ativo }}, {{ $json.agenteConfig.created_at }}, {{ $json.agenteConfig.updated_at }}"
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 300],
+      "id": "postgres-insert",
+      "name": "PostgreSQL - Inserir Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/eBcColwirndBaFZX",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 100],
+      "id": "fetch-start-workflow",
+      "name": "Busca Start Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/AwYrhj5Z6z4K0Mgv",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 200],
+      "id": "fetch-status-workflow",
+      "name": "Busca Status Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/piyABVIDxK9OoLYB",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 300],
+      "id": "fetch-lista-workflow",
+      "name": "Busca Lista Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/wBDZdXsfY8GYYUYg",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 400],
+      "id": "fetch-stop-workflow",
+      "name": "Busca Stop Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Start\nconst originalWorkflow = $json.data;\nconst agentData = $('Preparar Contador').item.json;\nconst counter = agentData.agentCounter;\n\nconsole.log(`🚀 Criando Start Workflow - Agente ${counter}`);\n\nconst workflowData = {\n  name: `Agente SDR - Start-${counter}`,\n  settings: {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `start${counter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections,\n  tags: ['agentes', 'Elleve', agentData.agentName, 'Start']\n};\n\nreturn {\n  json: {\n    workflowData,\n    agentName: agentData.agentName,\n    agentType: agentData.agentType,\n    agentId: agentData.agentId,\n    counter: counter,\n    type: 'start'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 100],
+      "id": "prepare-start-clone",
+      "name": "Preparar Start Clone"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Status\nconst originalWorkflow = $json.data;\nconst agentData = $('Preparar Contador').item.json;\nconst counter = agentData.agentCounter;\n\nconsole.log(`📊 Criando Status Workflow - Agente ${counter}`);\n\nconst workflowData = {\n  name: `Agente SDR - Status-${counter}`,\n  settings: {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `status${counter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections,\n  tags: ['agentes', 'Elleve', agentData.agentName, 'Status']\n};\n\nreturn {\n  json: {\n    workflowData,\n    agentName: agentData.agentName,\n    agentType: agentData.agentType,\n    agentId: agentData.agentId,\n    counter: counter,\n    type: 'status'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 200],
+      "id": "prepare-status-clone",
+      "name": "Preparar Status Clone"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Lista\nconst originalWorkflow = $json.data;\nconst agentData = $('Preparar Contador').item.json;\nconst counter = agentData.agentCounter;\n\nconsole.log(`📋 Criando Lista Workflow - Agente ${counter}`);\n\nconst workflowData = {\n  name: `Agente SDR - Lista-${counter}`,\n  settings: {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `lista${counter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections,\n  tags: ['agentes', 'Elleve', agentData.agentName, 'Lista']\n};\n\nreturn {\n  json: {\n    workflowData,\n    agentName: agentData.agentName,\n    agentType: agentData.agentType,\n    agentId: agentData.agentId,\n    counter: counter,\n    type: 'lista'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300],
+      "id": "prepare-lista-clone",
+      "name": "Preparar Lista Clone"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Stop\nconst originalWorkflow = $json.data;\nconst agentData = $('Preparar Contador').item.json;\nconst counter = agentData.agentCounter;\n\nconsole.log(`🛑 Criando Stop Workflow - Agente ${counter}`);\n\nconst workflowData = {\n  name: `Agente SDR - Stop-${counter}`,\n  settings: {},\n  nodes: originalWorkflow.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `stop${counter}-${agentData.agentType}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: originalWorkflow.connections,\n  tags: ['agentes', 'Elleve', agentData.agentName, 'Stop']\n};\n\nreturn {\n  json: {\n    workflowData,\n    agentName: agentData.agentName,\n    agentType: agentData.agentType,\n    agentId: agentData.agentId,\n    counter: counter,\n    type: 'stop'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 400],
+      "id": "prepare-stop-clone",
+      "name": "Preparar Stop Clone"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 250],
+      "id": "create-workflow",
+      "name": "Criar Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2440, 250],
+      "id": "activate-workflow",
+      "name": "Ativar Workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Agente e workflows criados com sucesso!\",\n  \"agentId\": \"={{ $('Preparar Contador').item.json.agentId }}\",\n  \"agentName\": \"={{ $('Preparar Contador').item.json.agentName }}\",\n  \"agentCounter\": {{ $('Preparar Contador').item.json.agentCounter }},\n  \"workflows\": [\n    {{ $('Ativar Workflow').all().map(item => `{ \"id\": \"${item.json.id}\", \"name\": \"${item.json.name}\", \"webhook\": \"${item.json.settings?.webhookPath || 'N/A'}\" }`).join(',\\n') }}\n  ]\n}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2660, 250]
+    }
+  ],
+  "connections": {
+    "Webhook Create Fixed": {
+      "main": [
+        [
+          {
+            "node": "Normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização": {
+      "main": [
+        [
+          {
+            "node": "Buscar Contador Atual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Contador Atual": {
+      "main": [
+        [
+          {
+            "node": "Preparar Contador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Contador": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Contador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Contador": {
+      "main": [
+        [
+          {
+            "node": "Preparar Inserção DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Inserção DB": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Inserir Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Inserir Agente": {
+      "main": [
+        [
+          {
+            "node": "Busca Start Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Status Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Lista Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Start Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Status Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Lista Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Stop Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Start Clone": {
+      "main": [
+        [
+          {
+            "node": "Criar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Status Clone": {
+      "main": [
+        [
+          {
+            "node": "Criar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Lista Clone": {
+      "main": [
+        [
+          {
+            "node": "Criar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Stop Clone": {
+      "main": [
+        [
+          {
+            "node": "Criar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Ativar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1"
+}

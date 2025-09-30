@@ -1,0 +1,623 @@
+{
+  "name": "Agente Clone Workflows - Organizado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "cors": {
+            "enabled": true,
+            "allowedOrigins": ["*"],
+            "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+          }
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-agente"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-action",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "create",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "switch-action",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Debug: Verificar dados recebidos do Switch Action\nconsole.log('🔍 Debug Switch - Dados recebidos:');\nconsole.log('📊 Input completo:', $input.all());\nconsole.log('📋 Primeiro item:', $input.first().json);\nconsole.log('🔗 Body:', $input.first().json.body);\nconsole.log('⚡ Action:', $input.first().json.body?.action);\n\nreturn $input.first();"
+      },
+      "id": "debug-switch",
+      "name": "Debug Switch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/folders",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-folders",
+      "name": "Get Folders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configurar pasta de destino para o agente com tratamento robusto de erros\ntry {\n  console.log('🔍 Iniciando Encontrar Pasta Destino');\n  \n  // Obter dados de entrada com fallback\n  let workflows = null;\n  try {\n    workflows = $input.first().json;\n    console.log('📁 Workflows recebidos:', workflows);\n  } catch (error) {\n    console.log('⚠️ Erro ao obter workflows:', error.message);\n  }\n  \n  // Obter dados normalizados com fallback\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n  \n  try {\n    const normalizedData = $('normalize-data').first().json;\n    agentName = normalizedData.agentName || agentName;\n    agentType = normalizedData.agentType || agentType;\n    agentId = normalizedData.agentId || agentId;\n    console.log('✅ Dados normalizados obtidos:', { agentName, agentType, agentId });\n  } catch (error) {\n    console.log('⚠️ Erro ao obter dados normalizados, usando fallback:', error.message);\n  }\n  \n  // Configurar pasta de destino (simplificado)\n  let targetFolderId = null; // Pasta raiz do n8n\n  let elleveConsorciosFolder = {\n    id: null,\n    name: 'Raiz',\n    description: 'Pasta raiz do n8n'\n  };\n  \n  console.log('✅ Usando pasta raiz:', targetFolderId);\n  console.log('📂 Pasta configurada:', elleveConsorciosFolder);\n  \n  const result = {\n    targetFolderId,\n    elleveConsorciosFolder,\n    agentName,\n    agentType,\n    agentId,\n    debug: {\n      workflowsReceived: !!workflows,\n      workflowsCount: Array.isArray(workflows) ? workflows.length : 'N/A',\n      normalizedDataReceived: true\n    }\n  };\n  \n  console.log('📊 Resultado final:', result);\n  \n  return { json: result };\n  \n} catch (error) {\n  console.log('❌ Erro crítico no Encontrar Pasta Destino:', error.message);\n  \n  // Retornar dados padrão em caso de erro\n  return {\n    json: {\n      targetFolderId: null,\n      elleveConsorciosFolder: {\n        id: null,\n        name: 'Raiz',\n        description: 'Pasta raiz (erro no processamento)'\n      },\n      agentName: 'Agente Padrão',\n      agentType: 'agentePadrao',\n      agentId: 'PADRAO123456789',\n      error: {\n        message: error.message,\n        stack: error.stack\n      }\n    }\n  };\n}"
+      },
+      "id": "find-target-folder",
+      "name": "Encontrar Pasta Destino",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/eBcColwirndBaFZX",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-start-workflow",
+      "name": "Get Start Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/piyABVIDxK9OoLYB",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-lista-workflow",
+      "name": "Get Lista Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/AwYrhj5Z6z4K0Mgv",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-status-workflow",
+      "name": "Get Status Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/wBDZdXsfY8GYYUYg",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-stop-workflow",
+      "name": "Get Stop Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Start com tratamento robusto de erros\ntry {\n  const startWorkflow = $input.first().json;\n  \n  console.log('🔍 Iniciando clonagem do workflow Start');\n  console.log('📊 Workflow recebido:', startWorkflow?.name || 'Nome não encontrado');\n\n  // Função para deep clone com tratamento de erro\n  function deepClone(obj) {\n    try {\n      return JSON.parse(JSON.stringify(obj));\n    } catch (error) {\n      console.log('⚠️ Erro no deep clone, usando Object.assign:', error.message);\n      return Object.assign({}, obj);\n    }\n  }\n\n  // Obter dados com fallbacks seguros\n  let folderData = { targetFolderId: null };\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n\n  // Tentar obter dados da pasta destino\n  try {\n    const folderItems = $node['find-target-folder'].json;\n    if (folderItems && Array.isArray(folderItems) && folderItems.length > 0) {\n      folderData = folderItems[0];\n    } else if (folderItems && !Array.isArray(folderItems)) {\n      folderData = folderItems;\n    }\n    console.log('✅ Dados da pasta:', folderData);\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Encontrar Pasta Destino:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeFolder = $('find-target-folder').first()?.json;\n      if (alternativeFolder) {\n        folderData = alternativeFolder;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo também falhou, usando fallback');\n    }\n  }\n\n  // Tentar obter dados normalizados\n  try {\n    const normalizedItems = $node['normalize-data'].json;\n    if (normalizedItems && Array.isArray(normalizedItems) && normalizedItems.length > 0) {\n      const normalizedData = normalizedItems[0];\n      agentName = normalizedData.agentName || agentName;\n      agentType = normalizedData.agentType || agentType;\n      agentId = normalizedData.agentId || agentId;\n    } else if (normalizedItems && !Array.isArray(normalizedItems)) {\n      agentName = normalizedItems.agentName || agentName;\n      agentType = normalizedItems.agentType || agentType;\n      agentId = normalizedItems.agentId || agentId;\n    }\n    console.log('✅ Dados normalizados:', { agentName, agentType, agentId });\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Normalizar Dados:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeNormalized = $('normalize-data').first()?.json;\n      if (alternativeNormalized) {\n        agentName = alternativeNormalized.agentName || agentName;\n        agentType = alternativeNormalized.agentType || agentType;\n        agentId = alternativeNormalized.agentId || agentId;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo aos dados normalizados falhou');\n    }\n  }\n\n  // Validar se o workflow de entrada é válido\n  if (!startWorkflow || typeof startWorkflow !== 'object') {\n    throw new Error('Workflow Start inválido ou não encontrado');\n  }\n\n  // Deep clone do workflow para evitar problemas de read-only\n  const clonedStartWorkflow = deepClone(startWorkflow);\n  \n  // Configurar propriedades básicas\n  clonedStartWorkflow.name = `Agente SDR - Start - ${agentName}`;\n  clonedStartWorkflow.active = false;\n  clonedStartWorkflow.folderId = folderData.targetFolderId;\n  \n  // Garantir que tags existe como array\n  if (!clonedStartWorkflow.tags || !Array.isArray(clonedStartWorkflow.tags)) {\n    clonedStartWorkflow.tags = [];\n  }\n  clonedStartWorkflow.tags = ['agentes', 'Elleve', agentName, 'Start'];\n\n  console.log('🔧 Workflow clonado:', clonedStartWorkflow.name);\n\n  // Atualizar nodes de forma segura\n  if (clonedStartWorkflow.nodes && Array.isArray(clonedStartWorkflow.nodes)) {\n    clonedStartWorkflow.nodes.forEach((node, index) => {\n      try {\n        // Atualizar webhook se for do tipo correto\n        if (node.type === 'n8n-nodes-base.webhook' && node.parameters) {\n          node.parameters.path = `start-${agentType}`;\n          node.webhookId = `start-${agentType}`;\n          console.log('🔗 Webhook atualizado para:', `start-${agentType}`);\n        }\n\n        // Atualizar referências de workflow_id de forma segura\n        if (node.parameters && typeof node.parameters === 'object') {\n          const updateParameters = (params) => {\n            Object.keys(params).forEach(key => {\n              if (typeof params[key] === 'string' && params[key].includes('eBcColwirndBaFZX')) {\n                params[key] = params[key].replace('eBcColwirndBaFZX', agentId);\n              } else if (typeof params[key] === 'object' && params[key] !== null) {\n                updateParameters(params[key]);\n              }\n            });\n          };\n          updateParameters(node.parameters);\n        }\n      } catch (nodeError) {\n        console.log(`⚠️ Erro ao processar node ${index}:`, nodeError.message);\n      }\n    });\n  }\n\n  console.log('✅ Workflow Start processado com sucesso');\n\n  return {\n    json: {\n      workflow: clonedStartWorkflow,\n      workflowData: {\n        name: clonedStartWorkflow.name,\n        nodes: clonedStartWorkflow.nodes,\n        connections: clonedStartWorkflow.connections,\n        active: clonedStartWorkflow.active,\n        settings: clonedStartWorkflow.settings,\n        folderId: folderData.targetFolderId,\n        tags: clonedStartWorkflow.tags\n      },\n      type: 'start',\n      agentName,\n      agentType,\n      agentId,\n      folderId: folderData.targetFolderId,\n      debug: {\n        originalWorkflowName: startWorkflow?.name,\n        folderDataReceived: !!folderData.targetFolderId,\n        nodesCount: clonedStartWorkflow.nodes?.length || 0\n      }\n    }\n  };\n\n} catch (error) {\n  console.log('❌ Erro crítico no Preparar Start Clone:', error.message);\n  console.log('Stack trace:', error.stack);\n  \n  // Retornar erro estruturado para debug\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      stack: error.stack,\n      type: 'start',\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "prepare-start-clone",
+      "name": "Preparar Start Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Lista com tratamento robusto de erros\ntry {\n  const listaWorkflow = $input.first().json;\n  \n  console.log('🔍 Iniciando clonagem do workflow Lista');\n  console.log('📊 Workflow recebido:', listaWorkflow?.name || 'Nome não encontrado');\n\n  // Função para deep clone com tratamento de erro\n  function deepClone(obj) {\n    try {\n      return JSON.parse(JSON.stringify(obj));\n    } catch (error) {\n      console.log('⚠️ Erro no deep clone, usando Object.assign:', error.message);\n      return Object.assign({}, obj);\n    }\n  }\n\n  // Obter dados com fallbacks seguros\n  let folderData = { targetFolderId: null };\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n\n  // Tentar obter dados da pasta destino\n  try {\n    const folderItems = $node['find-target-folder'].json;\n    if (folderItems && Array.isArray(folderItems) && folderItems.length > 0) {\n      folderData = folderItems[0];\n    } else if (folderItems && !Array.isArray(folderItems)) {\n      folderData = folderItems;\n    }\n    console.log('✅ Dados da pasta:', folderData);\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Encontrar Pasta Destino:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeFolder = $('find-target-folder').first()?.json;\n      if (alternativeFolder) {\n        folderData = alternativeFolder;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo também falhou, usando fallback');\n    }\n  }\n\n  // Tentar obter dados normalizados\n  try {\n    const normalizedItems = $node['normalize-data'].json;\n    if (normalizedItems && Array.isArray(normalizedItems) && normalizedItems.length > 0) {\n      const normalizedData = normalizedItems[0];\n      agentName = normalizedData.agentName || agentName;\n      agentType = normalizedData.agentType || agentType;\n      agentId = normalizedData.agentId || agentId;\n    } else if (normalizedItems && !Array.isArray(normalizedItems)) {\n      agentName = normalizedItems.agentName || agentName;\n      agentType = normalizedItems.agentType || agentType;\n      agentId = normalizedItems.agentId || agentId;\n    }\n    console.log('✅ Dados normalizados:', { agentName, agentType, agentId });\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Normalizar Dados:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeNormalized = $('normalize-data').first()?.json;\n      if (alternativeNormalized) {\n        agentName = alternativeNormalized.agentName || agentName;\n        agentType = alternativeNormalized.agentType || agentType;\n        agentId = alternativeNormalized.agentId || agentId;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo aos dados normalizados falhou');\n    }\n  }\n\n  // Validar se o workflow de entrada é válido\n  if (!listaWorkflow || typeof listaWorkflow !== 'object') {\n    throw new Error('Workflow Lista inválido ou não encontrado');\n  }\n\n  // Deep clone do workflow para evitar problemas de read-only\n  const clonedListaWorkflow = deepClone(listaWorkflow);\n  \n  // Configurar propriedades básicas\n  clonedListaWorkflow.name = `Agente SDR - Lista Prospecção - ${agentName}`;\n  clonedListaWorkflow.active = false;\n  clonedListaWorkflow.folderId = folderData.targetFolderId;\n  \n  // Garantir que tags existe como array\n  if (!clonedListaWorkflow.tags || !Array.isArray(clonedListaWorkflow.tags)) {\n    clonedListaWorkflow.tags = [];\n  }\n  clonedListaWorkflow.tags = ['agentes', 'Elleve', agentName, 'Lista'];\n\n  console.log('🔧 Workflow clonado:', clonedListaWorkflow.name);\n\n  // Atualizar nodes de forma segura\n  if (clonedListaWorkflow.nodes && Array.isArray(clonedListaWorkflow.nodes)) {\n    clonedListaWorkflow.nodes.forEach((node, index) => {\n      try {\n        // Atualizar webhook se for do tipo correto\n        if (node.type === 'n8n-nodes-base.webhook' && node.parameters) {\n          node.parameters.path = `lista-prospeccao-${agentType}`;\n          node.webhookId = `lista-prospeccao-${agentType}`;\n          console.log('🔗 Webhook atualizado para:', `lista-prospeccao-${agentType}`);\n        }\n\n        // Atualizar referências de workflow_id de forma segura\n        if (node.parameters && typeof node.parameters === 'object') {\n          const updateParameters = (params) => {\n            Object.keys(params).forEach(key => {\n              if (typeof params[key] === 'string' && params[key].includes('eBcColwirndBaFZX')) {\n                params[key] = params[key].replace('eBcColwirndBaFZX', agentId);\n              } else if (typeof params[key] === 'object' && params[key] !== null) {\n                updateParameters(params[key]);\n              }\n            });\n          };\n          updateParameters(node.parameters);\n        }\n      } catch (nodeError) {\n        console.log(`⚠️ Erro ao processar node ${index}:`, nodeError.message);\n      }\n    });\n  }\n\n  console.log('✅ Workflow Lista processado com sucesso');\n\n  return {\n    json: {\n      workflow: clonedListaWorkflow,\n      workflowData: {\n        name: clonedListaWorkflow.name,\n        nodes: clonedListaWorkflow.nodes,\n        connections: clonedListaWorkflow.connections,\n        active: clonedListaWorkflow.active,\n        settings: clonedListaWorkflow.settings,\n        folderId: folderData.targetFolderId,\n        tags: clonedListaWorkflow.tags\n      },\n      type: 'lista',\n      agentName,\n      agentType,\n      agentId,\n      folderId: folderData.targetFolderId,\n      debug: {\n        originalWorkflowName: listaWorkflow?.name,\n        folderDataReceived: !!folderData.targetFolderId,\n        nodesCount: clonedListaWorkflow.nodes?.length || 0\n      }\n    }\n  };\n\n} catch (error) {\n  console.log('❌ Erro crítico no Preparar Lista Clone:', error.message);\n  console.log('Stack trace:', error.stack);\n  \n  // Retornar erro estruturado para debug\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      stack: error.stack,\n      type: 'lista',\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "prepare-lista-clone",
+      "name": "Preparar Lista Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Status com tratamento robusto de erros\ntry {\n  const statusWorkflow = $input.first().json;\n  \n  console.log('🔍 Iniciando clonagem do workflow Status');\n  console.log('📊 Workflow recebido:', statusWorkflow?.name || 'Nome não encontrado');\n\n  // Função para deep clone com tratamento de erro\n  function deepClone(obj) {\n    try {\n      return JSON.parse(JSON.stringify(obj));\n    } catch (error) {\n      console.log('⚠️ Erro no deep clone, usando Object.assign:', error.message);\n      return Object.assign({}, obj);\n    }\n  }\n\n  // Obter dados com fallbacks seguros\n  let folderData = { targetFolderId: null };\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n\n  // Tentar obter dados da pasta destino\n  try {\n    const folderItems = $node['find-target-folder'].json;\n    if (folderItems && Array.isArray(folderItems) && folderItems.length > 0) {\n      folderData = folderItems[0];\n    } else if (folderItems && !Array.isArray(folderItems)) {\n      folderData = folderItems;\n    }\n    console.log('✅ Dados da pasta:', folderData);\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Encontrar Pasta Destino:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeFolder = $('find-target-folder').first()?.json;\n      if (alternativeFolder) {\n        folderData = alternativeFolder;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo também falhou, usando fallback');\n    }\n  }\n\n  // Tentar obter dados normalizados\n  try {\n    const normalizedItems = $node['normalize-data'].json;\n    if (normalizedItems && Array.isArray(normalizedItems) && normalizedItems.length > 0) {\n      const normalizedData = normalizedItems[0];\n      agentName = normalizedData.agentName || agentName;\n      agentType = normalizedData.agentType || agentType;\n      agentId = normalizedData.agentId || agentId;\n    } else if (normalizedItems && !Array.isArray(normalizedItems)) {\n      agentName = normalizedItems.agentName || agentName;\n      agentType = normalizedItems.agentType || agentType;\n      agentId = normalizedItems.agentId || agentId;\n    }\n    console.log('✅ Dados normalizados:', { agentName, agentType, agentId });\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Normalizar Dados:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeNormalized = $('normalize-data').first()?.json;\n      if (alternativeNormalized) {\n        agentName = alternativeNormalized.agentName || agentName;\n        agentType = alternativeNormalized.agentType || agentType;\n        agentId = alternativeNormalized.agentId || agentId;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo aos dados normalizados falhou');\n    }\n  }\n\n  // Validar se o workflow de entrada é válido\n  if (!statusWorkflow || typeof statusWorkflow !== 'object') {\n    throw new Error('Workflow Status inválido ou não encontrado');\n  }\n\n  // Deep clone do workflow para evitar problemas de read-only\n  const clonedStatusWorkflow = deepClone(statusWorkflow);\n  \n  // Configurar propriedades básicas\n  clonedStatusWorkflow.name = `Agente SDR - Status - ${agentName}`;\n  clonedStatusWorkflow.active = false;\n  clonedStatusWorkflow.folderId = folderData.targetFolderId;\n  \n  // Garantir que tags existe como array\n  if (!clonedStatusWorkflow.tags || !Array.isArray(clonedStatusWorkflow.tags)) {\n    clonedStatusWorkflow.tags = [];\n  }\n  clonedStatusWorkflow.tags = ['agentes', 'Elleve', agentName, 'Status'];\n\n  console.log('🔧 Workflow clonado:', clonedStatusWorkflow.name);\n\n  // Atualizar nodes de forma segura\n  if (clonedStatusWorkflow.nodes && Array.isArray(clonedStatusWorkflow.nodes)) {\n    clonedStatusWorkflow.nodes.forEach((node, index) => {\n      try {\n        // Atualizar webhook se for do tipo correto\n        if (node.type === 'n8n-nodes-base.webhook' && node.parameters) {\n          node.parameters.path = `status-${agentType}`;\n          node.webhookId = `status-${agentType}`;\n          console.log('🔗 Webhook atualizado para:', `status-${agentType}`);\n        }\n\n        // Atualizar referências de workflow_id de forma segura\n        if (node.parameters && typeof node.parameters === 'object') {\n          const updateParameters = (params) => {\n            Object.keys(params).forEach(key => {\n              if (typeof params[key] === 'string' && params[key].includes('eBcColwirndBaFZX')) {\n                params[key] = params[key].replace('eBcColwirndBaFZX', agentId);\n              } else if (typeof params[key] === 'object' && params[key] !== null) {\n                updateParameters(params[key]);\n              }\n            });\n          };\n          updateParameters(node.parameters);\n        }\n      } catch (nodeError) {\n        console.log(`⚠️ Erro ao processar node ${index}:`, nodeError.message);\n      }\n    });\n  }\n\n  console.log('✅ Workflow Status processado com sucesso');\n\n  return {\n    json: {\n      workflow: clonedStatusWorkflow,\n      workflowData: {\n        name: clonedStatusWorkflow.name,\n        nodes: clonedStatusWorkflow.nodes,\n        connections: clonedStatusWorkflow.connections,\n        active: clonedStatusWorkflow.active,\n        settings: clonedStatusWorkflow.settings,\n        folderId: folderData.targetFolderId,\n        tags: clonedStatusWorkflow.tags\n      },\n      type: 'status',\n      agentName,\n      agentType,\n      agentId,\n      folderId: folderData.targetFolderId,\n      debug: {\n        originalWorkflowName: statusWorkflow?.name,\n        folderDataReceived: !!folderData.targetFolderId,\n        nodesCount: clonedStatusWorkflow.nodes?.length || 0\n      }\n    }\n  };\n\n} catch (error) {\n  console.log('❌ Erro crítico no Preparar Status Clone:', error.message);\n  console.log('Stack trace:', error.stack);\n  \n  // Retornar erro estruturado para debug\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      stack: error.stack,\n      type: 'status',\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "prepare-status-clone",
+      "name": "Preparar Status Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para clonagem do workflow Stop com tratamento robusto de erros\ntry {\n  const stopWorkflow = $input.first().json;\n  \n  console.log('🔍 Iniciando clonagem do workflow Stop');\n  console.log('📊 Workflow recebido:', stopWorkflow?.name || 'Nome não encontrado');\n\n  // Função para deep clone com tratamento de erro\n  function deepClone(obj) {\n    try {\n      return JSON.parse(JSON.stringify(obj));\n    } catch (error) {\n      console.log('⚠️ Erro no deep clone, usando Object.assign:', error.message);\n      return Object.assign({}, obj);\n    }\n  }\n\n  // Obter dados com fallbacks seguros\n  let folderData = { targetFolderId: null };\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n\n  // Tentar obter dados da pasta destino\n  try {\n    const folderItems = $node['find-target-folder'].json;\n    if (folderItems && Array.isArray(folderItems) && folderItems.length > 0) {\n      folderData = folderItems[0];\n    } else if (folderItems && !Array.isArray(folderItems)) {\n      folderData = folderItems;\n    }\n    console.log('✅ Dados da pasta:', folderData);\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Encontrar Pasta Destino:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeFolder = $('find-target-folder').first()?.json;\n      if (alternativeFolder) {\n        folderData = alternativeFolder;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo também falhou, usando fallback');\n    }\n  }\n\n  // Tentar obter dados normalizados\n  try {\n    const normalizedItems = $node['normalize-data'].json;\n    if (normalizedItems && Array.isArray(normalizedItems) && normalizedItems.length > 0) {\n      const normalizedData = normalizedItems[0];\n      agentName = normalizedData.agentName || agentName;\n      agentType = normalizedData.agentType || agentType;\n      agentId = normalizedData.agentId || agentId;\n    } else if (normalizedItems && !Array.isArray(normalizedItems)) {\n      agentName = normalizedItems.agentName || agentName;\n      agentType = normalizedItems.agentType || agentType;\n      agentId = normalizedItems.agentId || agentId;\n    }\n    console.log('✅ Dados normalizados:', { agentName, agentType, agentId });\n  } catch (error) {\n    console.log('⚠️ Erro ao acessar Normalizar Dados:', error.message);\n    // Tentar acesso alternativo\n    try {\n      const alternativeNormalized = $('normalize-data').first()?.json;\n      if (alternativeNormalized) {\n        agentName = alternativeNormalized.agentName || agentName;\n        agentType = alternativeNormalized.agentType || agentType;\n        agentId = alternativeNormalized.agentId || agentId;\n      }\n    } catch (altError) {\n      console.log('⚠️ Acesso alternativo aos dados normalizados falhou');\n    }\n  }\n\n  // Validar se o workflow de entrada é válido\n  if (!stopWorkflow || typeof stopWorkflow !== 'object') {\n    throw new Error('Workflow Stop inválido ou não encontrado');\n  }\n\n  // Deep clone do workflow para evitar problemas de read-only\n  const clonedStopWorkflow = deepClone(stopWorkflow);\n  \n  // Configurar propriedades básicas\n  clonedStopWorkflow.name = `Agente SDR - Stop - ${agentName}`;\n  clonedStopWorkflow.active = false;\n  clonedStopWorkflow.folderId = folderData.targetFolderId;\n  \n  // Garantir que tags existe como array\n  if (!clonedStopWorkflow.tags || !Array.isArray(clonedStopWorkflow.tags)) {\n    clonedStopWorkflow.tags = [];\n  }\n  clonedStopWorkflow.tags = ['agentes', 'Elleve', agentName, 'Stop'];\n\n  console.log('🔧 Workflow clonado:', clonedStopWorkflow.name);\n\n  // Atualizar nodes de forma segura\n  if (clonedStopWorkflow.nodes && Array.isArray(clonedStopWorkflow.nodes)) {\n    clonedStopWorkflow.nodes.forEach((node, index) => {\n      try {\n        // Atualizar webhook se for do tipo correto\n        if (node.type === 'n8n-nodes-base.webhook' && node.parameters) {\n          node.parameters.path = `stop-${agentType}`;\n          node.webhookId = `stop-${agentType}`;\n          console.log('🔗 Webhook atualizado para:', `stop-${agentType}`);\n        }\n\n        // Atualizar referências de workflow_id de forma segura\n        if (node.parameters && typeof node.parameters === 'object') {\n          const updateParameters = (params) => {\n            Object.keys(params).forEach(key => {\n              if (typeof params[key] === 'string' && params[key].includes('eBcColwirndBaFZX')) {\n                params[key] = params[key].replace('eBcColwirndBaFZX', agentId);\n              } else if (typeof params[key] === 'object' && params[key] !== null) {\n                updateParameters(params[key]);\n              }\n            });\n          };\n          updateParameters(node.parameters);\n        }\n      } catch (nodeError) {\n        console.log(`⚠️ Erro ao processar node ${index}:`, nodeError.message);\n      }\n    });\n  }\n\n  console.log('✅ Workflow Stop processado com sucesso');\n\n  return {\n    json: {\n      workflow: clonedStopWorkflow,\n      workflowData: {\n        name: clonedStopWorkflow.name,\n        nodes: clonedStopWorkflow.nodes,\n        connections: clonedStopWorkflow.connections,\n        active: clonedStopWorkflow.active,\n        settings: clonedStopWorkflow.settings,\n        folderId: folderData.targetFolderId,\n        tags: clonedStopWorkflow.tags\n      },\n      type: 'stop',\n      agentName,\n      agentType,\n      agentId,\n      folderId: folderData.targetFolderId,\n      debug: {\n        originalWorkflowName: stopWorkflow?.name,\n        folderDataReceived: !!folderData.targetFolderId,\n        nodesCount: clonedStopWorkflow.nodes?.length || 0\n      }\n    }\n  };\n\n} catch (error) {\n  console.log('❌ Erro crítico no Preparar Stop Clone:', error.message);\n  console.log('Stack trace:', error.stack);\n  \n  // Retornar erro estruturado para debug\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      stack: error.stack,\n      type: 'stop',\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "prepare-stop-clone",
+      "name": "Preparar Stop Clone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-start-workflow",
+      "name": "Create Start Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-lista-workflow",
+      "name": "Create Lista Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-status-workflow",
+      "name": "Create Status Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-stop-workflow",
+      "name": "Create Stop Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultados da criação dos workflows organizados com tratamento robusto de erros\ntry {\n  console.log('🔍 Iniciando consolidação de resultados');\n  \n  // Dados padrão para evitar erros\n  let agentName = 'Agente Padrão';\n  let agentType = 'agentePadrao';\n  let agentId = 'PADRAO123456789';\n  let folderData = { targetFolderId: null, elleveConsorciosFolder: { name: 'Raiz' } };\n  \n  // Tentar obter dados normalizados\n  try {\n    const normalizedNode = $('normalize-data');\n    if (normalizedNode && normalizedNode.first()) {\n      const normalizedData = normalizedNode.first().json;\n      agentName = normalizedData.agentName || agentName;\n      agentType = normalizedData.agentType || agentType;\n      agentId = normalizedData.agentId || agentId;\n      console.log('✅ Dados normalizados obtidos:', { agentName, agentType, agentId });\n    }\n  } catch (error) {\n    console.log('⚠️ Erro ao obter dados normalizados:', error.message);\n  }\n  \n  // Tentar obter dados da pasta\n  try {\n    const folderNode = $('find-target-folder');\n    if (folderNode && folderNode.first()) {\n      folderData = folderNode.first().json;\n      console.log('✅ Dados da pasta obtidos:', folderData);\n    }\n  } catch (error) {\n    console.log('⚠️ Erro ao obter dados da pasta:', error.message);\n  }\n  \n  // Tentar obter resultados dos workflows criados\n  const workflowResults = {};\n  const workflowTypes = ['start', 'lista', 'status', 'stop'];\n  const workflowNodes = ['Create Start Workflow', 'Create Lista Workflow', 'Create Status Workflow', 'Create Stop Workflow'];\n  \n  workflowTypes.forEach((type, index) => {\n    try {\n      const node = $(workflowNodes[index]);\n      if (node && node.first()) {\n        const result = node.first().json;\n        workflowResults[type] = {\n          id: result.id || 'N/A',\n          name: result.name || `Agente SDR - ${type.charAt(0).toUpperCase() + type.slice(1)} - ${agentName}`,\n          webhook: type === 'lista' ? `lista-prospeccao-${agentType}` : `${type}-${agentType}`,\n          folderId: folderData.targetFolderId,\n          success: true\n        };\n        console.log(`✅ Workflow ${type} criado com sucesso:`, workflowResults[type]);\n      } else {\n        workflowResults[type] = {\n          id: 'N/A',\n          name: `Agente SDR - ${type.charAt(0).toUpperCase() + type.slice(1)} - ${agentName}`,\n          webhook: type === 'lista' ? `lista-prospeccao-${agentType}` : `${type}-${agentType}`,\n          folderId: folderData.targetFolderId,\n          success: false,\n          error: 'Node não executado'\n        };\n        console.log(`⚠️ Workflow ${type} não foi criado:`, workflowResults[type]);\n      }\n    } catch (error) {\n      workflowResults[type] = {\n        id: 'N/A',\n        name: `Agente SDR - ${type.charAt(0).toUpperCase() + type.slice(1)} - ${agentName}`,\n        webhook: type === 'lista' ? `lista-prospeccao-${agentType}` : `${type}-${agentType}`,\n        folderId: folderData.targetFolderId,\n        success: false,\n        error: error.message\n      };\n      console.log(`❌ Erro ao obter workflow ${type}:`, error.message);\n    }\n  });\n  \n  // Verificar se pelo menos um workflow foi criado com sucesso\n  const successCount = Object.values(workflowResults).filter(w => w.success).length;\n  const totalCount = Object.keys(workflowResults).length;\n  \n  const results = {\n    success: successCount > 0,\n    message: successCount === totalCount \n      ? `Agente ${agentName} criado com sucesso! Todos os ${totalCount} workflows foram criados.`\n      : `Agente ${agentName} criado parcialmente. ${successCount}/${totalCount} workflows foram criados com sucesso.`,\n    agent: {\n      name: agentName,\n      type: agentType,\n      id: agentId\n    },\n    organization: {\n      folderId: folderData.targetFolderId,\n      folderName: folderData.elleveConsorciosFolder ? folderData.elleveConsorciosFolder.name : 'Raiz',\n      structure: 'Personal/Produção/Clientes/Elleve Consorcios'\n    },\n    workflows: workflowResults,\n    statistics: {\n      total: totalCount,\n      successful: successCount,\n      failed: totalCount - successCount\n    },\n    timestamp: new Date().toISOString()\n  };\n  \n  console.log('📊 Resultados consolidados:', results);\n  return { json: results };\n  \n} catch (error) {\n  console.log('❌ Erro crítico na consolidação:', error.message);\n  \n  // Retornar erro estruturado\n  return {\n    json: {\n      success: false,\n      message: `Erro na criação do agente: ${error.message}`,\n      error: {\n        message: error.message,\n        stack: error.stack\n      },\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "consolidate-results",
+      "name": "Consolidar Resultados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 250]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2220, 250]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Debug Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug Switch": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Get Folders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Start Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Lista Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Status Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Folders": {
+      "main": [
+        [
+          {
+            "node": "Encontrar Pasta Destino",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Start Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Lista Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Status Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar Stop Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontrar Pasta Destino": {
+      "main": [
+        [
+          {
+            "node": "Preparar Start Clone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Lista Clone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Status Clone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Stop Clone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Start Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Start Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Lista Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Lista Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Status Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Status Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Stop Clone": {
+      "main": [
+        [
+          {
+            "node": "Create Stop Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lista Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Status Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Stop Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultados": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-19T16:00:00.000Z",
+  "versionId": "1"
+}

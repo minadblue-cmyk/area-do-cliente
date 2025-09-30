@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhooks do Banco de Dados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Teste Webhooks do Banco de Dados - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Verificar se os webhooks estão carregando as permissões corretas do PostgreSQL.
+        </div>
+
+        <h2>🔗 Testes de Webhook</h2>
+        <button onclick="testarWebhookPermissoes()">🔑 Testar Webhook Permissões</button>
+        <button onclick="testarWebhookPerfis()">👥 Testar Webhook Perfis</button>
+        <button onclick="testarWebhookLogin()">🔐 Testar Webhook Login</button>
+        <button onclick="testarMapeamentoPermissoes()">🔍 Testar Mapeamento</button>
+        <button onclick="abrirApp()">🚀 Abrir App</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://n8n.code-iq.com.br/webhook';
+        const N8N_BASE = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook';
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        async function testarWebhookPermissoes() {
+            log('🔑 Testando webhook de permissões...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-permission`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    const permissions = data.data || data || [];
+                    
+                    let html = `
+                        <div class="status success">
+                            <strong>✅ Webhook de permissões funcionando!</strong><br>
+                            <strong>Total de permissões:</strong> ${permissions.length}<br>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    permissions.forEach(permission => {
+                        html += `
+                            <tr>
+                                <td>${permission.id}</td>
+                                <td>${permission.nome}</td>
+                                <td>${permission.descricao || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    addResult(html);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro desconhecido'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPerfis() {
+            log('👥 Testando webhook de perfis...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    const profiles = data || [];
+                    
+                    let html = `
+                        <div class="status success">
+                            <strong>✅ Webhook de perfis funcionando!</strong><br>
+                            <strong>Total de perfis:</strong> ${profiles.length}<br>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome do Perfil</th>
+                                    <th>Descrição</th>
+                                    <th>Permissões (IDs)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    profiles.forEach(profile => {
+                        const permissoes = profile.permissoes ? profile.permissoes.filter(id => id !== null) : [];
+                        html += `
+                            <tr>
+                                <td>${profile.id}</td>
+                                <td>${profile.nome_perfil}</td>
+                                <td>${profile.descricao || 'N/A'}</td>
+                                <td>${permissoes.join(', ')}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    addResult(html);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro desconhecido'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookLogin() {
+            log('🔐 Testando webhook de login...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'administrador@code-iq.com.br', 
+                        password: 'admin123' 
+                    })
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok && data.token) {
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Webhook de login funcionando!</strong><br>
+                            <strong>Nome:</strong> ${data.nome}<br>
+                            <strong>Perfil:</strong> ${data.perfil}<br>
+                            <strong>Perfil ID:</strong> ${data.perfil_id}<br>
+                            <strong>Token:</strong> ${data.token ? 'Presente' : 'Ausente'}
+                        </div>
+                    `);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro no login'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarMapeamentoPermissoes() {
+            log('🔍 Testando mapeamento de permissões...');
+            
+            try {
+                // Carregar permissões
+                const permissionsResponse = await fetch(`${N8N_BASE}/list-permission`);
+                const permissionsData = await permissionsResponse.json();
+                const permissions = permissionsData.data || permissionsData || [];
+                
+                // Carregar perfis
+                const profilesResponse = await fetch(`${N8N_BASE}/list-profile`);
+                const profilesData = await profilesResponse.json();
+                const profiles = profilesData || [];
+                
+                // Encontrar perfil do administrador
+                const adminProfile = profiles.find(p => p.id === 28 || p.nome_perfil === 'Administrador');
+                
+                if (adminProfile) {
+                    const adminPermissionIds = adminProfile.permissoes.filter(id => id !== null);
+                    const adminPermissionNames = adminPermissionIds
+                        .map(id => permissions.find(p => p.id === id)?.nome)
+                        .filter(Boolean);
+                    
+                    let html = `
+                        <div class="status success">
+                            <strong>✅ Mapeamento de permissões funcionando!</strong><br>
+                            <strong>Perfil Administrador encontrado:</strong> ${adminProfile.nome_perfil}<br>
+                            <strong>IDs das permissões:</strong> ${adminPermissionIds.join(', ')}<br>
+                            <strong>Nomes das permissões:</strong> ${adminPermissionNames.join(', ')}<br>
+                        </div>
+                    `;
+                    
+                    addResult(html);
+                } else {
+                    addResult(`<div class="status warning"><strong>⚠️ AVISO:</strong> Perfil do administrador não encontrado no banco de dados</div>`);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no mapeamento: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        // Teste automático ao carregar
+        window.onload = function() {
+            log('🔧 Página de teste carregada');
+            addResult('<div class="status info"><strong>ℹ️ Clique nos botões para testar os webhooks do banco de dados</strong></div>');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Aplicação Real</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Aplicação Real</h1>
+        
+        <div class="section">
+            <h2>1. Simular Exatamente o que a Aplicação Faz</h2>
+            <button onclick="simularAplicacao()">Simular Aplicação</button>
+            <div id="aplicacao"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Parsing da Resposta</h2>
+            <button onclick="testarParsing()">Testar Parsing</button>
+            <div id="parsing"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Estrutura da Resposta</h2>
+            <button onclick="verificarEstrutura()">Verificar Estrutura</button>
+            <div id="estrutura"></div>
+        </div>
+    </div>
+
+    <script>
+        async function simularAplicacao() {
+            const resultDiv = document.getElementById('aplicacao')
+            resultDiv.innerHTML = '<p class="info">🔄 Simulando aplicação real...</p>'
+            
+            try {
+                // Simular exatamente o que a aplicação faz
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('📡 Resposta do webhook:', data)
+                
+                // Simular a lógica da aplicação
+                let agentesList = []
+                
+                if (Array.isArray(data)) {
+                    agentesList = data
+                    console.log('📦 Formato: Array direto')
+                } else if (data.data && Array.isArray(data.data)) {
+                    agentesList = data.data
+                    console.log('📦 Formato: data.data array')
+                } else if (data.success && data.data) {
+                    agentesList = data.data
+                    console.log('📦 Formato: success.data array')
+                }
+                
+                console.log('📊 Agentes encontrados:', agentesList.length)
+                console.log('📊 Agentes:', agentesList)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔧 Simulação da Aplicação Real</h3>
+                    <p><strong>Status da resposta:</strong> ${response.status}</p>
+                    <p><strong>Tipo da resposta:</strong> ${typeof data}</p>
+                    <p><strong>É array:</strong> ${Array.isArray(data)}</p>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Message:</strong> ${data.message}</p>
+                    <p><strong>Total:</strong> ${data.total}</p>
+                    
+                    <h4>Estrutura da resposta:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h4>Agentes extraídos:</h4>
+                    <p><strong>Quantidade:</strong> ${agentesList.length}</p>
+                    <ul>
+                        ${agentesList.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>usuario_id: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesList.length === 3 ? 'success' : 'error'}">
+                        ${agentesList.length === 3 ? 
+                            '✅ CORRETO: Aplicação consegue extrair 3 agentes' : 
+                            '❌ INCORRETO: Aplicação não consegue extrair agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro na simulação:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function testarParsing() {
+            const resultDiv = document.getElementById('parsing')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando parsing...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                
+                // Testar diferentes formas de parsing
+                const testes = [
+                    {
+                        nome: 'Array direto',
+                        resultado: Array.isArray(data) ? data : null,
+                        sucesso: Array.isArray(data) && data.length > 0
+                    },
+                    {
+                        nome: 'data.data array',
+                        resultado: data.data && Array.isArray(data.data) ? data.data : null,
+                        sucesso: data.data && Array.isArray(data.data) && data.data.length > 0
+                    },
+                    {
+                        nome: 'success.data array',
+                        resultado: data.success && data.data && Array.isArray(data.data) ? data.data : null,
+                        sucesso: data.success && data.data && Array.isArray(data.data) && data.data.length > 0
+                    },
+                    {
+                        nome: 'data[0].data array',
+                        resultado: Array.isArray(data) && data[0] && data[0].data && Array.isArray(data[0].data) ? data[0].data : null,
+                        sucesso: Array.isArray(data) && data[0] && data[0].data && Array.isArray(data[0].data) && data[0].data.length > 0
+                    }
+                ]
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔍 Teste de Parsing</h3>
+                    <p><strong>Resposta original:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h4>Resultados dos testes:</h4>
+                    <ul>
+                        ${testes.map(teste => `
+                            <li>
+                                <strong>${teste.nome}:</strong> 
+                                ${teste.sucesso ? '✅ SUCESSO' : '❌ FALHOU'}
+                                <br>Agentes: ${teste.resultado ? teste.resultado.length : 0}
+                                ${teste.resultado ? `
+                                    <br>Primeiro agente: ${teste.resultado[0]?.nome || 'N/A'}
+                                ` : ''}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="info">ℹ️ O formato correto é: <strong>data.success && data.data && Array.isArray(data.data)</strong></p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarEstrutura() {
+            const resultDiv = document.getElementById('estrutura')
+            
+            // Estrutura esperada baseada nos dados reais
+            const estruturaEsperada = {
+                success: true,
+                message: "Agentes encontrados",
+                data: [
+                    {
+                        id: 68,
+                        nome: "Joana",
+                        usuario_id: 5,
+                        ativo: true
+                    },
+                    {
+                        id: 65,
+                        nome: "João", 
+                        usuario_id: 6,
+                        ativo: true
+                    },
+                    {
+                        id: 74,
+                        nome: "Zeca",
+                        usuario_id: 5,
+                        ativo: true
+                    }
+                ],
+                total: 3,
+                timestamp: "2025-09-24T18:59:01.682Z"
+            }
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📋 Estrutura Esperada da Resposta</h3>
+                <p><strong>Formato:</strong> Objeto com propriedades success, message, data, total, timestamp</p>
+                <p><strong>data:</strong> Array de agentes</p>
+                <p><strong>Total de agentes:</strong> 3</p>
+                
+                <h4>Estrutura completa:</h4>
+                <pre>${JSON.stringify(estruturaEsperada, null, 2)}</pre>
+                
+                <h4>Como extrair agentes:</h4>
+                <pre>
+// Método correto:
+const agentes = data.data || []
+
+// Verificações:
+- data.success === true ✅
+- Array.isArray(data.data) === true ✅  
+- data.data.length === 3 ✅
+                </pre>
+                
+                <h4>Problema na aplicação real:</h4>
+                <p class="warning">⚠️ A aplicação pode estar esperando um formato diferente ou há um erro na lógica de parsing</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            simularAplicacao()
+            testarParsing()
+            verificarEstrutura()
+        }
+    </script>
+</body>
+</html>

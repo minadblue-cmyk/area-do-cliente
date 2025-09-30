@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Webhook Dashboard</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook Dashboard</h2>
+            <button onclick="testarDashboard()">Testar Dashboard</button>
+            <div id="resultado-dashboard"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Criar Webhook Dashboard Simples</h2>
+            <button onclick="criarWebhookDashboard()">Criar Webhook Dashboard</button>
+            <div id="resultado-criacao"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Dashboard da Aplicação</h2>
+            <button onclick="testarDashboardApp()">Testar Dashboard App</button>
+            <div id="resultado-app"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarDashboard() {
+            const resultDiv = document.getElementById('resultado-dashboard')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook-dashboard...</p>'
+            
+            try {
+                const response = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/dashboard', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Webhook Dashboard Funcionando</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Webhook Dashboard</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p>O webhook pode não existir ou estar com problemas.</p>
+                `
+            }
+        }
+
+        function criarWebhookDashboard() {
+            const resultDiv = document.getElementById('resultado-criacao')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📋 Instruções para Criar Webhook Dashboard</h3>
+                <ol>
+                    <li>Acesse o n8n: <a href="https://n8n-lavo-n8n.15gxno.easypanel.host" target="_blank">https://n8n-lavo-n8n.15gxno.easypanel.host</a></li>
+                    <li>Crie um novo workflow</li>
+                    <li>Adicione um nó "Webhook"</li>
+                    <li>Configure:
+                        <ul>
+                            <li><strong>HTTP Method:</strong> GET</li>
+                            <li><strong>Path:</strong> /webhook/dashboard</li>
+                            <li><strong>Response Mode:</strong> "Respond to Webhook"</li>
+                        </ul>
+                    </li>
+                    <li>Adicione um nó "Set" para definir a resposta</li>
+                    <li>Configure a resposta com dados mock:
+                        <pre>{
+  "totalUsers": 1250,
+  "activeCompanies": 89,
+  "uploads": 342,
+  "leadsProspected": 2150,
+  "recent": [
+    { "id": "1", "description": "Novo usuário cadastrado", "timestamp": "2024-01-01T10:00:00Z" },
+    { "id": "2", "description": "Upload de arquivo realizado", "timestamp": "2024-01-01T09:00:00Z" }
+  ],
+  "weeklySeries": [
+    { "date": "Seg", "value": 120 },
+    { "date": "Ter", "value": 190 },
+    { "date": "Qua", "value": 300 }
+  ]
+}</pre>
+                    </li>
+                    <li>Ative o workflow</li>
+                    <li>Teste novamente</li>
+                </ol>
+            `
+        }
+
+        function testarDashboardApp() {
+            const resultDiv = document.getElementById('resultado-app')
+            resultDiv.innerHTML = '<p class="info">🔄 Redirecionando para dashboard...</p>'
+            
+            // Redirecionar para dashboard
+            window.location.href = '/dashboard'
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔄 Redirecionando para Dashboard</h3>
+                <p>Se o dashboard funcionar, o problema foi resolvido.</p>
+                <p>Se ainda houver erro, verifique o console (F12).</p>
+            `
+        }
+
+        // Auto-executar teste
+        window.onload = function() {
+            testarDashboard()
+        }
+    </script>
+</body>
+</html>

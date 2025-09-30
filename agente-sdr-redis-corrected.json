@@ -1,0 +1,1200 @@
+{
+  "name": "Agente SDR - Redis Control (CORRIGIDO)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-redis-control",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        368
+      ],
+      "id": "d47f537e-939b-46f3-bfdf-d9b3cb516241",
+      "name": "Webhook Start",
+      "webhookId": "0cf6f675-44e0-4776-ade8-4aba1208e7db"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "stop",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Para o Agente"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Inicia o Agente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -544,
+        368
+      ],
+      "id": "87f63022-040c-4533-93f0-087a535f1dc5",
+      "name": "Switch Action"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agente_execucoes",
+          "mode": "list",
+          "cachedResultName": "agente_execucoes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.body.logged_user.id }}",
+            "execution_id": "={{ $json.body.execution_id }}",
+            "workflow_id": "={{ $json.body.workflow_id }}",
+            "usuario_id": "={{ $json.body.usuario_id }}",
+            "usuario_nome": "={{ $json.body.logged_user.name }}",
+            "usuario_email": "={{ $json.body.logged_user.email }}",
+            "status": "stopped",
+            "parado_em": "={{ new Date().toISOString() }}",
+            "updated_at": "={{ new Date().toISOString() }}",
+            "payload_parada": "={{ JSON.stringify($json.body) }}",
+            "finalizado_em": "={{ new Date().toISOString() }}",
+            "duracao_segundos": "={{ Math.floor((new Date() - new Date($json.body.timestamp)) / 1000) }}"
+          },
+          "matchingColumns": [
+            "execution_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "usuario_nome",
+              "displayName": "usuario_nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "usuario_email",
+              "displayName": "usuario_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "iniciado_em",
+              "displayName": "iniciado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "parado_em",
+              "displayName": "parado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "payload_inicial",
+              "displayName": "payload_inicial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "payload_parada",
+              "displayName": "payload_parada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "finalizado_em",
+              "displayName": "finalizado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "erro_em",
+              "displayName": "erro_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "mensagem_erro",
+              "displayName": "mensagem_erro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "duracao_segundos",
+              "displayName": "duracao_segundos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "367c3be2-cf79-4dbf-87c1-a92ba097d12a",
+      "name": "Parar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $json.body.execution_id }}",
+        "value": "stopped",
+        "expire": true,
+        "ttl": "=3600"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -48
+      ],
+      "id": "c7da85a0-cdf1-41ce-8fb8-1ea4d4613f5c",
+      "name": "Redis - Parar",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n        \"success\": true,\n        \"message\": \"Agente parado com sucesso\",\n        \"execution_id\": \"{{ $json.body.execution_id }}\",\n        \"timestamp\": \"{{ $json.body.timestamp }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "b198ad83-2abe-4481-842b-67ac29da5161",
+      "name": "Respond Stop"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agente_execucoes",
+          "mode": "list",
+          "cachedResultName": "agente_execucoes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $execution.id }}",
+            "workflow_id": "={{ $json.body.workflow_id }}",
+            "usuario_id": "={{ $json.body.usuario_id }}",
+            "usuario_nome": "={{ $json.body.logged_user.name }}",
+            "status": "=running",
+            "iniciado_em": "={{ $json.body.timestamp }}",
+            "usuario_email": "={{ $json.body.logged_user.email }}",
+            "payload_inicial": "={{ $json.body }}",
+            "created_at": "={{ $now }}",
+            "updated_at": "={{ $now.toISO() }}",
+            "duracao_segundos": 0
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_nome",
+              "displayName": "usuario_nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "iniciado_em",
+              "displayName": "iniciado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "parado_em",
+              "displayName": "parado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_inicial",
+              "displayName": "payload_inicial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_parada",
+              "displayName": "payload_parada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duracao_segundos",
+              "displayName": "duracao_segundos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -256,
+        384
+      ],
+      "id": "656ba687-2d3a-4896-9ec0-09fbbef1a74a",
+      "name": "Iniciar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}",
+        "value": "running",
+        "expire": true,
+        "ttl": "=3600"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        384
+      ],
+      "id": "bb500d4d-3689-4e8f-ab7c-9403ce856713",
+      "name": "Redis - Iniciar",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n        \"success\": true,\n        \"message\": \"Agente iniciado com sucesso\",\n        \"execution_id\": \"{{ $execution.id }}\",\n        \"timestamp\": \"{{ $json.body.timestamp }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        192,
+        384
+      ],
+      "id": "6ea45e20-b287-42e6-baa4-ffe94c88c487",
+      "name": "Respond Start"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH pegar AS (\n  SELECT id\n  FROM public.lead\n  WHERE contatado IS NOT TRUE\n    AND (reservado_lote IS NULL\n         OR COALESCE(reservado_em, NOW() - INTERVAL '100 years')\n            < NOW() - INTERVAL '30 minutes')\n  ORDER BY COALESCE(data_ultima_interacao, data_criacao) ASC, id ASC\n  LIMIT 20\n  FOR UPDATE SKIP LOCKED\n)\nUPDATE public.lead l\nSET reservado_por  = $1,\n    reservado_em   = NOW(),\n    reservado_lote = $2\nFROM pegar p\nWHERE l.id = p.id\nRETURNING\n  l.id,\n  l.reservado_lote,\n  l.reservado_por,\n  l.reservado_em;",
+        "options": {
+          "queryReplacement": "={{$workflow.id}}, {{$execution.id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        384
+      ],
+      "id": "c9ade9e7-4e1b-404d-bd53-ff53294a251f",
+      "name": "Busca Leads",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.id, l.client_id, l.nome, l.nome_cliente, l.telefone, l.canal, l.status,\n  l.data_criacao, l.data_ultima_interacao, l.fonte_prospec, l.idade, l.profissao,\n  l.estado_civil, l.filhos, l.qtd_filhos, l.reservado_por, l.reservado_em, l.reservado_lote\nFROM public.lead l\nWHERE l.reservado_lote = $1\nORDER BY COALESCE(l.data_ultima_interacao, l.data_criacao) ASC, l.id ASC;",
+        "options": {
+          "queryBatching": "single",
+          "queryReplacement": "={{$item(0).$json.reservado_lote}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        672,
+        384
+      ],
+      "id": "bb23c29e-0efc-4dce-b1c3-5de72c2ccd79",
+      "name": "Buscar Lote",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        912,
+        352
+      ],
+      "id": "73bfd562-0c47-49bd-af67-95912561e75e",
+      "name": "Loop Principal"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        352
+      ],
+      "id": "8fd31cf2-77c8-43e4-b4c1-e820ac744060",
+      "name": "Redis Status Check",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verificar se agente foi parado via Redis\nconst redisData = $('Redis Status Check').item.json;\nconst statusAtual = redisData.propertyName || redisData.value || 'running';\n\nconsole.log('🔍 Status atual do agente:', statusAtual);\nconsole.log('📊 Dados Redis:', redisData);\n\nif (statusAtual === 'stopped') {\n  console.log('🛑 Agente foi parado pelo frontend');\n  \n  return [{\n    json: {\n      status: 'stopped',\n      motivo: 'Parado pelo usuário via frontend',\n      execution_id: $execution.id,\n      workflow_id: $workflow.id,\n      timestamp: new Date().toISOString(),\n      parar_loop: true\n    }\n  }];\n}\n\n// Se ainda está rodando, continua o fluxo normal\nconsole.log('✅ Agente ainda rodando, continuando loop');\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        352
+      ],
+      "id": "010c9998-cdec-4521-8ce2-cac311bc0053",
+      "name": "Verificar Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-status",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "stopped",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1632,
+        352
+      ],
+      "id": "57aa8870-5127-431b-9a79-fdbb3677bc9c",
+      "name": "Check if Stopped"
+    },
+    {
+      "parameters": {
+        "amount": "=2",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        352
+      ],
+      "id": "f4630586-4fba-458f-918a-d38eb8aaeeff",
+      "name": "Wait Processamento",
+      "webhookId": "609332bd-b138-44c3-acf7-a19fe0f59ba8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-data",
+              "name": "lead_data",
+              "key": "Lead Data",
+              "value": "={{ $json.json || $json }}",
+              "type": "object"
+            },
+            {
+              "id": "execution-info",
+              "name": "execution_info",
+              "key": "Execution Info",
+              "value": "={{ { execution_id: $execution.id, workflow_id: $workflow.id } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2112,
+        352
+      ],
+      "id": "69acff46-c148-4bcb-b70f-6346be6f3646",
+      "name": "Prepare Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.lead_data;\n\n// Saudação por horário (SP)\nfunction saudacaoSP() {\n  const horas = parseInt(new Intl.DateTimeFormat('pt-BR', {\n    timeZone: 'America/Sao_Paulo', hour: 'numeric', hour12: false\n  }).format(new Date()), 10);\n  if (horas >= 5 && horas < 12) return 'Bom dia';\n  if (horas >= 12 && horas < 19) return 'Boa tarde';\n  return 'Boa noite';\n}\n\nconst saudacao = saudacaoSP();\nconst nome = lead.nome_cliente || lead.nome || 'Cliente';\nconst profissao = lead.profissao || 'sua área de atuação';\nconst fonte = lead.fonte_prospec || 'um parceiro';\n\nconst mensagem = `${saudacao}, ${nome}! Sou Cleber Frank da Elleve Consórcios. Recebi seu contato através de ${fonte} e gostaria de falar sobre oportunidades de investimento. Como atua com ${profissao}, acredito que pode se interessar por soluções financeiras sólidas. Posso te explicar rapidamente como funciona, o que acha?`;\n\nconsole.log(`💬 Mensagem gerada para ${nome}: ${mensagem.substring(0, 50)}...`);\n\nreturn [{\n  json: {\n    ...$json,\n    mensagem,\n    telefone_normalizado: lead.telefone?.toString().replace(/\\D/g, '') || '',\n    nome_cliente: nome,\n    profissao_cliente: profissao\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        352
+      ],
+      "id": "9b562205-a0a6-49c6-bf39-8496c997e4be",
+      "name": "Gerar Mensagem"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.lead SET status = 'prospectando', data_ultima_interacao = NOW() WHERE id = $1 AND reservado_por = $2 AND reservado_lote = $3 RETURNING id, status, data_ultima_interacao;",
+        "options": {
+          "queryReplacement": "={{ $json.lead_data.id }}\n={{ $json.execution_info.workflow_id }}\n={{ $json.execution_info.execution_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2592,
+        352
+      ],
+      "id": "8a9478b7-8f00-4da2-9f1c-94f3a6b6d92b",
+      "name": "Atualizar Status Lead",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "=5",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2832,
+        352
+      ],
+      "id": "3758d7f3-3cb6-4b74-a3f6-83564ff2b066",
+      "name": "Simular Envio WhatsApp",
+      "webhookId": "5c62af13-3035-4a46-973f-d5ddcdf9404b"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.lead SET contatado = TRUE, status = 'concluido', data_ultima_interacao = NOW(), reservado_por = NULL, reservado_lote = NULL, reservado_em = NULL WHERE id = $1 RETURNING id, status, data_ultima_interacao;",
+        "options": {
+          "queryReplacement": "={{ $json.lead_data.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3072,
+        352
+      ],
+      "id": "aacecb0d-33e9-451e-b563-d49df2fc71a8",
+      "name": "Finalizar Lead",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agente_execucoes SET status = 'completed', finalizado_em = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, duracao_segundos = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - iniciado_em)) WHERE execution_id = $1 RETURNING id, execution_id, status, finalizado_em, duracao_segundos;",
+        "options": {
+          "queryReplacement": "={{ $execution.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3312,
+        352
+      ],
+      "id": "6174e6c1-67fc-4e5f-94e4-74814c4440a5",
+      "name": "Finalizar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        352
+      ],
+      "id": "516dc3da-ad5f-4896-828f-9585ef04438e",
+      "name": "Limpar Redis",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Agente parado pelo usuário"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        -144
+      ],
+      "id": "50ef4797-57a3-417d-b35a-e2c5c9a92105",
+      "name": "Stop Execution"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agente_execucoes SET status = 'stopped', parado_em = NOW(), payload_parada = $1, updated_at = NOW() WHERE execution_id = $2",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($json.body) }}\n={{ $json.body.execution_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2032,
+        80
+      ],
+      "id": "d71b54ca-f9b6-419a-9a4c-686336f20f18",
+      "name": "Parar Agente1",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook Start": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.code-iq.com.br",
+            "user-agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; pt-BR) WindowsPowerShell/5.1.26100.6584",
+            "content-length": "377",
+            "authorization": "Bearer 6kyMClf5mgstRnWNtI7GGw8m58CHyz5A1hO7RYhA",
+            "content-type": "application/json",
+            "x-forwarded-for": "191.220.223.65",
+            "x-forwarded-host": "n8n.code-iq.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "c9d5d40fca21",
+            "x-real-ip": "191.220.223.65",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "action": "stop",
+            "workflow_id": "eBcColwirndBaFZX",
+            "timestamp": "2025-09-19T08:01:44.634Z",
+            "logged_user": {
+              "email": "test@redis.com",
+              "name": "Test User Redis",
+              "id": 5
+            },
+            "usuario_id": 5,
+            "execution_id": "test-redis-20250919-080144"
+          },
+          "webhookUrl": "https://n8n.code-iq.com.br/webhook/agente-redis-control",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Start": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Parar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Iniciar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parar Agente": {
+      "main": [
+        [
+          {
+            "node": "Redis - Parar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis - Parar": {
+      "main": [
+        [
+          {
+            "node": "Respond Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Stop": {
+      "main": [
+        [
+          {
+            "node": "Stop Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iniciar Agente": {
+      "main": [
+        [
+          {
+            "node": "Redis - Iniciar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis - Iniciar": {
+      "main": [
+        [
+          {
+            "node": "Respond Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Start": {
+      "main": [
+        [
+          {
+            "node": "Busca Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Leads": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lote": {
+      "main": [
+        [
+          {
+            "node": "Loop Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Principal": {
+      "main": [
+        [
+          {
+            "node": "Redis Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalizar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Status Check": {
+      "main": [
+        [
+          {
+            "node": "Verificar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Status": {
+      "main": [
+        [
+          {
+            "node": "Check if Stopped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Stopped": {
+      "main": [
+        [
+          {
+            "node": "Parar Agente1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Processamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Processamento": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Gerar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status Lead": {
+      "main": [
+        [
+          {
+            "node": "Simular Envio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular Envio WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Finalizar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar Lead": {
+      "main": [
+        [
+          {
+            "node": "Finalizar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar Agente": {
+      "main": [
+        [
+          {
+            "node": "Limpar Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Redis": {
+      "main": []
+    },
+    "Parar Agente1": {
+      "main": [
+        [
+          {
+            "node": "Stop Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveExecutionProgress": true
+  },
+  "versionId": "78f9dd62-0f2e-4749-8d90-c83ba544f1ff",
+  "meta": {
+    "instanceId": "e390a7cf83b11ca128a2252ed89e7c1ee590debb7c2457ed87a7ff09e87ea108"
+  },
+  "id": "MAFbfn3NiO3kawNf",
+  "tags": [
+    {
+      "name": "Consórcio"
+    }
+  ]
+}

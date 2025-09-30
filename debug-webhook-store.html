@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Webhook Store</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        .warning { background: #fff3e0; color: #ef6c00; }
+        button { padding: 10px 20px; margin: 5px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #1976d2; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Webhook Store</h1>
+        
+        <button onclick="verificarTodos()">🔍 Verificar Tudo</button>
+        <button onclick="limparTudo()">🧹 Limpar Tudo</button>
+        <button onclick="corrigirWebhooks()">🔧 Corrigir Webhooks</button>
+        <button onclick="testarWebhook()">🧪 Testar Webhook</button>
+
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function verificarTodos() {
+            log('🔍 Verificando todos os dados do localStorage...', 'info');
+            
+            // Verificar todas as chaves do localStorage
+            const keys = Object.keys(localStorage);
+            log(`📦 Total de chaves no localStorage: ${keys.length}`, 'info');
+            
+            keys.forEach(key => {
+                if (key.includes('webhook') || key.includes('area')) {
+                    const value = localStorage.getItem(key);
+                    log(`🔑 ${key}: ${value ? value.substring(0, 100) + '...' : 'vazio'}`, 'info');
+                }
+            });
+
+            // Verificar especificamente os webhooks
+            const webhookKeys = ['flowhub:webhooks', 'area:webhooks', 'area:webhook-urls'];
+            webhookKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    try {
+                        const parsed = JSON.parse(value);
+                        log(`📊 ${key}: ${Object.keys(parsed).length} itens`, 'info');
+                        
+                        // Procurar por list-profiles (incorreto)
+                        if (Array.isArray(parsed)) {
+                            const incorreto = parsed.find(item => item === 'webhook/list-profiles');
+                            if (incorreto) {
+                                log(`❌ Encontrado webhook incorreto: ${incorreto}`, 'error');
+                            }
+                        } else if (typeof parsed === 'object') {
+                            const incorreto = Object.keys(parsed).find(key => key === 'webhook/list-profiles');
+                            if (incorreto) {
+                                log(`❌ Encontrado webhook incorreto: ${incorreto}`, 'error');
+                            }
+                        }
+                    } catch (e) {
+                        log(`❌ Erro ao parsear ${key}: ${e.message}`, 'error');
+                    }
+                } else {
+                    log(`ℹ️ ${key}: não encontrado`, 'info');
+                }
+            });
+        }
+
+        function limparTudo() {
+            log('🧹 Limpando todos os dados relacionados...', 'info');
+            
+            const keysToRemove = [
+                'flowhub:webhooks',
+                'area:webhooks', 
+                'area:webhook-urls',
+                'area:jwt',
+                'area:user',
+                'area:user_data'
+            ];
+            
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                log(`🗑️ Removido: ${key}`, 'success');
+            });
+            
+            log('✅ Limpeza concluída!', 'success');
+        }
+
+        function corrigirWebhooks() {
+            log('🔧 Corrigindo webhooks...', 'info');
+            
+            // Corrigir flowhub:webhooks
+            const flowhubWebhooks = localStorage.getItem('flowhub:webhooks');
+            if (flowhubWebhooks) {
+                try {
+                    const parsed = JSON.parse(flowhubWebhooks);
+                    let corrigido = false;
+                    
+                    if (parsed['webhook/list-profiles']) {
+                        parsed['webhook/list-profile'] = parsed['webhook/list-profiles'];
+                        delete parsed['webhook/list-profiles'];
+                        corrigido = true;
+                    }
+                    
+                    if (corrigido) {
+                        localStorage.setItem('flowhub:webhooks', JSON.stringify(parsed));
+                        log('✅ flowhub:webhooks corrigido', 'success');
+                    } else {
+                        log('ℹ️ flowhub:webhooks já está correto', 'info');
+                    }
+                } catch (e) {
+                    log(`❌ Erro ao corrigir flowhub:webhooks: ${e.message}`, 'error');
+                }
+            }
+
+            // Corrigir area:webhooks (array)
+            const areaWebhooks = localStorage.getItem('area:webhooks');
+            if (areaWebhooks) {
+                try {
+                    const parsed = JSON.parse(areaWebhooks);
+                    if (Array.isArray(parsed)) {
+                        const index = parsed.indexOf('webhook/list-profiles');
+                        if (index !== -1) {
+                            parsed[index] = 'webhook/list-profile';
+                            localStorage.setItem('area:webhooks', JSON.stringify(parsed));
+                            log('✅ area:webhooks corrigido', 'success');
+                        } else {
+                            log('ℹ️ area:webhooks já está correto', 'info');
+                        }
+                    }
+                } catch (e) {
+                    log(`❌ Erro ao corrigir area:webhooks: ${e.message}`, 'error');
+                }
+            }
+
+            // Corrigir area:webhook-urls
+            const areaUrls = localStorage.getItem('area:webhook-urls');
+            if (areaUrls) {
+                try {
+                    const parsed = JSON.parse(areaUrls);
+                    if (parsed['webhook/list-profiles']) {
+                        parsed['webhook/list-profile'] = parsed['webhook/list-profiles'];
+                        delete parsed['webhook/list-profiles'];
+                        localStorage.setItem('area:webhook-urls', JSON.stringify(parsed));
+                        log('✅ area:webhook-urls corrigido', 'success');
+                    } else {
+                        log('ℹ️ area:webhook-urls já está correto', 'info');
+                    }
+                } catch (e) {
+                    log(`❌ Erro ao corrigir area:webhook-urls: ${e.message}`, 'error');
+                }
+            }
+        }
+
+        function testarWebhook() {
+            log('🧪 Testando webhook list-profile...', 'info');
+            
+            fetch('https://n8n.code-iq.com.br/webhook/list-profile', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                log(`📡 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                return response.json();
+            })
+            .then(data => {
+                log('✅ Webhook funcionando!', 'success');
+                log(`📊 Resposta: ${JSON.stringify(data).substring(0, 300)}...`, 'info');
+            })
+            .catch(error => {
+                log(`❌ Erro: ${error.message}`, 'error');
+            });
+        }
+
+        // Executar verificação inicial
+        window.onload = function() {
+            log('🚀 Script carregado. Clique nos botões para executar as ações.', 'info');
+            verificarTodos();
+        };
+    </script>
+</body>
+</html>

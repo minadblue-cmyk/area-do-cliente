@@ -1,0 +1,28 @@
+{
+  "name": "redis-counter-server",
+  "version": "1.0.0",
+  "description": "Servidor Redis para gerenciar contadores de agentes N8N",
+  "main": "redis-counter-server.js",
+  "scripts": {
+    "start": "node redis-counter-server.js",
+    "dev": "nodemon redis-counter-server.js",
+    "test": "node test-redis-counter.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "redis": "^4.6.8",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "redis",
+    "counter",
+    "n8n",
+    "agent",
+    "webhook"
+  ],
+  "author": "Code IQ",
+  "license": "MIT"
+}

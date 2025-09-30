@@ -1,0 +1,10 @@
+open ftp.code-iq.com.br
+u535869980.cursor
+F0rm@T1001
+binary
+put "area-cliente-react-real.html" "area-cliente-app.html"
+put "dist/favicon.svg" "favicon.svg"
+cd assets
+lcd "dist/assets"
+mput *
+quit

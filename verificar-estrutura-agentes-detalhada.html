@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Estrutura Agentes Detalhada</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+        th { background: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Estrutura Agentes Detalhada</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Estrutura Completa dos Agentes</h2>
+            <button onclick="verificarEstruturaCompleta()">Verificar Estrutura</button>
+            <div id="estrutura-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Atribuições de Agentes</h2>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições</button>
+            <div id="atribuicoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Lógica de Filtro Corrigida</h2>
+            <button onclick="testarFiltroCorrigido()">Testar Filtro</button>
+            <div id="filtro-result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verificarEstruturaCompleta() {
+            const resultDiv = document.getElementById('estrutura-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Verificando estrutura completa dos agentes...</p>';
+
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Resposta completa:', data);
+
+                let agentes = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data;
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data;
+                }
+
+                if (agentes.length > 0) {
+                    const primeiroAgente = agentes[0];
+                    const colunas = Object.keys(primeiroAgente);
+                    
+                    let tabela = '<table><tr><th>Propriedade</th><th>Valor</th></tr>';
+                    colunas.forEach(coluna => {
+                        const valor = primeiroAgente[coluna];
+                        const tipo = typeof valor;
+                        const valorFormatado = valor === null ? 'null' : 
+                                            valor === undefined ? 'undefined' : 
+                                            Array.isArray(valor) ? `Array(${valor.length})` :
+                                            tipo === 'object' ? JSON.stringify(valor) :
+                                            String(valor);
+                        tabela += `<tr><td><strong>${coluna}</strong></td><td>${valorFormatado}</td></tr>`;
+                    });
+                    tabela += '</table>';
+
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Estrutura completa do primeiro agente:</p>
+                        ${tabela}
+                        <p class="info">📊 Total de agentes: ${agentes.length}</p>
+                        <p class="info">🔍 Todos os agentes:</p>
+                        <pre>${JSON.stringify(agentes, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Nenhum agente encontrado</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            const resultDiv = document.getElementById('atribuicoes-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Verificando atribuições de agentes...</p>';
+
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Resposta de atribuições:', data);
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Resposta de atribuições:</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function testarFiltroCorrigido() {
+            const resultDiv = document.getElementById('filtro-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando lógica de filtro corrigida...</p>';
+
+            try {
+                // Simular dados do usuário padrão
+                const userData = {
+                    id: '6',
+                    name: 'Usuário Elleve Padrão',
+                    perfil_id: 32
+                };
+
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                let agentes = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data;
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data;
+                }
+
+                const userId = parseInt(userData.id);
+                let resultado = `<p class="info">👤 Usuário: ${userData.name} (ID: ${userId})</p>`;
+                resultado += `<p class="info">📊 Total de agentes disponíveis: ${agentes.length}</p>`;
+                resultado += '<hr>';
+
+                // Simular permissões do usuário padrão
+                const agentPermissions = {
+                    canViewAll: false,
+                    canManage: false,
+                    canViewOwn: true,
+                    canAssignAgents: false
+                };
+
+                const agentesFiltrados = agentes.filter((agente) => {
+                    resultado += `<p>🔍 Filtrando agente: ${agente.nome} (usuario_id: ${agente.usuario_id})</p>`;
+                    resultado += `<p>   - atribuido_para_usuario: ${agente.atribuido_para_usuario || 'undefined'}</p>`;
+                    
+                    // REGRA PRINCIPAL: Se é administrador, sempre mostrar todos os agentes
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        resultado += `<p class="success">   ✅ Mostrando (ADMIN - vê todos)</p>`;
+                        return true;
+                    }
+                    
+                    // Para usuários não-admin: verificar se o agente está atribuído para eles
+                    if (agente.atribuido_para_usuario === userId) {
+                        resultado += `<p class="success">   ✅ Mostrando (atribuído para o usuário)</p>`;
+                        return true;
+                    }
+                    
+                    // Se o agente foi criado pelo usuário atual (regra temporária para compatibilidade)
+                    if (agente.usuario_id === userId) {
+                        resultado += `<p class="warning">   ⚠️ Mostrando (criado pelo usuário) - REGRA TEMPORÁRIA</p>`;
+                        return true;
+                    }
+                    
+                    // Caso contrário, não mostrar
+                    resultado += `<p class="error">   ❌ Ocultando (não atribuído para o usuário)</p>`;
+                    return false;
+                });
+
+                resultado += '<hr>';
+                resultado += `<p class="info">📊 Agentes filtrados: ${agentesFiltrados.length} de ${agentes.length}</p>`;
+                
+                if (agentesFiltrados.length > 0) {
+                    resultado += `<p class="success">✅ Agentes que o usuário pode ver:</p>`;
+                    agentesFiltrados.forEach(agente => {
+                        resultado += `<p>   - ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</p>`;
+                    });
+                } else {
+                    resultado += `<p class="error">❌ Nenhum agente visível para este usuário</p>`;
+                }
+
+                // Análise do problema
+                resultado += '<hr>';
+                resultado += `<p class="info">🔍 <strong>ANÁLISE DO PROBLEMA:</strong></p>`;
+                resultado += `<p class="info">- Usuário Padrão (ID 6) está vendo o João (usuario_id: 6)</p>`;
+                resultado += `<p class="info">- Deveria ver o Zeca (usuario_id: 5) que foi atribuído para ele</p>`;
+                resultado += `<p class="info">- Problema: A coluna 'atribuido_para_usuario' pode não existir ou não estar preenchida</p>`;
+
+                resultDiv.innerHTML = resultado;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

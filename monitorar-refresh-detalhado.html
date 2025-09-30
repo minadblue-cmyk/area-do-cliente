@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitorar Refresh Detalhado</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #dc2626; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .log { background: #1e1e1e; padding: 10px; border-radius: 5px; margin: 5px 0; font-family: monospace; font-size: 12px; }
+        .log.success { border-left: 3px solid #4ade80; }
+        .log.error { border-left: 3px solid #f87171; }
+        .log.info { border-left: 3px solid #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Monitorar Refresh Detalhado</h1>
+        
+        <div class="section">
+            <h2>1. Estado dos Webhooks</h2>
+            <button onclick="verificarWebhooks()">Verificar Webhooks</button>
+            <div id="webhooks-status"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Listagem de Agentes</h2>
+            <button onclick="testarListagem()">Testar Listagem</button>
+            <div id="listagem-status"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Criar Agente e Monitorar</h2>
+            <button onclick="criarEMonitorar()" class="danger">Criar Agente e Monitorar</button>
+            <div id="criacao-status"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Logs de Monitoramento</h2>
+            <button onclick="limparLogs()">Limpar Logs</button>
+            <div id="logs"></div>
+        </div>
+
+        <div class="section">
+            <h2>5. Verificar Console do Navegador</h2>
+            <button onclick="mostrarInstrucoes()">Mostrar Instruções</button>
+            <div id="instrucoes"></div>
+        </div>
+    </div>
+
+    <script>
+        let logs = []
+
+        function adicionarLog(tipo, mensagem) {
+            const timestamp = new Date().toLocaleTimeString()
+            logs.push({ tipo, mensagem, timestamp })
+            
+            const logsDiv = document.getElementById('logs')
+            logsDiv.innerHTML = logs.map(log => 
+                `<div class="log ${log.tipo}">[${log.timestamp}] ${log.mensagem}</div>`
+            ).join('')
+            
+            // Scroll para o final
+            logsDiv.scrollTop = logsDiv.scrollHeight
+        }
+
+        function verificarWebhooks() {
+            const resultDiv = document.getElementById('webhooks-status')
+            
+            const webhooks = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+            const temAgentes = webhooks['webhook/list-agentes'] ? true : false
+            const temCreate = webhooks['webhook/create-agente'] ? true : false
+            
+            resultDiv.innerHTML = `
+                <h3 class="${temAgentes && temCreate ? 'success' : 'error'}">Status dos Webhooks</h3>
+                <p><strong>webhook/list-agentes:</strong> ${temAgentes ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>webhook/create-agente:</strong> ${temCreate ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>Total de webhooks:</strong> ${Object.keys(webhooks).length}</p>
+            `
+            
+            adicionarLog('info', `Webhooks verificados: ${Object.keys(webhooks).length} encontrados`)
+        }
+
+        async function testarListagem() {
+            const resultDiv = document.getElementById('listagem-status')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando listagem de agentes...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Listagem Funcionando</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Total de agentes:</strong> ${Array.isArray(data) ? data.length : 'N/A'}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+                
+                adicionarLog('success', `Listagem OK: ${Array.isArray(data) ? data.length : 0} agentes encontrados`)
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro na Listagem</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+                
+                adicionarLog('error', `Erro na listagem: ${error.message}`)
+            }
+        }
+
+        async function criarEMonitorar() {
+            const resultDiv = document.getElementById('criacao-status')
+            resultDiv.innerHTML = '<p class="info">🔄 Criando agente e monitorando...</p>'
+            
+            adicionarLog('info', 'Iniciando criação de agente de teste')
+            
+            try {
+                // 1. Criar agente
+                const agentId = 'TESTE_' + Date.now()
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        agent_name: 'Teste Refresh Detalhado',
+                        agent_type: 'teste-refresh-detalhado',
+                        agent_id: agentId,
+                        user_id: '28', // ID do administrador
+                        descricao: 'Agente de teste para monitorar refresh',
+                        icone: '🔍',
+                        cor: 'bg-indigo-500',
+                        ativo: true
+                    })
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`)
+                }
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agente Criado</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Agent ID:</strong> ${agentId}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p><strong>Monitorando refresh automático...</strong></p>
+                `
+                
+                adicionarLog('success', `Agente criado: ${agentId}`)
+                
+                // 2. Monitorar refresh automático
+                let tentativas = 0
+                const maxTentativas = 10
+                
+                const monitorar = setInterval(async () => {
+                    tentativas++
+                    adicionarLog('info', `Tentativa ${tentativas}/${maxTentativas}: Verificando se agente aparece na lista`)
+                    
+                    try {
+                        const listResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        })
+                        
+                        if (listResponse.ok) {
+                            const listData = await listResponse.json()
+                            const agentes = Array.isArray(listData) ? listData : []
+                            
+                            // Procurar pelo agente criado
+                            const agenteEncontrado = agentes.find(agente => 
+                                agente.nome === 'Teste Refresh Detalhado' || 
+                                agente.agent_id === agentId ||
+                                agente.id === agentId
+                            )
+                            
+                            if (agenteEncontrado) {
+                                adicionarLog('success', `✅ Agente encontrado na lista! Nome: ${agenteEncontrado.nome}`)
+                                resultDiv.innerHTML += `
+                                    <div class="log success">
+                                        <strong>✅ SUCESSO!</strong> Agente encontrado na lista após ${tentativas} tentativas.
+                                        <br>Nome: ${agenteEncontrado.nome}
+                                        <br>ID: ${agenteEncontrado.id || agenteEncontrado.agent_id}
+                                    </div>
+                                `
+                                clearInterval(monitorar)
+                                return
+                            } else {
+                                adicionarLog('info', `Agente ainda não encontrado. Total de agentes: ${agentes.length}`)
+                            }
+                        }
+                        
+                        if (tentativas >= maxTentativas) {
+                            adicionarLog('error', `❌ Timeout: Agente não encontrado após ${maxTentativas} tentativas`)
+                            resultDiv.innerHTML += `
+                                <div class="log error">
+                                    <strong>❌ TIMEOUT!</strong> Agente não foi encontrado na lista após ${maxTentativas} tentativas.
+                                    <br>Isso indica que o refresh automático pode não estar funcionando.
+                                </div>
+                            `
+                            clearInterval(monitorar)
+                        }
+                        
+                    } catch (error) {
+                        adicionarLog('error', `Erro na verificação: ${error.message}`)
+                    }
+                }, 2000) // Verificar a cada 2 segundos
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro na Criação</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+                
+                adicionarLog('error', `Erro na criação: ${error.message}`)
+            }
+        }
+
+        function limparLogs() {
+            logs = []
+            document.getElementById('logs').innerHTML = ''
+            adicionarLog('info', 'Logs limpos')
+        }
+
+        function mostrarInstrucoes() {
+            const resultDiv = document.getElementById('instrucoes')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📋 Instruções para Verificar Console</h3>
+                <ol>
+                    <li>Pressione <strong>F12</strong> para abrir as ferramentas de desenvolvedor</li>
+                    <li>Vá para a aba <strong>Console</strong></li>
+                    <li>Procure por mensagens que começam com <strong>🔄 REFRESH:</strong></li>
+                    <li>Verifique se aparecem mensagens como:
+                        <ul>
+                            <li>"🔄 REFRESH: Chamando loadAgentes() após criação bem-sucedida"</li>
+                            <li>"🔄 REFRESH: Executando loadAgentes() após delay de 2s"</li>
+                            <li>"🔄 REFRESH: Executando loadAgentes() após delay de 5s (backup)"</li>
+                            <li>"🔄 REFRESH: Executando refresh final após criação"</li>
+                        </ul>
+                    </li>
+                    <li>Se essas mensagens não aparecem, o refresh automático não está funcionando</li>
+                </ol>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            adicionarLog('info', 'Sistema de monitoramento iniciado')
+            verificarWebhooks()
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Login com Permissões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste de Login com Permissões</h1>
+        
+        <div class="section info">
+            <h3>📋 Instruções:</h3>
+            <ol>
+                <li>Abra o console do navegador (F12)</li>
+                <li>Faça login com um usuário</li>
+                <li>Verifique se as permissões foram carregadas durante o login</li>
+                <li>Teste o acesso às páginas</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>🔍 Verificar Estado Atual:</h3>
+            <button onclick="verificarEstado()">Verificar Estado</button>
+            <button onclick="limparCache()">Limpar Cache</button>
+            <button onclick="abrirApp()">Abrir App</button>
+        </div>
+
+        <div id="resultado" class="section" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <pre id="resultado-texto"></pre>
+        </div>
+    </div>
+
+    <script>
+        function verificarEstado() {
+            const resultado = document.getElementById('resultado');
+            const resultadoTexto = document.getElementById('resultado-texto');
+            
+            try {
+                // Verificar localStorage
+                const authToken = localStorage.getItem('auth_token');
+                const authUser = localStorage.getItem('auth_user');
+                const authUserData = localStorage.getItem('auth_user_data');
+                
+                let userData = null;
+                if (authUserData) {
+                    try {
+                        userData = JSON.parse(authUserData);
+                    } catch (e) {
+                        console.error('Erro ao parsear userData:', e);
+                    }
+                }
+                
+                // Verificar webhooks
+                const webhooks = localStorage.getItem('webhook_urls');
+                const webhookArray = webhooks ? JSON.parse(webhooks) : [];
+                
+                const estado = {
+                    autenticado: !!authToken,
+                    token: authToken ? 'Presente' : 'Ausente',
+                    usuario: authUser || 'Nenhum',
+                    userData: userData,
+                    permissoes: userData?.permissions || [],
+                    webhooks: webhookArray.length,
+                    webhooksList: webhookArray
+                };
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = JSON.stringify(estado, null, 2);
+                
+                console.log('🔍 Estado atual:', estado);
+                
+            } catch (error) {
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = 'Erro: ' + error.message;
+                console.error('Erro ao verificar estado:', error);
+            }
+        }
+        
+        function limparCache() {
+            try {
+                // Limpar dados de autenticação
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+                localStorage.removeItem('auth_user_data');
+                
+                // Limpar cache do Vite
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            if (name.includes('vite') || name.includes('app')) {
+                                caches.delete(name);
+                            }
+                        });
+                    });
+                }
+                
+                alert('✅ Cache limpo com sucesso!');
+                console.log('🧹 Cache limpo');
+                
+            } catch (error) {
+                alert('❌ Erro ao limpar cache: ' + error.message);
+                console.error('Erro ao limpar cache:', error);
+            }
+        }
+        
+        function abrirApp() {
+            window.open('http://localhost:5173', '_blank');
+        }
+        
+        // Verificar estado automaticamente ao carregar
+        window.addEventListener('load', () => {
+            console.log('🔍 Página de teste carregada');
+            verificarEstado();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+{
+  "name": "Listar Agentes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "list-agentes",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-list-agentes",
+      "name": "Webhook Listar Agentes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": "public",
+        "table": "agente_config",
+        "options": {
+          "orderBy": "created_at DESC"
+        }
+      },
+      "id": "postgres-query-agentes",
+      "name": "PostgreSQL - Consultar Agentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "total",
+              "name": "total",
+              "value": "={{ Array.isArray($json) ? $json.length : 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "data",
+              "name": "data",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "Agentes encontrados",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-response",
+      "name": "Normalizar Resposta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-agentes",
+      "name": "Respond Agentes",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Listar Agentes": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Consultar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Consultar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Resposta": {
+      "main": [
+        [
+          {
+            "node": "Respond Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

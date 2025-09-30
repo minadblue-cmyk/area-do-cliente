@@ -1,0 +1,562 @@
+{
+  "name": "Create Agente with Redis",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente-redis",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "fdf5b7a5-4ef6-41b3-be91-124789159c12",
+      "name": "Webhook Create Agente Redis",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-1648, 432],
+      "webhookId": "create-agente-redis-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fa99acf-f4ca-45c4-b062-aa4780b74e7c",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name || 'Agente Padrão' }}",
+              "type": "string"
+            },
+            {
+              "id": "0482ff15-f5e2-44fb-b9f7-d0426aea4e3d",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type || 'agentePadrao' }}",
+              "type": "string"
+            },
+            {
+              "id": "85775350-052c-4d18-9ad2-7a321e951e85",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id || 'PADRAO123456789' }}",
+              "type": "string"
+            },
+            {
+              "id": "d3326eab-f5f8-4ec2-9e0b-426633f54108",
+              "name": "userId",
+              "value": "={{ $json.body.user_id || '1' }}",
+              "type": "string"
+            },
+            {
+              "id": "icone",
+              "name": "icone",
+              "value": "={{ $json.body.icone || '🤖' }}",
+              "type": "string"
+            },
+            {
+              "id": "cor",
+              "name": "cor",
+              "value": "={{ $json.body.cor || 'bg-blue-500' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c29b7da1-81da-489d-8fd8-dcfe3c803727",
+      "name": "Normalização",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1360, 432]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "04308445-4c72-4423-8628-ceec7d53a1ec",
+              "name": "agenteConfig.id",
+              "value": "={{ $json.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "ae228c95-87e2-4c5d-a8d4-c77e022f9f05",
+              "name": "agenteConfig.nome",
+              "value": "={{ $json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "d309a22f-b52c-44c6-a47e-17f1dedd3aff",
+              "name": "agenteConfig.workflow_id",
+              "value": "={{ $json.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "f90c3c06-3c22-4dff-b54c-5d799e0cd343",
+              "name": "agenteConfig.webhook_url",
+              "value": "=webhook/start-{{ $json.agentType }}",
+              "type": "string"
+            },
+            {
+              "id": "34d55ed0-9e2a-4b82-a6f1-6fdd8c013e34",
+              "name": "agenteConfig.descricao",
+              "value": "=Agente {{ $json.agentName }} para prospecção de leads",
+              "type": "string"
+            },
+            {
+              "id": "a9d0e2a0-9809-40ba-88a7-dba321a73383",
+              "name": "agenteConfig.icone",
+              "value": "={{ $json.icone }}",
+              "type": "string"
+            },
+            {
+              "id": "266bdfd3-e9d5-45b6-88fd-49dba8f088a6",
+              "name": "agenteConfig.cor",
+              "value": "={{ $json.cor }}",
+              "type": "string"
+            },
+            {
+              "id": "e45d27dd-bc7e-43e2-bc40-4e8d6b2cdb15",
+              "name": "agenteConfig.ativo",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "891719b4-2a55-4a63-be58-ca1d4d2e938a",
+              "name": "agenteConfig.created_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "2243823f-ef67-41b2-99e5-e9a92a00595d",
+              "name": "agenteConfig.updated_at",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5fdd8b7-cfc7-4d51-92b4-0bcea33449d8",
+      "name": "Preparar Inserção DB",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1120, 432]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agentes_config",
+          "mode": "list",
+          "cachedResultName": "agentes_config"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ativo": "={{ $json.agenteConfig.ativo }}",
+            "nome": "={{ $json.agenteConfig.nome }}",
+            "workflow_id": "={{ $json.agenteConfig.workflow_id }}",
+            "webhook_url": "={{ $json.agenteConfig.webhook_url }}",
+            "descricao": "={{ $json.agenteConfig.descricao }}",
+            "icone": "={{ $json.agenteConfig.icone }}",
+            "cor": "={{ $json.agenteConfig.cor }}",
+            "created_at": "={{ $json.agenteConfig.created_at }}",
+            "updated_at": "={{ $json.agenteConfig.updated_at }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "webhook_url",
+              "displayName": "webhook_url",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descricao",
+              "displayName": "descricao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "icone",
+              "displayName": "icone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cor",
+              "displayName": "cor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ativo",
+              "displayName": "ativo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "fcc92424-ad5c-4ba4-8029-b6088d0e7cae",
+      "name": "Insert rows in a table",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-912, 432],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obter contadores únicos do Redis para cada tipo de workflow\nconst agentType = $('Normalização').item.json.agentType;\nconst agentName = $('Normalização').item.json.agentName;\n\n// Tipos de workflows que precisam ser clonados\nconst workflowTypes = [\n  { type: 'start', templateId: 'eBcColwirndBaFZX' },\n  { type: 'status', templateId: 'ZWeNlGbLyv0HkXvq' },\n  { type: 'lista', templateId: 'piyABVIDxK9OoLYB' },\n  { type: 'stop', templateId: 'wBDZdXsfY8GYYUYg' }\n];\n\n// Preparar dados para cada workflow\nconst workflowData = workflowTypes.map(workflowType => {\n  return {\n    json: {\n      agentType: agentType,\n      agentName: agentName,\n      webhookType: workflowType.type,\n      templateId: workflowType.templateId,\n      workflowName: `Agente SDR - ${workflowType.type.charAt(0).toUpperCase() + workflowType.type.slice(1)} - ${agentName}`,\n      webhookPath: `${workflowType.type}-${agentType}`\n    }\n  };\n});\n\nreturn workflowData;"
+      },
+      "id": "preparar-workflows",
+      "name": "Preparar Workflows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-672, 432]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/api/counter/next",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"agentType\": $json.agentType,\n  \"webhookType\": $json.webhookType\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "obter-contador-redis",
+      "name": "Obter Contador Redis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-400, 432]
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.templateId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "id": "buscar-template",
+      "name": "Buscar Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-128, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Usar contador do Redis para criar nome único\nconst templateData = $json;\nconst agentData = $('Obter Contador Redis').item.json;\nconst workflowData = $('Preparar Workflows').item.json;\nconst counter = agentData.counter;\n\nconst clonedWorkflow = {\n  name: `${workflowData.workflowName}-${counter}`,\n  settings: templateData.settings || {},\n  nodes: templateData.nodes.map(node => {\n    if (node.type === 'n8n-nodes-base.webhook') {\n      return {\n        ...node,\n        parameters: {\n          ...node.parameters,\n          path: `${workflowData.webhookPath}-${counter}`\n        }\n      };\n    }\n    return node;\n  }),\n  connections: templateData.connections || {}\n};\n\nreturn { workflowData: clonedWorkflow, counter: counter, webhookType: workflowData.webhookType };"
+      },
+      "id": "preparar-workflow-clonado",
+      "name": "Preparar Workflow Clonado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [144, 432]
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowData = $input.first().json.workflowData;\n\n// Criar um objeto limpo apenas com campos permitidos na criação\nconst cleanWorkflowData = {\n  name: workflowData.name,\n  settings: {}, // Sempre vazio para criação\n  nodes: workflowData.nodes,\n  connections: workflowData.connections\n  // Remover: active, versionId, id, createdAt, updatedAt, etc.\n};\n\nreturn { workflowData: cleanWorkflowData };"
+      },
+      "id": "limpar-dados-workflow",
+      "name": "Limpar Dados Workflow",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [352, 432]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "options": {}
+      },
+      "id": "clonar-workflow",
+      "name": "Clonar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "id": "ativar-workflow",
+      "name": "Ativar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [768, 432],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultados de todos os workflows criados\nconst allResults = $input.all();\nconst agentData = $('Normalização').item.json;\n\n// Extrair informações dos workflows criados\nconst workflows = allResults.map(result => {\n  const workflowInfo = result.json;\n  const counter = result.counter;\n  const webhookType = result.webhookType;\n  \n  return {\n    id: workflowInfo.id,\n    name: workflowInfo.name,\n    webhookType: webhookType,\n    counter: counter,\n    webhookPath: `${webhookType}-${agentData.agentType}-${counter}`\n  };\n});\n\n// Preparar resposta consolidada\nconst response = {\n  success: true,\n  message: `${workflows.length} workflows criados com sucesso`,\n  agentName: agentData.agentName,\n  agentType: agentData.agentType,\n  agentId: agentData.agentId,\n  workflows: workflows,\n  timestamp: new Date().toISOString(),\n  executionId: $execution.id\n};\n\nreturn response;"
+      },
+      "id": "consolidar-resultados",
+      "name": "Consolidar Resultados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [976, 432]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1184, 432]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente Redis": {
+      "main": [
+        [
+          {
+            "node": "Normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização": {
+      "main": [
+        [
+          {
+            "node": "Preparar Inserção DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Inserção DB": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Preparar Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Workflows": {
+      "main": [
+        [
+          {
+            "node": "Obter Contador Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter Contador Redis": {
+      "main": [
+        [
+          {
+            "node": "Buscar Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Template": {
+      "main": [
+        [
+          {
+            "node": "Preparar Workflow Clonado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Workflow Clonado": {
+      "main": [
+        [
+          {
+            "node": "Limpar Dados Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Dados Workflow": {
+      "main": [
+        [
+          {
+            "node": "Clonar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Ativar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultados": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "redis-counter-v1",
+  "meta": {
+    "instanceId": "redis-counter-instance"
+  },
+  "id": "REDIS-COUNTER-WORKFLOW",
+  "tags": ["redis", "counter", "agente"]
+}

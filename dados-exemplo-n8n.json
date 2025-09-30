@@ -1,0 +1,120 @@
+{
+  "payloadFrontend": {
+    "agent_name": "Agente Vendas Premium",
+    "agent_type": "vendas-premium",
+    "agent_id": "VENDA_PREMIUM_001",
+    "user_id": "5",
+    "icone": "💼",
+    "cor": "bg-green-500",
+    "descricao": "Agente para vendas premium"
+  },
+  
+  "dadosNormalizados": {
+    "agentName": "Agente Vendas Premium",
+    "agentType": "vendas-premium",
+    "agentId": "VENDA_PREMIUM_001",
+    "userId": "5",
+    "icone": "💼",
+    "cor": "bg-green-500"
+  },
+  
+  "contadoresRedis": {
+    "agente_counter_global": 1,
+    "vendas-premium:start": 1,
+    "vendas-premium:status": 1,
+    "vendas-premium:lista": 1,
+    "vendas-premium:stop": 1
+  },
+  
+  "workflowsCriados": [
+    {
+      "tipo": "start",
+      "contador": 1,
+      "nome": "Agente SDR - Start-1",
+      "webhookPath": "start1-vendas-premium",
+      "templateId": "eBcColwirndBaFZX"
+    },
+    {
+      "tipo": "status",
+      "contador": 1,
+      "nome": "Agente SDR - Status-1",
+      "webhookPath": "status1-vendas-premium",
+      "templateId": "ZWeNlGbLyv0HkXvq"
+    },
+    {
+      "tipo": "lista",
+      "contador": 1,
+      "nome": "Agente SDR - Lista-1",
+      "webhookPath": "lista1-vendas-premium",
+      "templateId": "piyABVIDxK9OoLYB"
+    },
+    {
+      "tipo": "stop",
+      "contador": 1,
+      "nome": "Agente SDR - Stop-1",
+      "webhookPath": "stop1-vendas-premium",
+      "templateId": "wBDZdXsfY8GYYUYg"
+    }
+  ],
+  
+  "respostaFinal": {
+    "success": true,
+    "message": "4 workflows criados com sucesso",
+    "agentName": "Agente Vendas Premium",
+    "agentType": "vendas-premium",
+    "agentId": "VENDA_PREMIUM_001",
+    "workflows": [
+      {
+        "id": "workflow-start-001",
+        "name": "Agente SDR - Start-1",
+        "webhookType": "start",
+        "counter": 1,
+        "webhookPath": "start1-vendas-premium",
+        "status": "ativo"
+      },
+      {
+        "id": "workflow-status-002",
+        "name": "Agente SDR - Status-1",
+        "webhookType": "status",
+        "counter": 1,
+        "webhookPath": "status1-vendas-premium",
+        "status": "ativo"
+      },
+      {
+        "id": "workflow-lista-003",
+        "name": "Agente SDR - Lista-1",
+        "webhookType": "lista",
+        "counter": 1,
+        "webhookPath": "lista1-vendas-premium",
+        "status": "ativo"
+      },
+      {
+        "id": "workflow-stop-004",
+        "name": "Agente SDR - Stop-1",
+        "webhookType": "stop",
+        "counter": 1,
+        "webhookPath": "stop1-vendas-premium",
+        "status": "ativo"
+      }
+    ],
+    "summary": {
+      "totalWorkflows": 4,
+      "activeWorkflows": 4,
+      "webhookTypes": ["start", "status", "lista", "stop"]
+    },
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "executionId": "execution-123"
+  },
+  
+  "configuracaoRedis": {
+    "chaveGlobal": "agente_counter_global",
+    "chavesPorTipo": {
+      "start": "vendas-premium:start",
+      "status": "vendas-premium:status", 
+      "lista": "vendas-premium:lista",
+      "stop": "vendas-premium:stop"
+    },
+    "operacao": "increment",
+    "valorIncremento": 1
+  }
+}

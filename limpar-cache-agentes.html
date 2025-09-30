@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpar Cache de Agentes</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 8px; 
+        }
+        button { 
+            background: #dc2626; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 10px 0; 
+        }
+        button:hover { 
+            background: #b91c1c; 
+        }
+        .success { 
+            color: #10b981; 
+        }
+        .warning { 
+            color: #f59e0b; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpar Cache de Agentes</h1>
+        <p>Este script irá:</p>
+        <ul>
+            <li>Limpar cache local de agentes</li>
+            <li>Limpar timestamps de cache</li>
+            <li>Forçar nova sincronização</li>
+        </ul>
+        
+        <button onclick="clearCache()">Limpar Cache e Recarregar</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearCache() {
+            const result = document.getElementById('result');
+            
+            try {
+                console.log('🧹 Limpando cache de agentes...');
+                
+                // Limpar cache de agentes
+                localStorage.removeItem('agents-cache');
+                localStorage.removeItem('agents-cache-timestamp');
+                
+                // Limpar cache de webhooks também
+                localStorage.removeItem('flowhub:webhooks');
+                
+                console.log('✅ Cache limpo com sucesso');
+                
+                result.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Cache Limpo com Sucesso!</h3>
+                        <p>Os seguintes itens foram removidos:</p>
+                        <ul>
+                            <li>agents-cache</li>
+                            <li>agents-cache-timestamp</li>
+                            <li>flowhub:webhooks</li>
+                        </ul>
+                        <p><strong>Recarregue a página principal agora.</strong></p>
+                    </div>
+                `;
+                
+                // Recarregar após 3 segundos
+                setTimeout(() => {
+                    if (window.opener) {
+                        window.opener.location.reload();
+                        window.close();
+                    } else {
+                        alert('Agora recarregue a página principal manualmente.');
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Erro ao limpar cache:', error);
+                result.innerHTML = `
+                    <div class="warning">
+                        <h3>❌ Erro ao Limpar Cache</h3>
+                        <p>Erro: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

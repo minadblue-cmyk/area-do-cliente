@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Parsing Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção Parsing Agentes</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook com Parsing Corrigido</h2>
+            <button onclick="testarWebhookCorrigido()">Testar Webhook Corrigido</button>
+            <div id="webhook"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Simular Parsing da Aplicação</h2>
+            <button onclick="simularParsingAplicacao()">Simular Parsing</button>
+            <div id="parsing"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Resultado Final</h2>
+            <button onclick="verificarResultado()">Verificar Resultado</button>
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarWebhookCorrigido() {
+            const resultDiv = document.getElementById('webhook')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook com parsing corrigido...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                console.log('📡 Resposta do webhook:', data)
+                
+                // Simular parsing corrigido da aplicação
+                let agentesList = []
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                  // Formato: [{ success: true, data: [...] }]
+                  agentesList = data[0].data
+                  console.log('✅ Formato correto detectado: Array com objeto')
+                } else if (data.data && Array.isArray(data.data)) {
+                  // Formato: { data: [...] }
+                  agentesList = data.data
+                  console.log('✅ Formato fallback detectado: Objeto com data array')
+                } else if (data.success && data.data) {
+                  // Formato: { success: true, data: [...] }
+                  agentesList = data.data
+                  console.log('✅ Formato fallback detectado: Objeto com success e data')
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">📊 Teste do Webhook com Parsing Corrigido</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Tipo da resposta:</strong> ${typeof data}</p>
+                    <p><strong>É array:</strong> ${Array.isArray(data)}</p>
+                    <p><strong>Primeiro item success:</strong> ${data[0]?.success || 'N/A'}</p>
+                    <p><strong>Primeiro item data length:</strong> ${data[0]?.data?.length || 'N/A'}</p>
+                    
+                    <h4>Agentes extraídos:</h4>
+                    <p><strong>Quantidade:</strong> ${agentesList.length}</p>
+                    
+                    ${agentesList.map(agente => `
+                        <div class="agent-card">
+                            <strong>${agente.nome}</strong> (ID: ${agente.id})
+                            <br>Usuário ID: ${agente.usuario_id}
+                            <br>Ativo: ${agente.ativo ? 'Sim' : 'Não'}
+                            <br>Status: ${agente.status_atual || 'stopped'}
+                        </div>
+                    `).join('')}
+                    
+                    <p class="${agentesList.length === 3 ? 'success' : 'error'}">
+                        ${agentesList.length === 3 ? '✅ Parsing funcionando - 3 agentes extraídos' : '❌ Parsing com problema - ' + agentesList.length + ' agentes extraídos'}
+                    </p>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function simularParsingAplicacao() {
+            const resultDiv = document.getElementById('parsing')
+            
+            // Simular resposta do webhook
+            const responseData = [
+                {
+                    "success": true,
+                    "message": "Agentes encontrados",
+                    "data": [
+                        {
+                            "id": 68,
+                            "nome": "Joana",
+                            "usuario_id": 5,
+                            "ativo": true,
+                            "status_atual": "stopped"
+                        },
+                        {
+                            "id": 65,
+                            "nome": "João",
+                            "usuario_id": 6,
+                            "ativo": true,
+                            "status_atual": "stopped"
+                        },
+                        {
+                            "id": 74,
+                            "nome": "Zeca",
+                            "usuario_id": 5,
+                            "ativo": true,
+                            "status_atual": "stopped"
+                        }
+                    ],
+                    "total": 3
+                }
+            ]
+            
+            // Simular parsing corrigido
+            let agentesList = []
+            if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].success && Array.isArray(responseData[0].data)) {
+              // Formato: [{ success: true, data: [...] }]
+              agentesList = responseData[0].data
+            } else if (responseData.data && Array.isArray(responseData.data)) {
+              // Formato: { data: [...] }
+              agentesList = responseData.data
+            } else if (responseData.success && responseData.data) {
+              // Formato: { success: true, data: [...] }
+              agentesList = responseData.data
+            }
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔧 Simulação de Parsing da Aplicação</h3>
+                <p><strong>Resposta original:</strong> Array com ${responseData.length} item(s)</p>
+                <p><strong>Primeiro item success:</strong> ${responseData[0].success}</p>
+                <p><strong>Primeiro item data length:</strong> ${responseData[0].data.length}</p>
+                
+                <h4>Parsing corrigido:</h4>
+                <p><strong>agentesList extraído:</strong> Array com ${agentesList.length} item(s)</p>
+                
+                <h4>Agentes extraídos:</h4>
+                ${agentesList.map(agente => `
+                    <div class="agent-card">
+                        <strong>${agente.nome}</strong> (ID: ${agente.id})
+                        <br>Usuário ID: ${agente.usuario_id}
+                        <br>Ativo: ${agente.ativo ? 'Sim' : 'Não'}
+                        <br>Status: ${agente.status_atual || 'stopped'}
+                    </div>
+                `).join('')}
+                
+                <p class="${agentesList.length === 3 ? 'success' : 'error'}">
+                    ${agentesList.length === 3 ? '✅ Parsing funcionando' : '❌ Parsing com problema'}
+                </p>
+            `
+        }
+
+        function verificarResultado() {
+            const resultDiv = document.getElementById('resultado')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔍 Verificação do Resultado Final</h3>
+                
+                <div class="agent-card">
+                    <h4>Problema Identificado:</h4>
+                    <p>❌ <code>🔍 Filtrando agente: undefined (usuario_id: undefined)</code></p>
+                    <p>❌ <code>📊 Carregando dados da tabela para undefined...</code></p>
+                    <p>❌ <code>🔍 Usando webhook: webhook/lista-undefined</code></p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Correção Aplicada:</h4>
+                    <p>✅ Parsing corrigido para formato <code>[{ success: true, data: [...] }]</code></p>
+                    <p>✅ Agora acessa <code>response.data[0].data</code> em vez de <code>response.data</code></p>
+                    <p>✅ Verificação de <code>Array.isArray(response.data) && response.data[0].success</code></p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Resultado Esperado:</h4>
+                    <p>✅ <code>🔍 Filtrando agente: Joana (usuario_id: 5)</code></p>
+                    <p>✅ <code>📊 Carregando dados da tabela para Joana...</code></p>
+                    <p>✅ <code>🔍 Usando webhook: webhook/lista10-joana</code></p>
+                    <p>✅ <code>✅ Joana: Mostrando (ADMIN - vê todos)</code></p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Próximos Passos:</h4>
+                    <ol>
+                        <li>Recarregar a aplicação</li>
+                        <li>Verificar se os agentes aparecem na tela</li>
+                        <li>Verificar se o console mostra os nomes corretos</li>
+                        <li>Verificar se não há mais erros de CORS</li>
+                    </ol>
+                </div>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarWebhookCorrigido()
+            simularParsingAplicacao()
+            verificarResultado()
+        }
+    </script>
+</body>
+</html>

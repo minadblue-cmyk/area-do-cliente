@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Dashboard Final</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Final do Dashboard</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Webhooks no localStorage</h2>
+            <button onclick="verificarWebhooks()">Verificar Webhooks</button>
+            <div id="webhooks-status"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Dashboard</h2>
+            <button onclick="testarDashboard()">Ir para Dashboard</button>
+            <div id="dashboard-status"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Upload</h2>
+            <button onclick="testarUpload()">Ir para Upload</button>
+            <div id="upload-status"></div>
+        </div>
+    </div>
+
+    <script>
+        function verificarWebhooks() {
+            const resultDiv = document.getElementById('webhooks-status')
+            
+            const webhooks = JSON.parse(localStorage.getItem('flowhub:webhooks') || '{}')
+            const totalWebhooks = Object.keys(webhooks).length
+            const temDashboard = webhooks['webhook-dashboard'] ? true : false
+            
+            resultDiv.innerHTML = `
+                <h3 class="${temDashboard ? 'success' : 'error'}">${temDashboard ? '✅' : '❌'} Status dos Webhooks</h3>
+                <p><strong>Total de webhooks:</strong> ${totalWebhooks}</p>
+                <p><strong>webhook-dashboard:</strong> ${temDashboard ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>webhook/list-agentes:</strong> ${webhooks['webhook/list-agentes'] ? '✅ Presente' : '❌ Ausente'}</p>
+                <p><strong>webhook-upload:</strong> ${webhooks['webhook-upload'] ? '✅ Presente' : '❌ Ausente'}</p>
+                
+                <h4>Webhooks essenciais:</h4>
+                <ul>
+                    <li>webhook-dashboard: ${webhooks['webhook-dashboard'] || '❌ AUSENTE'}</li>
+                    <li>webhook/list-agentes: ${webhooks['webhook/list-agentes'] || '❌ AUSENTE'}</li>
+                    <li>webhook-upload: ${webhooks['webhook-upload'] || '❌ AUSENTE'}</li>
+                    <li>webhook-login: ${webhooks['webhook-login'] || '❌ AUSENTE'}</li>
+                    <li>webhook-me: ${webhooks['webhook-me'] || '❌ AUSENTE'}</li>
+                </ul>
+            `
+        }
+
+        function testarDashboard() {
+            const resultDiv = document.getElementById('dashboard-status')
+            resultDiv.innerHTML = '<p class="info">🔄 Redirecionando para dashboard...</p>'
+            
+            // Redirecionar para dashboard
+            window.location.href = '/dashboard'
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔄 Redirecionando para Dashboard</h3>
+                <p>Se o dashboard funcionar, o problema foi resolvido.</p>
+                <p>Se ainda houver erro, verifique o console (F12).</p>
+            `
+        }
+
+        function testarUpload() {
+            const resultDiv = document.getElementById('upload-status')
+            resultDiv.innerHTML = '<p class="info">🔄 Redirecionando para upload...</p>'
+            
+            // Redirecionar para upload
+            window.location.href = '/upload'
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔄 Redirecionando para Upload</h3>
+                <p>Se o upload funcionar, o problema foi resolvido.</p>
+                <p>Se ainda houver erro, verifique o console (F12).</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            verificarWebhooks()
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Versão do App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .danger-btn { background-color: #dc3545; }
+        .danger-btn:hover { background-color: #c82333; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .webhook-item {
+            background-color: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+        }
+        .webhook-old {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .webhook-new {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificação de Versão do App - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Verificar se o app está carregando a versão mais recente ou se há cache antigo.
+        </div>
+
+        <h2>🛠️ Ações de Diagnóstico</h2>
+        <button onclick="verificarVersao()">🔍 Verificar Versão Atual</button>
+        <button onclick="verificarWebhooks()">🔗 Verificar Webhooks</button>
+        <button onclick="verificarLocalStorage()">💾 Verificar localStorage</button>
+        <button onclick="limparCacheCompleto()" class="danger-btn">🧹 Limpar Cache Completo</button>
+        <button onclick="abrirApp()">🚀 Abrir App</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        function verificarVersao() {
+            log('🔍 Verificando versão do app...');
+            
+            // Verificar se estamos no localhost
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            addResult(`
+                <div class="status ${isLocalhost ? 'success' : 'warning'}">
+                    <strong>🌐 URL Atual:</strong> ${window.location.href}<br>
+                    <strong>🏠 Localhost:</strong> ${isLocalhost ? 'SIM' : 'NÃO'}
+                </div>
+            `);
+            
+            // Verificar timestamp do build
+            const buildTime = document.querySelector('meta[name="build-time"]')?.content || 'Não encontrado';
+            log(`📅 Build Time: ${buildTime}`);
+            
+            // Verificar se há service worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    log(`🔧 Service Workers registrados: ${registrations.length}`);
+                    registrations.forEach((registration, index) => {
+                        log(`   ${index + 1}. ${registration.scope}`);
+                    });
+                });
+            }
+            
+            log('✅ Verificação de versão concluída!');
+        }
+
+        function verificarWebhooks() {
+            log('🔗 Verificando webhooks...');
+            
+            // Webhooks esperados na versão atual
+            const webhooksEsperados = [
+                'webhook/list-agentes',
+                'webhook/create-agente',
+                'webhook/update-agente',
+                'webhook/delete-agente',
+                'webhook/list-profiles',
+                'webhook/create-profile',
+                'webhook/edit-profile',
+                'webhook/delete-profile',
+                'webhook/list-users',
+                'webhook/list-company',
+                'webhook/login',
+                'webhook-me'
+            ];
+            
+            // Webhooks antigos que não deveriam estar mais
+            const webhooksAntigos = [
+                'webhook-listar-saudacao',
+                'webhook-salvar-saudacao',
+                'webhook-deletar-saudacao',
+                'webhook-agente-recebimento',
+                'webhook-upload',
+                'webhook-controle-agente'
+            ];
+            
+            const webhooks = localStorage.getItem('flowhub:webhooks');
+            if (webhooks) {
+                try {
+                    const parsed = JSON.parse(webhooks);
+                    const webhookIds = Object.keys(parsed);
+                    
+                    log(`📦 Total de webhooks no localStorage: ${webhookIds.length}`);
+                    
+                    // Verificar webhooks esperados
+                    const webhooksEncontrados = webhooksEsperados.filter(id => webhookIds.includes(id));
+                    const webhooksFaltando = webhooksEsperados.filter(id => !webhookIds.includes(id));
+                    
+                    // Verificar webhooks antigos
+                    const webhooksAntigosEncontrados = webhooksAntigos.filter(id => webhookIds.includes(id));
+                    
+                    let html = '<h3>🔗 Análise de Webhooks</h3>';
+                    
+                    // Webhooks encontrados (novos)
+                    if (webhooksEncontrados.length > 0) {
+                        html += '<div class="status success"><strong>✅ Webhooks Atuais Encontrados:</strong><br>';
+                        webhooksEncontrados.forEach(id => {
+                            html += `<div class="webhook-item webhook-new">${id}</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    // Webhooks faltando
+                    if (webhooksFaltando.length > 0) {
+                        html += '<div class="status warning"><strong>⚠️ Webhooks Atuais Faltando:</strong><br>';
+                        webhooksFaltando.forEach(id => {
+                            html += `<div class="webhook-item">${id}</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    // Webhooks antigos
+                    if (webhooksAntigosEncontrados.length > 0) {
+                        html += '<div class="status danger"><strong>❌ Webhooks Antigos (Devem ser Removidos):</strong><br>';
+                        webhooksAntigosEncontrados.forEach(id => {
+                            html += `<div class="webhook-item webhook-old">${id}</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    // Lista completa
+                    html += '<div class="status info"><strong>📋 Lista Completa de Webhooks:</strong><br>';
+                    webhookIds.forEach(id => {
+                        const isOld = webhooksAntigos.includes(id);
+                        const isNew = webhooksEsperados.includes(id);
+                        const className = isOld ? 'webhook-old' : (isNew ? 'webhook-new' : 'webhook-item');
+                        html += `<div class="${className}">${id}</div>`;
+                    });
+                    html += '</div>';
+                    
+                    addResult(html);
+                    
+                    // Determinar se é versão antiga
+                    if (webhooksAntigosEncontrados.length > 0) {
+                        addResult('<div class="status danger"><strong>🚨 PROBLEMA DETECTADO:</strong> O app está carregando webhooks antigos! Isso indica cache desatualizado.</div>');
+                    } else if (webhooksFaltando.length === 0) {
+                        addResult('<div class="status success"><strong>✅ VERSÃO ATUAL:</strong> O app parece estar carregando a versão mais recente.</div>');
+                    } else {
+                        addResult('<div class="status warning"><strong>⚠️ VERSÃO PARCIAL:</strong> Alguns webhooks atuais estão faltando.</div>');
+                    }
+                    
+                } catch (error) {
+                    log(`❌ Erro ao parsear webhooks: ${error.message}`);
+                    addResult('<div class="status danger"><strong>❌ ERRO:</strong> Não foi possível analisar os webhooks do localStorage.</div>');
+                }
+            } else {
+                log('📦 Nenhum webhook encontrado no localStorage');
+                addResult('<div class="status info"><strong>ℹ️ INFO:</strong> Nenhum webhook encontrado no localStorage. O app carregará os webhooks padrão.</div>');
+            }
+            
+            log('✅ Verificação de webhooks concluída!');
+        }
+
+        function verificarLocalStorage() {
+            log('💾 Verificando localStorage...');
+            
+            const keys = Object.keys(localStorage);
+            log(`📦 Total de chaves no localStorage: ${keys.length}`);
+            
+            let html = '<h3>💾 Análise do localStorage</h3>';
+            
+            if (keys.length === 0) {
+                html += '<div class="status info"><strong>ℹ️ localStorage vazio</strong></div>';
+            } else {
+                html += '<div class="status info"><strong>📋 Chaves encontradas:</strong><br>';
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const size = new Blob([value]).size;
+                    html += `<div class="webhook-item">${key} (${size} bytes)</div>`;
+                    log(`   - ${key}: ${size} bytes`);
+                });
+                html += '</div>';
+            }
+            
+            addResult(html);
+            log('✅ Verificação do localStorage concluída!');
+        }
+
+        function limparCacheCompleto() {
+            if (!confirm('⚠️ Tem certeza que deseja limpar TODO o cache? Esta ação não pode ser desfeita!')) {
+                return;
+            }
+            
+            log('🧹 Iniciando limpeza completa...');
+            
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                log('✅ localStorage limpo');
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                log('✅ sessionStorage limpo');
+                
+                // Limpar cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                log('✅ Cookies limpos');
+                
+                // Limpar cache do service worker
+                if ('caches' in window) {
+                    caches.keys().then(cacheNames => {
+                        return Promise.all(
+                            cacheNames.map(cacheName => {
+                                log(`🗑️ Removendo cache: ${cacheName}`);
+                                return caches.delete(cacheName);
+                            })
+                        );
+                    }).then(() => {
+                        log('✅ Service Worker caches limpos');
+                        addResult('<div class="status success"><strong>✅ CACHE LIMPO:</strong> Todo o cache foi removido com sucesso!</div>');
+                    });
+                }
+                
+                addResult('<div class="status success"><strong>✅ LIMPEZA CONCLUÍDA:</strong> Cache removido. Recarregue a página para ver as mudanças.</div>');
+                
+            } catch (error) {
+                log(`❌ Erro durante limpeza: ${error.message}`);
+                addResult('<div class="status danger"><strong>❌ ERRO:</strong> Erro durante a limpeza do cache.</div>');
+            }
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        // Verificação automática ao carregar
+        window.onload = function() {
+            verificarVersao();
+            verificarWebhooks();
+            verificarLocalStorage();
+        };
+    </script>
+</body>
+</html>

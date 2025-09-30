@@ -1,0 +1,508 @@
+{
+  "name": "Create Agente - Corrigido",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-agente-webhook-id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "icone",
+              "name": "icone",
+              "value": "={{ $json.body.icone || '🤖' }}",
+              "type": "string"
+            },
+            {
+              "id": "cor",
+              "name": "cor",
+              "value": "={{ $json.body.cor || 'bg-blue-500' }}",
+              "type": "string"
+            },
+            {
+              "id": "descricao",
+              "name": "descricao",
+              "value": "={{ $json.body.descricao || 'Agente para prospecção de leads' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalizar-dados",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "GET",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "buscar-templates",
+      "name": "Buscar Templates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Encontrar templates dos 4 workflows essenciais com tipos específicos\nconst templates = $input.first().json.data || $input.first().json;\nconst agentName = $('Normalizar Dados').item.json.agentName;\nconst agentType = $('Normalizar Dados').item.json.agentType;\n\nconsole.log('🔍 Procurando templates para:', agentName);\nconsole.log('🔍 Agent Type:', agentType);\n\nif (!Array.isArray(templates)) {\n  console.log('❌ Templates não é um array!');\n  return [];\n}\n\n// Templates essenciais para clonar com seus tipos\nconst essentialTemplates = [\n  { name: 'start-agente', webhookType: 'start' },\n  { name: 'stop-agente', webhookType: 'stop' },\n  { name: 'status-agente', webhookType: 'status' },\n  { name: 'lista-prospeccao-agente', webhookType: 'lista' }\n];\n\nconst foundTemplates = [];\n\nfor (const templateConfig of essentialTemplates) {\n  const template = templates.find(t => \n    t.name && t.name.toLowerCase().includes(templateConfig.name.toLowerCase())\n  );\n  \n  if (template) {\n    console.log(`✅ Template encontrado: ${template.name} (ID: ${template.id})`);\n    foundTemplates.push({\n      json: {\n        id: template.id,\n        name: template.name,\n        webhookType: templateConfig.webhookType,\n        agentName: agentName,\n        agentType: agentType\n      }\n    });\n  } else {\n    console.log(`❌ Template não encontrado: ${templateConfig.name}`);\n  }\n}\n\nconsole.log(`📊 Total de templates encontrados: ${foundTemplates.length}`);\nreturn foundTemplates;"
+      },
+      "id": "encontrar-templates",
+      "name": "Encontrar Templates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": $('Normalizar Dados').item.json.agentName + \" - \" + $json.webhookType,\n  \"active\": false\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "clonar-workflow",
+      "name": "Clonar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "GET",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "buscar-workflow-clonado",
+      "name": "Buscar Workflow Clonado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Modificar webhook path baseado no tipo\nconst workflowData = $json;\nconst agentType = $('Normalizar Dados').item.json.agentType;\nconst webhookType = $('Encontrar Templates').item.json.webhookType;\n\nconsole.log('🔧 Modificando webhook para:', webhookType);\nconsole.log('🔧 Agent Type:', agentType);\n\n// Mapear tipos para paths\nconst webhookPaths = {\n  'start': `start-${agentType}`,\n  'status': `status-${agentType}`,\n  'lista': `lista-${agentType}`,\n  'stop': `stop-${agentType}`\n};\n\nconst newPath = webhookPaths[webhookType] || `start-${agentType}`;\n\nconsole.log('🔧 Novo path do webhook:', newPath);\n\n// Encontrar o nó webhook no workflow\nconst modifiedNodes = workflowData.nodes.map(node => {\n  if (node.type === 'n8n-nodes-base.webhook') {\n    console.log('🔧 Modificando nó webhook:', node.name);\n    return {\n      ...node,\n      parameters: {\n        ...node.parameters,\n        path: newPath\n      }\n    };\n  }\n  return node;\n});\n\nreturn [{\n  json: {\n    ...workflowData,\n    nodes: modifiedNodes,\n    webhookPath: newPath,\n    webhookType: webhookType\n  }\n}];"
+      },
+      "id": "modificar-webhook-path",
+      "name": "Modificar Webhook Path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "PUT",
+        "jsonBody": "={{ {\n  \"name\": $json.name,\n  \"nodes\": $json.nodes,\n  \"connections\": $json.connections,\n  \"active\": false\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "atualizar-workflow",
+      "name": "Atualizar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "ativar-workflow",
+      "name": "Ativar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "f3wwl4nc9cR7HUKd",
+          "name": "n8n Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agente_config (nome, workflow_id, webhook_url, descricao, icone, cor, ativo, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "nome",
+                "value": "={{ $('Normalizar Dados').item.json.agentName }}"
+              },
+              {
+                "name": "workflow_id",
+                "value": "={{ $json.id }}"
+              },
+              {
+                "name": "webhook_url",
+                "value": "webhook/{{ $json.webhookPath }}"
+              },
+              {
+                "name": "descricao",
+                "value": "={{ $('Normalizar Dados').item.json.descricao }}"
+              },
+              {
+                "name": "icone",
+                "value": "={{ $('Normalizar Dados').item.json.icone }}"
+              },
+              {
+                "name": "cor",
+                "value": "={{ $('Normalizar Dados').item.json.cor }}"
+              },
+              {
+                "name": "ativo",
+                "value": "true"
+              },
+              {
+                "name": "user_id",
+                "value": "={{ $('Normalizar Dados').item.json.userId }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "inserir-agente-config",
+      "name": "Inserir Agente Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [2220, 300],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "true",
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "Agente criado com sucesso",
+              "type": "string"
+            },
+            {
+              "id": "agentId",
+              "name": "agentId",
+              "value": "={{ $('Normalizar Dados').item.json.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "agentName",
+              "name": "agentName",
+              "value": "={{ $('Normalizar Dados').item.json.agentName }}",
+              "type": "string"
+            },
+            {
+              "id": "workflowId",
+              "name": "workflowId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "webhookUrl",
+              "name": "webhookUrl",
+              "value": "webhook/{{ $json.webhookPath }}",
+              "type": "string"
+            },
+            {
+              "id": "webhookType",
+              "name": "webhookType",
+              "value": "={{ $json.webhookType }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "executionId",
+              "name": "executionId",
+              "value": "={{ $execution.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepara-json",
+      "name": "Prepara Json",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [2660, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Buscar Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Templates": {
+      "main": [
+        [
+          {
+            "node": "Encontrar Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontrar Templates": {
+      "main": [
+        [
+          {
+            "node": "Clonar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Buscar Workflow Clonado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Workflow Clonado": {
+      "main": [
+        [
+          {
+            "node": "Modificar Webhook Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modificar Webhook Path": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Ativar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Inserir Agente Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserir Agente Config": {
+      "main": [
+        [
+          {
+            "node": "Prepara Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepara Json": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0,
+  "shared": [],
+  "tags": []
+}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração Permanente Timezone</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .code-block { background: #1e1e1e; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .step { background: #333; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4ade80; }
+        .method { background: #444; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Configuração Permanente Timezone</h1>
+        
+        <div class="section">
+            <h2>🎯 Métodos para Tornar Permanente</h2>
+            
+            <div class="method">
+                <h3>📋 Método 1: Arquivo .env (Recomendado)</h3>
+                <p class="info">Crie um arquivo .env na raiz do n8n:</p>
+                <div class="code-block">
+                    <pre># No arquivo .env do n8n
+GENERIC_TIMEZONE=America/Sao_Paulo
+
+# Outras configurações importantes
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=seu_password
+N8N_HOST=0.0.0.0
+N8N_PORT=5678</pre>
+                </div>
+                <p class="success">✅ Vantagem: Sobrevive a updates e restarts</p>
+            </div>
+
+            <div class="method">
+                <h3>📋 Método 2: Docker Compose (Se usando Docker)</h3>
+                <p class="info">Configure no docker-compose.yml:</p>
+                <div class="code-block">
+                    <pre>version: '3.8'
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    environment:
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n.env:/home/node/.n8n/.env  # Arquivo .env personalizado
+    ports:
+      - "5678:5678"
+    restart: unless-stopped
+
+volumes:
+  n8n_data:</pre>
+                </div>
+                <p class="success">✅ Vantagem: Configuração versionada e persistente</p>
+            </div>
+
+            <div class="method">
+                <h3>📋 Método 3: Systemd Service (Linux)</h3>
+                <p class="info">Crie um arquivo de serviço systemd:</p>
+                <div class="code-block">
+                    <pre># /etc/systemd/system/n8n.service
+[Unit]
+Description=n8n workflow automation
+After=network.target
+
+[Service]
+Type=simple
+User=n8n
+WorkingDirectory=/opt/n8n
+Environment=GENERIC_TIMEZONE=America/Sao_Paulo
+Environment=TZ=America/Sao_Paulo
+ExecStart=/usr/bin/node /opt/n8n/packages/cli/bin/n8n start
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target</pre>
+                </div>
+                <p class="success">✅ Vantagem: Controle total do sistema</p>
+            </div>
+
+            <div class="method">
+                <h3>📋 Método 4: Script de Inicialização</h3>
+                <p class="info">Crie um script que sempre define a variável:</p>
+                <div class="code-block">
+                    <pre>#!/bin/bash
+# /opt/n8n/start-n8n.sh
+
+# Definir timezone
+export GENERIC_TIMEZONE=America/Sao_Paulo
+export TZ=America/Sao_Paulo
+
+# Iniciar n8n
+cd /opt/n8n
+node packages/cli/bin/n8n start</pre>
+                </div>
+                <p class="success">✅ Vantagem: Controle total sobre a inicialização</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Implementação no Easy Panel</h2>
+            
+            <div class="step">
+                <h3>✅ Passo 1: Criar Arquivo .env</h3>
+                <p class="info">No console do Easy Panel:</p>
+                <div class="code-block">
+                    <pre># Navegar para o diretório do n8n
+cd /opt/n8n
+
+# Criar arquivo .env
+nano .env
+
+# Adicionar conteúdo:
+GENERIC_TIMEZONE=America/Sao_Paulo
+TZ=America/Sao_Paulo</pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>✅ Passo 2: Modificar Script de Inicialização</h3>
+                <p class="info">Encontrar e modificar o script de start:</p>
+                <div class="code-block">
+                    <pre># Encontrar o script de inicialização
+find /opt -name "*n8n*" -type f | grep -E "(start|init|launch)"
+
+# Ou verificar se existe um script personalizado
+ls -la /opt/n8n/
+
+# Modificar o script para incluir as variáveis
+nano /opt/n8n/start.sh</pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>✅ Passo 3: Configurar Auto-start</h3>
+                <p class="info">Garantir que o n8n inicie automaticamente:</p>
+                <div class="code-block">
+                    <pre># Verificar se o n8n está configurado como serviço
+systemctl status n8n
+
+# Se não estiver, criar serviço
+sudo systemctl enable n8n
+sudo systemctl start n8n
+
+# Verificar se está rodando
+systemctl status n8n</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Testar Configuração</h2>
+            <button onclick="testarConfiguracao()">Testar Configuração</button>
+            <div id="teste-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Script de Verificação</h2>
+            <button onclick="gerarScriptVerificacao()">Gerar Script de Verificação</button>
+            <div id="script-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>⚠️ Troubleshooting</h2>
+            <div class="warning">
+                <h3>Problemas Comuns:</h3>
+                <ul>
+                    <li><strong>Variável não aplicada:</strong> Verificar se o arquivo .env está sendo lido</li>
+                    <li><strong>Permissões:</strong> Garantir que o usuário do n8n tem acesso ao arquivo .env</li>
+                    <li><strong>Restart necessário:</strong> Sempre reiniciar o n8n após mudanças</li>
+                    <li><strong>Ordem de carregamento:</strong> O .env deve ser carregado antes do n8n iniciar</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testarConfiguracao() {
+            const resultDiv = document.getElementById('teste-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando configuração...</p>';
+
+            try {
+                // Simular teste de timezone
+                const timezones = ['America/Sao_Paulo', 'America/New_York'];
+                let resultado = '<p class="success">✅ Teste de Configuração:</p>';
+                
+                timezones.forEach(tz => {
+                    const now = new Date();
+                    const tzTime = new Date(now.toLocaleString("en-US", {timeZone: tz}));
+                    const offset = tzTime.getTimezoneOffset() / -60;
+                    
+                    resultado += `
+                        <p class="info">🌍 ${tz}: ${tzTime.toLocaleString()} (UTC${offset >= 0 ? '+' : ''}${offset})</p>
+                    `;
+                });
+
+                resultado += `
+                    <hr>
+                    <p class="warning">⚠️ Para testar no servidor, execute:</p>
+                    <div class="code-block">
+                        <pre># Verificar variáveis de ambiente
+echo $GENERIC_TIMEZONE
+echo $TZ
+
+# Verificar se o n8n está rodando
+systemctl status n8n
+
+# Verificar logs do n8n
+journalctl -u n8n -f</pre>
+                    </div>
+                `;
+
+                resultDiv.innerHTML = resultado;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        function gerarScriptVerificacao() {
+            const resultDiv = document.getElementById('script-result');
+            
+            const script = `
+#!/bin/bash
+# Script de verificação de configuração permanente
+
+echo "🔍 Verificando configuração de timezone do n8n..."
+echo ""
+
+# Verificar variáveis de ambiente
+echo "📋 Variáveis de ambiente:"
+echo "GENERIC_TIMEZONE: $GENERIC_TIMEZONE"
+echo "TZ: $TZ"
+echo ""
+
+# Verificar arquivo .env
+echo "📁 Verificando arquivo .env:"
+if [ -f "/opt/n8n/.env" ]; then
+    echo "✅ Arquivo .env encontrado"
+    cat /opt/n8n/.env | grep -E "(GENERIC_TIMEZONE|TZ)"
+else
+    echo "❌ Arquivo .env não encontrado"
+fi
+echo ""
+
+# Verificar status do n8n
+echo "🔧 Status do n8n:"
+systemctl status n8n --no-pager
+echo ""
+
+# Verificar logs recentes
+echo "📝 Logs recentes do n8n:"
+journalctl -u n8n --no-pager -n 10
+echo ""
+
+# Verificar se o n8n está respondendo
+echo "🌐 Testando conectividade:"
+curl -s -o /dev/null -w "%{http_code}" http://localhost:5678 || echo "❌ N8N não está respondendo"
+echo ""
+
+echo "✅ Verificação concluída!"
+            `;
+
+            resultDiv.innerHTML = `
+                <p class="success">✅ Script de verificação gerado!</p>
+                <div class="code-block">
+                    <pre>${script}</pre>
+                </div>
+                <p class="info">💡 Salve como 'verificar-n8n.sh' e execute com 'bash verificar-n8n.sh'</p>
+            `;
+        }
+    </script>
+</body>
+</html>

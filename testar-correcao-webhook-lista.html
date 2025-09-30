@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Webhook Lista</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção Webhook Lista</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook Lista - Joana</h2>
+            <button onclick="testarWebhookLista()">Testar Joana</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Simular Comportamento da Aplicação</h2>
+            <button onclick="simularAplicacao()">Simular Aplicação</button>
+            <div id="simulacao"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarWebhookLista() {
+            const resultDiv = document.getElementById('resultado')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook de lista da Joana...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/lista10-joana', {
+                    method: 'GET',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                
+                console.log('📡 Resposta do webhook:', response)
+                
+                // Verificar se a resposta está vazia
+                if (response.status === 200) {
+                    const textResponse = await response.text()
+                    console.log('📡 Resposta como texto:', textResponse)
+                    
+                    if (!textResponse || textResponse.trim() === '') {
+                        resultDiv.innerHTML = `
+                            <h3 class="warning">⚠️ Webhook Retorna Vazio</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Resposta:</strong> (vazia)</p>
+                            <p class="warning">⚠️ O webhook está funcionando mas retorna conteúdo vazio</p>
+                            <p class="info">💡 Isso pode indicar que não há prospects para este agente ou o webhook não está configurado corretamente</p>
+                        `
+                    } else {
+                        try {
+                            const jsonData = JSON.parse(textResponse)
+                            resultDiv.innerHTML = `
+                                <h3 class="success">✅ Webhook Funcionando</h3>
+                                <p><strong>Status:</strong> ${response.status}</p>
+                                <p><strong>Resposta:</strong></p>
+                                <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+                            `
+                        } catch (parseError) {
+                            resultDiv.innerHTML = `
+                                <h3 class="error">❌ Erro no Parse</h3>
+                                <p><strong>Status:</strong> ${response.status}</p>
+                                <p><strong>Resposta:</strong></p>
+                                <pre>${textResponse}</pre>
+                                <p class="error">❌ Erro ao fazer parse do JSON: ${parseError.message}</p>
+                            `
+                        }
+                    }
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 class="error">❌ Erro HTTP</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p class="error">❌ Webhook retornou erro HTTP</p>
+                    `
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error)
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Teste</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p class="error">❌ Verifique se o webhook está configurado corretamente no n8n</p>
+                `
+            }
+        }
+
+        function simularAplicacao() {
+            const resultDiv = document.getElementById('simulacao')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔧 Simulação da Aplicação</h3>
+                
+                <div class="agent-card">
+                    <h4>Problema Identificado:</h4>
+                    <p>O webhook <code>webhook/lista10-joana</code> retorna conteúdo vazio</p>
+                    <p>Isso causa o erro: <code>Unexpected end of JSON input</code></p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Correção Aplicada:</h4>
+                    <p>✅ Adicionada verificação para respostas vazias</p>
+                    <p>✅ Se resposta vazia, criar array vazio de prospects</p>
+                    <p>✅ Evitar erro de parse JSON</p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Resultado Esperado:</h4>
+                    <p>✅ Aplicação não deve mais quebrar com webhook vazio</p>
+                    <p>✅ Tabela de prospects deve mostrar "Nenhum prospect encontrado"</p>
+                    <p>✅ Console deve mostrar "Resposta vazia para Joana, criando dados vazios"</p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Próximos Passos:</h4>
+                    <p>1. Recarregar a aplicação</p>
+                    <p>2. Verificar se não há mais erros no console</p>
+                    <p>3. Verificar se a tabela de prospects aparece vazia mas sem erro</p>
+                </div>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarWebhookLista()
+            simularAplicacao()
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Sincronização</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background: #059669;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Sincronização</h1>
+        <p>Investigando por que o frontend não encontra as atribuições:</p>
+        
+        <button class="btn" onclick="debugCompleto()">
+            🔍 DEBUG COMPLETO
+        </button>
+        
+        <button class="btn" onclick="testarAtribuicaoEspecifica()">
+            🧪 TESTAR ATRIBUIÇÃO ESPECÍFICA
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function debugCompleto() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result info">🔄 Iniciando debug completo...</div>';
+            
+            try {
+                // 1. Verificar atribuições atuais
+                resultDiv.innerHTML += '<div class="result info">📋 1. Verificando atribuições atuais...</div>';
+                
+                const listarResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const listarData = await listarResponse.json();
+                resultDiv.innerHTML += `<div class="result success">✅ Resposta do webhook: ${JSON.stringify(listarData, null, 2)}</div>`;
+                
+                // 2. Processar dados como o frontend faz
+                resultDiv.innerHTML += '<div class="result info">📋 2. Processando dados como frontend...</div>';
+                
+                if (listarData && listarData.data) {
+                    const atribuicoes = Array.isArray(listarData.data) 
+                        ? listarData.data 
+                        : [listarData.data];
+                    
+                    resultDiv.innerHTML += `<div class="result info">📊 Atribuições processadas: ${atribuicoes.length}</div>`;
+                    
+                    // 3. Verificar cada atribuição
+                    atribuicoes.forEach((attr, index) => {
+                        resultDiv.innerHTML += `<div class="result info">[${index + 1}] Agente: ${attr.agente_id}, Usuário: ${attr.usuario_id}, Nome: ${attr.usuario_nome || 'N/A'}</div>`;
+                    });
+                    
+                    // 4. Testar verificação específica
+                    resultDiv.innerHTML += '<div class="result info">📋 3. Testando verificação específica...</div>';
+                    
+                    const temAtribuicao68_37 = atribuicoes.some(attr => 
+                        attr.agente_id == 68 && attr.usuario_id == 37
+                    );
+                    
+                    const temAtribuicao65_6 = atribuicoes.some(attr => 
+                        attr.agente_id == 65 && attr.usuario_id == 6
+                    );
+                    
+                    resultDiv.innerHTML += `<div class="result ${temAtribuicao68_37 ? 'success' : 'error'}">Agente 68 → Usuário 37: ${temAtribuicao68_37 ? 'ENCONTRADO' : 'NÃO ENCONTRADO'}</div>`;
+                    resultDiv.innerHTML += `<div class="result ${temAtribuicao65_6 ? 'success' : 'error'}">Agente 65 → Usuário 6: ${temAtribuicao65_6 ? 'ENCONTRADO' : 'NÃO ENCONTRADO'}</div>`;
+                    
+                } else {
+                    resultDiv.innerHTML += '<div class="result error">❌ Dados não encontrados na resposta</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="result error">❌ ERRO: ${error.message}</div>`;
+            }
+        }
+        
+        async function testarAtribuicaoEspecifica() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result info">🧪 Testando atribuição específica...</div>';
+            
+            try {
+                // 1. Criar atribuição de teste
+                resultDiv.innerHTML += '<div class="result info">📋 1. Criando atribuição de teste...</div>';
+                
+                const atribuirResponse = await fetch('https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agente_id: 65,
+                        usuario_id: 6,
+                        atribuido_por: 5
+                    })
+                });
+                
+                const atribuirData = await atribuirResponse.json();
+                resultDiv.innerHTML += `<div class="result success">✅ Atribuição criada: ${JSON.stringify(atribuirData)}</div>`;
+                
+                // 2. Aguardar
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 3. Verificar imediatamente
+                resultDiv.innerHTML += '<div class="result info">📋 2. Verificando imediatamente...</div>';
+                
+                const verificarResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const verificarData = await verificarResponse.json();
+                const atribuicoes = Array.isArray(verificarData.data) 
+                    ? verificarData.data 
+                    : [verificarData.data];
+                
+                resultDiv.innerHTML += `<div class="result info">📊 Atribuições após criação: ${atribuicoes.length}</div>`;
+                
+                const temAtribuicao = atribuicoes.some(attr => 
+                    attr.agente_id == 65 && attr.usuario_id == 6
+                );
+                
+                if (temAtribuicao) {
+                    resultDiv.innerHTML += '<div class="result success">🎉 SUCESSO! Atribuição encontrada!</div>';
+                } else {
+                    resultDiv.innerHTML += '<div class="result error">❌ PROBLEMA! Atribuição não encontrada</div>';
+                    resultDiv.innerHTML += '<div class="result warning">🔍 Possíveis causas:</div>';
+                    resultDiv.innerHTML += '<div class="result info">  • Delay no banco de dados</div>';
+                    resultDiv.innerHTML += '<div class="result info">  • Problema no webhook list-agente-atribuicoes</div>';
+                    resultDiv.innerHTML += '<div class="result info">  • Cache do n8n</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="result error">❌ ERRO: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

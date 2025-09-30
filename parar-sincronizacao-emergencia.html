@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PARAR SINCRONIZAÇÃO - EMERGÊNCIA</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 2px solid #dc2626;
+        }
+        .emergency { 
+            background: #dc2626; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0; 
+        }
+        .emergency:hover { 
+            background: #b91c1c; 
+        }
+        .warning { 
+            color: #f59e0b; 
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .success { 
+            color: #10b981; 
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 EMERGÊNCIA - PARAR SINCRONIZAÇÃO</h1>
+        
+        <div class="warning">
+            ⚠️ ATENÇÃO: A sincronização está em loop infinito!
+        </div>
+        
+        <p>Este script irá:</p>
+        <ul>
+            <li>Limpar TODOS os caches</li>
+            <li>Remover dados de sincronização</li>
+            <li>Parar o sistema de sincronização</li>
+            <li>Recarregar a página</li>
+        </ul>
+        
+        <button class="emergency" onclick="emergencyStop()">
+            🛑 PARAR SINCRONIZAÇÃO AGORA
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function emergencyStop() {
+            const result = document.getElementById('result');
+            
+            try {
+                console.log('🚨 PARANDO SINCRONIZAÇÃO EMERGENCIAL...');
+                
+                // Limpar TODOS os caches
+                localStorage.removeItem('agents-cache');
+                localStorage.removeItem('agents-cache-timestamp');
+                localStorage.removeItem('flowhub:webhooks');
+                
+                // Limpar dados de sincronização
+                localStorage.removeItem('sync-count');
+                localStorage.removeItem('last-sync');
+                localStorage.removeItem('sync-time');
+                
+                // Forçar parada da sincronização
+                if (window.opener && window.opener.location) {
+                    // Se abriu em popup, recarregar janela principal
+                    window.opener.location.reload();
+                    window.close();
+                } else {
+                    // Se é janela principal, recarregar
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+                
+                result.innerHTML = `
+                    <div class="success">
+                        <h3>✅ SINCRONIZAÇÃO PARADA!</h3>
+                        <p>Todos os caches foram limpos.</p>
+                        <p>A página será recarregada em 2 segundos...</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Erro ao parar sincronização:', error);
+                result.innerHTML = `
+                    <div class="warning">
+                        <h3>❌ ERRO AO PARAR</h3>
+                        <p>Erro: ${error.message}</p>
+                        <p><strong>RECARREGUE A PÁGINA MANUALMENTE AGORA!</strong></p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

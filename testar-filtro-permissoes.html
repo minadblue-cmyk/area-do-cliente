@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Filtro de Permissões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Testar Filtro de Permissões</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Usuário Atual</h2>
+            <button onclick="verificarUsuario()">Verificar Usuário</button>
+            <div id="usuario"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Filtro de Agentes</h2>
+            <button onclick="testarFiltro()">Testar Filtro</button>
+            <div id="filtro"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Simular Diferentes Usuários</h2>
+            <button onclick="simularUsuarios()">Simular Usuários</button>
+            <div id="simulacao"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Testar na Aplicação</h2>
+            <button onclick="testarAplicacao()">Ir para Upload</button>
+            <div id="aplicacao"></div>
+        </div>
+    </div>
+
+    <script>
+        function verificarUsuario() {
+            const resultDiv = document.getElementById('usuario')
+            
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+            const authData = JSON.parse(localStorage.getItem('authData') || '{}')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">👤 Usuário Atual</h3>
+                <p><strong>ID:</strong> ${userData.id || 'N/A'}</p>
+                <p><strong>Nome:</strong> ${userData.name || 'N/A'}</p>
+                <p><strong>Email:</strong> ${userData.email || 'N/A'}</p>
+                <p><strong>Perfil ID:</strong> ${userData.perfil_id || 'N/A'}</p>
+                <p><strong>Perfil:</strong> ${userData.perfil || 'N/A'}</p>
+                
+                <h4>Dados completos:</h4>
+                <pre>${JSON.stringify(userData, null, 2)}</pre>
+            `
+        }
+
+        async function testarFiltro() {
+            const resultDiv = document.getElementById('filtro')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando filtro de agentes...</p>'
+            
+            try {
+                // 1. Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data[0]?.data || []
+                
+                // 2. Verificar usuário atual
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+                const userId = parseInt(userData.id || '0')
+                
+                // 3. Aplicar filtro
+                const agentesFiltrados = agentes.filter(agente => {
+                    return agente.usuario_id === userId
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔍 Resultado do Filtro</h3>
+                    <p><strong>Usuário ID:</strong> ${userId}</p>
+                    <p><strong>Total de agentes:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes do usuário:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes disponíveis:</h4>
+                    <ul>
+                        ${agentes.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                                <br>Status: ${agente.usuario_id === userId ? '✅ Seu agente' : '❌ De outro usuário'}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Agentes filtrados (apenas seus):</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function simularUsuarios() {
+            const resultDiv = document.getElementById('simulacao')
+            
+            // Dados simulados de agentes
+            const agentes = [
+                { id: 68, nome: 'Joana', usuario_id: 5 },
+                { id: 65, nome: 'João', usuario_id: 6 },
+                { id: 70, nome: 'Zeca', usuario_id: 5 }
+            ]
+            
+            // Simular diferentes usuários
+            const usuarios = [
+                { id: 5, nome: 'Usuário Padrão', perfil_id: 32 },
+                { id: 6, nome: 'Supervisor', perfil_id: 42 },
+                { id: 28, nome: 'Administrador', perfil_id: 1 }
+            ]
+            
+            let resultado = '<h3 class="info">👥 Simulação de Usuários</h3>'
+            
+            usuarios.forEach(usuario => {
+                const agentesDoUsuario = agentes.filter(agente => agente.usuario_id === usuario.id)
+                
+                resultado += `
+                    <div style="margin: 15px 0; padding: 10px; background: #1e1e1e; border-radius: 5px;">
+                        <h4>${usuario.nome} (ID: ${usuario.id}, Perfil: ${usuario.perfil_id})</h4>
+                        <p><strong>Agentes que deve ver:</strong> ${agentesDoUsuario.length}</p>
+                        <ul>
+                            ${agentesDoUsuario.map(agente => `<li>${agente.nome} (ID: ${agente.id})</li>`).join('')}
+                        </ul>
+                    </div>
+                `
+            })
+            
+            resultDiv.innerHTML = resultado
+        }
+
+        function testarAplicacao() {
+            const resultDiv = document.getElementById('aplicacao')
+            resultDiv.innerHTML = '<p class="info">🔄 Redirecionando para Upload...</p>'
+            
+            // Redirecionar para upload
+            window.location.href = '/upload'
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔄 Redirecionando para Upload</h3>
+                <p>Agora o supervisor deve ver apenas os agentes atribuídos a ele.</p>
+                <p>Se ainda estiver vendo agentes de outros usuários, há um problema na lógica de filtragem.</p>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            verificarUsuario()
+            testarFiltro()
+        }
+    </script>
+</body>
+</html>

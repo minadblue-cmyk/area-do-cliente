@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhook N8N</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testar Webhook N8N</h1>
+        
+        <div class="section">
+            <h2>1. Testar Webhook List Agentes</h2>
+            <button onclick="testarListAgentes()">Testar List Agentes</button>
+            <div id="list-agentes"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Webhook Create Agente</h2>
+            <button onclick="testarCreateAgente()">Testar Create Agente</button>
+            <div id="create-agente"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Sequência Completa</h2>
+            <button onclick="testarSequencia()">Testar Sequência Completa</button>
+            <div id="sequencia"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Verificar URLs N8N</h2>
+            <button onclick="verificarUrls()">Verificar URLs</button>
+            <div id="urls"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarListAgentes() {
+            const resultDiv = document.getElementById('list-agentes')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook list-agentes...</p>'
+            
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="${response.ok ? 'success' : 'error'}">${response.ok ? '✅' : '❌'} Webhook List Agentes</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Status Text:</strong> ${response.statusText}</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre>${JSON.stringify([...response.headers.entries()], null, 2)}</pre>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h4>Análise:</h4>
+                    <ul>
+                        <li><strong>Tipo de resposta:</strong> ${typeof data}</li>
+                        <li><strong>É array:</strong> ${Array.isArray(data) ? 'Sim' : 'Não'}</li>
+                        <li><strong>Tamanho:</strong> ${Array.isArray(data) ? data.length : 'N/A'}</li>
+                        <li><strong>Vazio:</strong> ${Array.isArray(data) && data.length === 0 ? 'Sim' : 'Não'}</li>
+                    </ul>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Webhook</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    <p><strong>Tipo:</strong> ${error.name}</p>
+                `
+            }
+        }
+
+        async function testarCreateAgente() {
+            const resultDiv = document.getElementById('create-agente')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando webhook create-agente...</p>'
+            
+            try {
+                const agentId = 'TESTE_N8N_' + Date.now()
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        agent_name: 'Teste N8N Webhook',
+                        agent_type: 'teste-n8n-webhook',
+                        agent_id: agentId,
+                        user_id: '28',
+                        descricao: 'Teste para verificar webhook N8N',
+                        icone: '🧪',
+                        cor: 'bg-cyan-500',
+                        ativo: true
+                    })
+                })
+                
+                const data = await response.json()
+                
+                resultDiv.innerHTML = `
+                    <h3 class="${response.ok ? 'success' : 'error'}">${response.ok ? '✅' : '❌'} Webhook Create Agente</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Status Text:</strong> ${response.statusText}</p>
+                    <p><strong>Agent ID:</strong> ${agentId}</p>
+                    <p><strong>Resposta:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h4>Análise:</h4>
+                    <ul>
+                        <li><strong>Sucesso:</strong> ${response.ok ? 'Sim' : 'Não'}</li>
+                        <li><strong>Mensagem:</strong> ${data.message || 'N/A'}</li>
+                        <li><strong>Agent ID retornado:</strong> ${data.agentId || 'N/A'}</li>
+                    </ul>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro no Webhook</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+            }
+        }
+
+        async function testarSequencia() {
+            const resultDiv = document.getElementById('sequencia')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando sequência completa...</p>'
+            
+            try {
+                // 1. Listar agentes antes
+                resultDiv.innerHTML += '<p>1. Listando agentes antes da criação...</p>'
+                const antesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                const antesData = await antesResponse.json()
+                const antesCount = Array.isArray(antesData) ? antesData.length : 0
+                
+                // 2. Criar agente
+                resultDiv.innerHTML += '<p>2. Criando agente...</p>'
+                const agentId = 'SEQUENCIA_' + Date.now()
+                const createResponse = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        agent_name: 'Teste Sequência',
+                        agent_type: 'teste-sequencia',
+                        agent_id: agentId,
+                        user_id: '28',
+                        descricao: 'Teste de sequência completa',
+                        icone: '🔄',
+                        cor: 'bg-green-500',
+                        ativo: true
+                    })
+                })
+                const createData = await createResponse.json()
+                
+                // 3. Aguardar
+                resultDiv.innerHTML += '<p>3. Aguardando 3 segundos...</p>'
+                await new Promise(resolve => setTimeout(resolve, 3000))
+                
+                // 4. Listar agentes depois
+                resultDiv.innerHTML += '<p>4. Listando agentes após criação...</p>'
+                const depoisResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                const depoisData = await depoisResponse.json()
+                const depoisCount = Array.isArray(depoisData) ? depoisData.length : 0
+                
+                // 5. Resultado
+                resultDiv.innerHTML = `
+                    <h3 class="${depoisCount > antesCount ? 'success' : 'error'}">${depoisCount > antesCount ? '✅' : '❌'} Sequência Completa</h3>
+                    <p><strong>Agentes antes:</strong> ${antesCount}</p>
+                    <p><strong>Agentes depois:</strong> ${depoisCount}</p>
+                    <p><strong>Diferença:</strong> ${depoisCount - antesCount}</p>
+                    <p><strong>Criação bem-sucedida:</strong> ${createResponse.ok ? 'Sim' : 'Não'}</p>
+                    
+                    <h4>Dados antes:</h4>
+                    <pre>${JSON.stringify(antesData, null, 2)}</pre>
+                    
+                    <h4>Dados depois:</h4>
+                    <pre>${JSON.stringify(depoisData, null, 2)}</pre>
+                    
+                    <h4>Resposta da criação:</h4>
+                    <pre>${JSON.stringify(createData, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ Erro na Sequência</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                `
+            }
+        }
+
+        function verificarUrls() {
+            const resultDiv = document.getElementById('urls')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🌐 URLs N8N</h3>
+                <p><strong>List Agentes:</strong> <a href="https://n8n.code-iq.com.br/webhook/list-agentes" target="_blank">https://n8n.code-iq.com.br/webhook/list-agentes</a></p>
+                <p><strong>Create Agente:</strong> <a href="https://n8n.code-iq.com.br/webhook/create-agente" target="_blank">https://n8n.code-iq.com.br/webhook/create-agente</a></p>
+                
+                <h4>Instruções:</h4>
+                <ol>
+                    <li>Clique nos links acima para testar diretamente no navegador</li>
+                    <li>Se retornar erro 404, o webhook não existe no n8n</li>
+                    <li>Se retornar erro 500, há problema no workflow do n8n</li>
+                    <li>Se retornar [], pode ser que não há dados no banco</li>
+                </ol>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            testarListAgentes()
+        }
+    </script>
+</body>
+</html>

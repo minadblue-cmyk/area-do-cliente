@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Correção Loop</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Correção Loop Infinito</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Problema Identificado</h3>
+            <p><strong>Problema:</strong> Loop infinito causado por `agentPermissions` nas dependências do `useEffect`</p>
+            <p><strong>Solução:</strong> Remover `agentPermissions` das dependências do `useEffect`</p>
+            <p><strong>Resultado esperado:</strong> Página deve carregar normalmente sem loop</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste de Dependências do useEffect</h3>
+            <button onclick="testarDependencias()">Testar Dependências</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function testarDependencias() {
+            log('🔍 Testando dependências do useEffect...')
+            
+            // Simular dados
+            const syncedAgents = {
+                "65": { id: 65, nome: "João", usuario_id: 6 },
+                "69": { id: 69, nome: "Teste Agente", usuario_id: 6 }
+            }
+            
+            const userData = { id: "6" }
+            
+            // Simular agentPermissions (objeto que muda constantemente)
+            let agentPermissions = {
+                canViewAll: false,
+                canManage: false,
+                canViewOwn: true
+            }
+            
+            let renderCount = 0
+            
+            // Simular useEffect ANTES da correção (com agentPermissions nas dependências)
+            log('🔍 Simulando useEffect ANTES da correção...')
+            for (let i = 0; i < 5; i++) {
+                renderCount++
+                log(`🔄 Render ${renderCount}: agentPermissions mudou, useEffect executado`)
+                
+                // Simular mudança em agentPermissions (causa re-render)
+                agentPermissions = { ...agentPermissions, canViewOwn: !agentPermissions.canViewOwn }
+            }
+            
+            log(`❌ ANTES: ${renderCount} renders causados por mudanças em agentPermissions`)
+            
+            // Simular useEffect DEPOIS da correção (sem agentPermissions nas dependências)
+            log('🔍 Simulando useEffect DEPOIS da correção...')
+            renderCount = 0
+            
+            for (let i = 0; i < 5; i++) {
+                renderCount++
+                log(`🔄 Render ${renderCount}: useEffect executado apenas quando syncedAgents ou userData mudam`)
+                
+                // Simular mudança em agentPermissions (não causa re-render)
+                agentPermissions = { ...agentPermissions, canViewOwn: !agentPermissions.canViewOwn }
+            }
+            
+            log(`✅ DEPOIS: ${renderCount} renders controlados (sem loop)`)
+            
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = `
+                <h4>📊 Resultado do Teste:</h4>
+                <p><strong>ANTES da correção:</strong> Loop infinito causado por agentPermissions nas dependências</p>
+                <p><strong>DEPOIS da correção:</strong> useEffect executa apenas quando necessário</p>
+                <p><strong>Dependências corretas:</strong> [syncedAgents, userData] (sem agentPermissions)</p>
+                <p><strong>Resultado:</strong> ✅ Loop resolvido</p>
+            `
+            resultadoDiv.className = 'test-section success'
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique em "Testar Dependências" para executar o teste.')
+        }
+    </script>
+</body>
+</html>

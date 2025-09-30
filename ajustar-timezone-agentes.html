@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustar Timezone dos Agentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .code-block { background: #1e1e1e; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕐 Ajustar Timezone dos Agentes</h1>
+        
+        <div class="section">
+            <h2>1. Configurações Necessárias</h2>
+            <p class="info">Para configurar o fuso horário <strong>America/Sao_Paulo</strong> nos agentes, você precisa:</p>
+            <ul>
+                <li>✅ Configurar timezone nos workflows clonados</li>
+                <li>✅ Ajustar nós que lidam com datas</li>
+                <li>✅ Configurar PostgreSQL com timezone correto</li>
+                <li>✅ Ajustar webhooks que retornam timestamps</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>2. Código para Adicionar nos Workflows</h2>
+            <p class="info">Adicione este código nos nós de preparação dos workflows clonados:</p>
+            
+            <div class="code-block">
+                <h3>📝 Código para "PREPARAR WORKFLOW CLONADO" (todos os tipos)</h3>
+                <pre>// Função para normalizar nome preservando acentos
+function normalizarNomeParaWebhook(nome) {
+  return nome
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '') // Remove espaços
+    .replace(/[^a-z0-9áàâãéèêíìîóòôõúùûç]/g, '') // Remove caracteres especiais exceto acentos
+    .replace(/[áàâã]/g, 'a')
+    .replace(/[éèê]/g, 'e')
+    .replace(/[íìî]/g, 'i')
+    .replace(/[óòôõ]/g, 'o')
+    .replace(/[úùû]/g, 'u')
+    .replace(/ç/g, 'c');
+}
+
+// Obter contador do Redis GET
+const counterData = $('Busca atual').item.json;
+const counter = counterData.propertyName || counterData.agente_counter_global || 1;
+
+// Acessar dados do nó "Normaliza campos" onde está o originalWorkflow
+const originalWorkflow = $('Normaliza campos').item.json.originalWorkflow;
+const agentData = $('Normalização').item.json;
+
+// CORREÇÃO: Normalizar agentType preservando acentos
+const agentTypeNormalizado = normalizarNomeParaWebhook(agentData.agentName || agentData.agentType);
+
+const clonedWorkflow = {
+  name: `Agente SDR - Start-${counter}`,
+  settings: {
+    ...originalWorkflow.settings,
+    // 🕐 CONFIGURAÇÃO DE TIMEZONE
+    timezone: 'America/Sao_Paulo',
+    executionOrder: 'v1'
+  },
+  nodes: originalWorkflow.nodes.map(node => {
+    if (node.type === 'n8n-nodes-base.webhook') {
+      return {
+        ...node,
+        parameters: {
+          ...node.parameters,
+          path: `start${counter}-${agentTypeNormalizado}`
+        }
+      };
+    }
+    
+    // 🕐 CONFIGURAR TIMEZONE EM NÓS DE DATA
+    if (node.type === 'n8n-nodes-base.set' && node.parameters.assignments) {
+      const assignments = node.parameters.assignments.assignments || [];
+      const updatedAssignments = assignments.map(assignment => {
+        // Se for um campo de data, configurar timezone
+        if (assignment.name && (assignment.name.includes('date') || assignment.name.includes('time') || assignment.name.includes('created') || assignment.name.includes('updated'))) {
+          return {
+            ...assignment,
+            value: `={{ $now.toISO() }}` // Usa timezone do sistema
+          };
+        }
+        return assignment;
+      });
+      
+      return {
+        ...node,
+        parameters: {
+          ...node.parameters,
+          assignments: {
+            ...node.parameters.assignments,
+            assignments: updatedAssignments
+          }
+        }
+      };
+    }
+    
+    // CORREÇÃO: Atualizar workflow_id nos nós de normalização
+    if (node.name === 'Normalizar Dados') {
+      return {
+        ...node,
+        parameters: {
+          ...node.parameters,
+          assignments: {
+            ...node.parameters.assignments,
+            assignments: node.parameters.assignments.assignments.map(assignment => {
+              if (assignment.id === 'workflow-id') {
+                return {
+                  ...assignment,
+                  value: `={{ $json.query.workflow_id || '${agentData.agentId}' }}`
+                };
+              }
+              return assignment;
+            })
+          }
+        }
+      };
+    }
+    return node;
+  }),
+  connections: originalWorkflow.connections || {}
+};
+
+return { workflowData: clonedWorkflow, counter: counter, webhookType: 'start' };</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Configuração do PostgreSQL</h2>
+            <p class="info">Execute este SQL no seu banco PostgreSQL:</p>
+            
+            <div class="code-block">
+                <pre>-- Configurar timezone do banco para America/Sao_Paulo
+ALTER DATABASE consorcio SET timezone TO 'America/Sao_Paulo';
+
+-- Verificar configuração atual
+SHOW timezone;
+
+-- Configurar timezone da sessão atual
+SET timezone TO 'America/Sao_Paulo';
+
+-- Verificar se está correto
+SELECT now() as data_atual, 
+       extract(timezone from now()) as offset_segundos,
+       extract(timezone from now())/3600 as offset_horas;</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Ajustar Webhook de Criação de Agente</h2>
+            <p class="info">No nó "Prep_Insert", ajuste o campo timestamp:</p>
+            
+            <div class="code-block">
+                <pre>// ✅ Code - Run Once for All Items (coloque após um Merge "Wait for all")
+
+function j(nameList){
+  const names = Array.isArray(nameList) ? nameList : [nameList];
+  for (const n of names) {
+    try { const v = $(n).first().json; if (v) return v; } catch {}
+  }
+  return null;
+}
+
+function numFromName(obj){
+  const s = obj?.name || '';
+  const m = s.match(/-(\\d+)(?!.*\\d)/); // último número após hífen
+  return m ? Number(m[1]) : null;
+}
+
+// Função para normalizar nome preservando acentos
+function normalizarNomeParaWebhook(nome) {
+  return nome
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '') // Remove espaços
+    .replace(/[^a-z0-9áàâãéèêíìîóòôõúùûç]/g, '') // Remove caracteres especiais exceto acentos
+    .replace(/[áàâã]/g, 'a')
+    .replace(/[éèê]/g, 'e')
+    .replace(/[íìî]/g, 'i')
+    .replace(/[óòôõ]/g, 'o')
+    .replace(/[úùû]/g, 'u')
+    .replace(/ç/g, 'c');
+}
+
+// fontes dos dados
+const agent = j(['Normalização','Normalizar Dados']) || {};
+const body  = j('Webhook Create Agente')?.body || {}; // onde estão nome/descricao/icone/cor/ativo
+
+// IDs dos 4 workflows (use as ativações porque já executaram)
+const start  = j('Ativa o Workflow');   // Start
+const status = j('Ativa o Workflow1');  // Status (list-agente)
+const lista  = j('Ativa o Workflow2');  // Lista
+const stop   = j('Ativa o Workflow3');  // Stop
+
+// counters oficiais; se faltar, extrai do "name" do workflow
+const cStart  = j('PREPARAR WORKFLOW CLONADO - Start')?.counter            ?? numFromName(start);
+const cStatus = j('PREPARAR WORKFLOW CLONADO - Status')?.counter           ?? numFromName(status);
+const cLista  = j('PREPARAR WORKFLOW CLONADO - Lista-Prospecção')?.counter ?? numFromName(lista);
+const cStop   = j('PREPARAR WORKFLOW CLONADO - Stop')?.counter             ?? numFromName(stop);
+
+// CORREÇÃO: Normalizar type preservando acentos
+const agentName = agent.agentName ?? body?.nome ?? 'agentePadrao';
+const type = normalizarNomeParaWebhook(agentName);
+
+const mk = (p,n) => n != null ? `webhook/${p}${n}-${type}` : null;
+
+const workflow = {
+  start_id:  start?.id  ? String(start.id)  : null,
+  status_id: status?.id ? String(status.id) : null,
+  lista_id:  lista?.id  ? String(lista.id)  : null,
+  stop_id:   stop?.id   ? String(stop.id)   : null,
+};
+const webhook = {
+  start_url:  mk('start',  cStart),
+  status_url: mk('status', cStatus),
+  lista_url:  mk('lista',  cLista),
+  stop_url:   mk('stop',   cStop),
+};
+
+// 🕐 CONFIGURAÇÃO DE TIMEZONE
+const timezone = 'America/Sao_Paulo';
+const now = new Date();
+const brazilTime = new Date(now.toLocaleString("en-US", {timeZone: timezone}));
+
+// ✅ CORREÇÃO: Incluir usuario_id no payload
+const out = {
+  success: true,
+  agentId:   agent.agentId ?? body?.agentId ?? null,
+  agentName: agent.agentName ?? body?.nome ?? null,
+  type,
+  workflow,
+  webhook,
+  // campos que o Postgres precisa (evita referenciar outros nós no mapeamento)
+  nome:       agent.agentName ?? body?.nome ?? null,
+  descricao:  body?.descricao ?? null,
+  icone:      body?.icone ?? null,
+  cor:        body?.cor ?? null,
+  ativo:      body?.ativo ?? true,
+  // ✅ ADICIONADO: Campo obrigatório para associar ao usuário
+  usuario_id: agent.usuario_id ?? body?.user_id ?? null,
+  // 🕐 TIMESTAMP COM TIMEZONE CORRETO
+  created_at: brazilTime.toISOString(),
+  updated_at: brazilTime.toISOString(),
+  timezone: timezone
+};
+
+// sinaliza faltas (sem quebrar)
+const missing = [];
+Object.entries(workflow).forEach(([k,v]) => { if (!v) missing.push(k); });
+Object.entries(webhook).forEach(([k,v]) => { if (!v) missing.push(k); });
+if (missing.length) { out.success = false; out.missing = missing; }
+
+return [{ json: out }];</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. Verificar Configuração Atual</h2>
+            <button onclick="verificarTimezone()">Verificar Timezone Atual</button>
+            <div id="timezone-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>6. Testar Criação de Agente com Timezone</h2>
+            <button onclick="testarCriacaoAgente()">Testar Criação de Agente</button>
+            <div id="teste-result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function verificarTimezone() {
+            const resultDiv = document.getElementById('timezone-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Verificando timezone atual...</p>';
+
+            try {
+                const now = new Date();
+                const brazilTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+                const utcTime = new Date(now.toLocaleString("en-US", {timeZone: "UTC"}));
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Timezone verificados:</p>
+                    <p class="info">🕐 Hora Local: ${now.toLocaleString()}</p>
+                    <p class="info">🇧🇷 Hora Brasil: ${brazilTime.toLocaleString()}</p>
+                    <p class="info">🌍 Hora UTC: ${utcTime.toLocaleString()}</p>
+                    <p class="info">⏰ Offset Brasil: ${brazilTime.getTimezoneOffset() / -60} horas</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        async function testarCriacaoAgente() {
+            const resultDiv = document.getElementById('teste-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando criação de agente com timezone...</p>';
+
+            try {
+                const timezone = 'America/Sao_Paulo';
+                const now = new Date();
+                const brazilTime = new Date(now.toLocaleString("en-US", {timeZone: timezone}));
+                
+                const payload = {
+                    action: "create",
+                    agent_name: "Teste Timezone",
+                    agent_type: "timezone",
+                    agent_id: `TIMEZONE${Date.now()}`,
+                    user_id: 6,
+                    descricao: "Agente para testar timezone",
+                    icone: "🕐",
+                    cor: "bg-purple-500",
+                    ativo: true,
+                    timezone: timezone,
+                    created_at: brazilTime.toISOString(),
+                    updated_at: brazilTime.toISOString()
+                };
+
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/create-agente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Teste realizado!</p>
+                    <p class="info">📊 Status: ${response.status}</p>
+                    <p class="info">🕐 Timezone: ${timezone}</p>
+                    <p class="info">⏰ Timestamp: ${brazilTime.toISOString()}</p>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpar Cache e Corrigir URLs</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            display: block;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .code {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧹 Limpar Cache e Corrigir URLs</h1>
+            <p>Limpar localStorage e corrigir URLs dos webhooks para resolver o problema do CORS</p>
+        </div>
+
+        <div id="result"></div>
+
+        <button class="btn btn-danger" onclick="limparTudo()">
+            🧹 Limpar Tudo e Corrigir URLs
+        </button>
+
+        <button class="btn" onclick="verificarStatus()">
+            🔍 Verificar Status Atual
+        </button>
+
+        <button class="btn btn-success" onclick="abrirApp()">
+            🚀 Abrir Aplicação
+        </button>
+
+        <div class="code" id="logs"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            const logsDiv = document.getElementById('logs');
+            logsDiv.textContent += logEntry + '\n';
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function mostrarResultado(message, type = 'success') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        function limparTudo() {
+            log('🧹 Iniciando limpeza completa...');
+            
+            try {
+                // 1. Limpar localStorage
+                log('📦 Limpando localStorage...');
+                localStorage.clear();
+                log('✅ localStorage limpo');
+
+                // 2. Limpar sessionStorage
+                log('📦 Limpando sessionStorage...');
+                sessionStorage.clear();
+                log('✅ sessionStorage limpo');
+
+                // 3. Definir URLs corretas
+                log('🔧 Definindo URLs corretas...');
+                const urlsCorretas = {
+                    'webhook-login': 'https://n8n.code-iq.com.br/webhook/login',
+                    'webhook-me': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/me',
+                    'webhook/list-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users',
+                    'webhook-criar-usuario': 'https://n8n.code-iq.com.br/webhook/create-user',
+                    'webhook/delete-users': 'https://n8n.code-iq.com.br/webhook/delete-users',
+                    'webhook/list-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission',
+                    'webhook-dashboard': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/dashboard',
+                    'webhook/list-profile': 'https://n8n.code-iq.com.br/webhook/list-profile',
+                    'webhook/create-profile': 'https://n8n.code-iq.com.br/webhook/create-profile',
+                    'webhook/edit-profile': 'https://n8n.code-iq.com.br/webhook/edit-profile',
+                    'webhook/delete-profile': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-profile',
+                    'webhook/assign-user-profiles': 'https://n8n.code-iq.com.br/webhook/assign-user-profiles',
+                    'webhook-create-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-permission',
+                    'webhook/list-permissions': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permissions',
+                    'webhook-delete-permission': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-permission',
+                    'webhook/list-permission-users': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission-users',
+                    'webhook/list-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-company',
+                    'webhook-criar-empresa': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/create-company',
+                    'webhook/edit-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/edit-company',
+                    'webhook/delete-company': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/delete-company',
+                    'webhook-upload': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/upload',
+                    'webhook-listar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/listar-saudacao',
+                    'webhook-salvar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/salvar-saudacao',
+                    'webhook-deletar-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/deletar-saudacao',
+                    'webhook-agente-recebimento': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/seleciona-saudacao',
+                    'webhook-saudacao': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/atualiza-saudacao',
+                    'webhook-lista-saudacoes': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/lista-saudacoes',
+                    'webhook-controle-agente': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/controle-do-agente',
+                    'webhook/list-agentes': 'https://n8n.code-iq.com.br/webhook/list-agentes',
+                    'webhook/create-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+                    'webhook/update-agente': 'https://n8n.code-iq.com.br/webhook/create-agente',
+                    'webhook/delete-agente': 'https://n8n.code-iq.com.br/webhook/delete-agente',
+                    'webhook/list-agente-atribuicoes': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-agente-atribuicoes',
+                    'webhook/atribuir-agente-usuario': 'https://n8n.code-iq.com.br/webhook/atribuir-agente-usuario',
+                    'webhook/remover-atribuicao-agente': 'https://n8n.code-iq.com.br/webhook/remover-atribuicao-agente',
+                    'webhook-agente-prospeccao-quente': 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/agente-prospeccao-quente',
+                    'webhook/agente-fria': 'https://n8n.code-iq.com.br/webhook/agente-fria'
+                };
+
+                localStorage.setItem('area:webhooks', JSON.stringify(urlsCorretas));
+                log(`✅ ${Object.keys(urlsCorretas).length} URLs corretas salvas`);
+
+                // 4. Verificar se não há URLs problemáticas
+                log('🔍 Verificando URLs salvas...');
+                const urlsSalvas = JSON.parse(localStorage.getItem('area:webhooks') || '{}');
+                const urlsProblematicas = Object.entries(urlsSalvas).filter(([key, url]) => 
+                    key.includes('list-profiles') || url.includes('list-profiles')
+                );
+
+                if (urlsProblematicas.length > 0) {
+                    log(`❌ Ainda há URLs problemáticas: ${urlsProblematicas.length}`);
+                    urlsProblematicas.forEach(([key, url]) => {
+                        log(`  - ${key}: ${url}`);
+                    });
+                } else {
+                    log('✅ Nenhuma URL problemática encontrada');
+                }
+
+                log('🎉 Limpeza completa finalizada!');
+                mostrarResultado(`
+                    <strong>✅ Limpeza Completa Realizada!</strong><br>
+                    • localStorage limpo<br>
+                    • sessionStorage limpo<br>
+                    • URLs corretas definidas<br>
+                    • ${Object.keys(urlsCorretas).length} webhooks configurados<br>
+                    <br>
+                    <strong>Próximo passo:</strong> Acesse a aplicação e faça login novamente.
+                `, 'success');
+
+            } catch (error) {
+                log(`❌ Erro durante a limpeza: ${error.message}`);
+                mostrarResultado(`
+                    <strong>❌ Erro durante a limpeza</strong><br>
+                    ${error.message}
+                `, 'error');
+            }
+        }
+
+        function verificarStatus() {
+            log('🔍 Verificando status atual...');
+            
+            try {
+                const webhookData = localStorage.getItem('area:webhooks');
+                const userData = localStorage.getItem('area:user_data');
+                const token = localStorage.getItem('area:jwt');
+                
+                log(`📦 Status do localStorage:`);
+                log(`  - Webhooks: ${webhookData ? 'Presente' : 'Ausente'}`);
+                log(`  - User Data: ${userData ? 'Presente' : 'Ausente'}`);
+                log(`  - Token: ${token ? 'Presente' : 'Ausente'}`);
+                
+                if (webhookData) {
+                    const webhooks = JSON.parse(webhookData);
+                    const urlsProblematicas = Object.entries(webhooks).filter(([key, url]) => 
+                        key.includes('list-profiles') || url.includes('list-profiles')
+                    );
+                    
+                    if (urlsProblematicas.length > 0) {
+                        log(`❌ URLs problemáticas encontradas: ${urlsProblematicas.length}`);
+                        urlsProblematicas.forEach(([key, url]) => {
+                            log(`  - ${key}: ${url}`);
+                        });
+                        mostrarResultado(`
+                            <strong>⚠️ URLs Problemáticas Encontradas</strong><br>
+                            ${urlsProblematicas.map(([key, url]) => `${key}: ${url}`).join('<br>')}<br>
+                            <br>
+                            <strong>Recomendação:</strong> Execute "Limpar Tudo e Corrigir URLs"
+                        `, 'warning');
+                    } else {
+                        log('✅ Nenhuma URL problemática encontrada');
+                        mostrarResultado(`
+                            <strong>✅ Status OK</strong><br>
+                            Nenhuma URL problemática encontrada.<br>
+                            Total de webhooks: ${Object.keys(webhooks).length}
+                        `, 'success');
+                    }
+                } else {
+                    log('⚠️ Nenhum dado de webhook encontrado');
+                    mostrarResultado(`
+                        <strong>⚠️ Nenhum Dado de Webhook</strong><br>
+                        Nenhum dado de webhook encontrado no localStorage.<br>
+                        <br>
+                        <strong>Recomendação:</strong> Execute "Limpar Tudo e Corrigir URLs"
+                    `, 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar status: ${error.message}`);
+                mostrarResultado(`
+                    <strong>❌ Erro ao Verificar Status</strong><br>
+                    ${error.message}
+                `, 'error');
+            }
+        }
+
+        function abrirApp() {
+            log('🚀 Abrindo aplicação...');
+            window.open('http://localhost:5174', '_blank');
+        }
+
+        // Log inicial
+        log('📋 Página carregada. Clique em "Limpar Tudo e Corrigir URLs" para resolver o problema.');
+    </script>
+</body>
+</html>

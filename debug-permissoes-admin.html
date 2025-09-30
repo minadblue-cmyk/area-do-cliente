@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Permissões Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Permissões Admin - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Verificar por que o administrador não tem acesso às permissões.
+        </div>
+
+        <h2>🔐 Teste de Login Admin</h2>
+        <button onclick="testarLoginAdmin()">🔐 Testar Login Admin</button>
+        <button onclick="testarWebhookPermissoes()">🔑 Testar Webhook Permissões</button>
+        <button onclick="testarWebhookPerfis()">👥 Testar Webhook Perfis</button>
+        <button onclick="verificarLocalStorage()">💾 Verificar localStorage</button>
+        <button onclick="limparCache()" class="danger-btn">🧹 Limpar Cache</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://n8n.code-iq.com.br/webhook';
+        const N8N_BASE = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook';
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        async function testarLoginAdmin() {
+            log('🔐 Testando login do administrador...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'administrador@code-iq.com.br', 
+                        password: 'admin123' 
+                    })
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook login: ${JSON.stringify(data, null, 2)}`);
+
+                if (data.token) {
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Login realizado com sucesso!</strong><br>
+                            <strong>Nome:</strong> ${data.nome || 'N/A'}<br>
+                            <strong>Email:</strong> ${data.email || 'N/A'}<br>
+                            <strong>Perfil:</strong> ${data.perfil || 'N/A'}<br>
+                            <strong>Perfil ID:</strong> ${data.perfil_id || 'N/A'}<br>
+                            <strong>Token:</strong> ${data.token ? 'Presente' : 'Ausente'}
+                        </div>
+                    `);
+                    
+                    // Armazenar dados para testes posteriores
+                    localStorage.setItem('debug_admin_data', JSON.stringify(data));
+                    
+                    // Testar permissões automaticamente
+                    setTimeout(() => testarWebhookPermissoes(), 1000);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO NO LOGIN:</strong> ${data.message || 'Token não encontrado'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPermissoes() {
+            log('🔑 Testando webhook de permissões...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-permission`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook permissões: ${JSON.stringify(data, null, 2)}`);
+
+                const permissions = data.data || data || [];
+                
+                let html = '<div class="status info"><strong>🔑 Permissões Disponíveis:</strong><br>';
+                permissions.forEach(permission => {
+                    html += `<div>ID: ${permission.id} - ${permission.nome}</div>`;
+                });
+                html += '</div>';
+
+                addResult(html);
+            } catch (error) {
+                log(`❌ Erro no webhook permissões: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO PERMISSÕES:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPerfis() {
+            log('👥 Testando webhook de perfis...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Resposta do webhook perfis: ${JSON.stringify(data, null, 2)}`);
+
+                const profiles = data || [];
+                
+                let html = '<div class="status info"><strong>👥 Perfis Disponíveis:</strong><br>';
+                profiles.forEach(profile => {
+                    html += `<div>
+                        <strong>ID:</strong> ${profile.id} - <strong>Nome:</strong> ${profile.nome_perfil}<br>
+                        <strong>Permissões:</strong> ${profile.permissoes ? profile.permissoes.length : 0} permissões<br>
+                        <strong>IDs das Permissões:</strong> ${profile.permissoes ? profile.permissoes.join(', ') : 'Nenhuma'}<br><br>
+                    </div>`;
+                });
+                html += '</div>';
+
+                addResult(html);
+            } catch (error) {
+                log(`❌ Erro no webhook perfis: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO PERFIS:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function verificarLocalStorage() {
+            log('💾 Verificando localStorage...');
+            
+            const keys = Object.keys(localStorage);
+            log(`📦 Total de chaves no localStorage: ${keys.length}`);
+            
+            let html = '<div class="status info"><strong>💾 Análise do localStorage:</strong><br>';
+            
+            if (keys.length === 0) {
+                html += '<div>Nenhum dado encontrado no localStorage</div>';
+            } else {
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const size = new Blob([value]).size;
+                    html += `<div><strong>${key}:</strong> ${size} bytes</div>`;
+                    log(`   - ${key}: ${size} bytes`);
+                });
+            }
+            
+            html += '</div>';
+            addResult(html);
+        }
+
+        function limparCache() {
+            log('🧹 Limpando cache...');
+            
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Limpar cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                addResult('<div class="status success"><strong>✅ Cache limpo com sucesso!</strong></div>');
+                log('✅ Cache limpo');
+            } catch (error) {
+                log(`❌ Erro ao limpar cache: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        // Verificação automática ao carregar
+        window.onload = function() {
+            log('🔧 Página de debug carregada');
+            addResult('<div class="status info"><strong>ℹ️ Clique em "Testar Login Admin" para começar</strong></div>');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Final</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Testar Correção Final</h1>
+        
+        <div class="section">
+            <h2>1. Carregar Dados Corrigidos</h2>
+            <button onclick="carregarDados()">Carregar Dados</button>
+            <div id="dados-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Filtro Usuário Padrão</h2>
+            <button onclick="testarUsuarioPadrao()">Testar Usuário Padrão</button>
+            <div id="usuario-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Filtro Administrador</h2>
+            <button onclick="testarAdmin()">Testar Admin</button>
+            <div id="admin-result"></div>
+        </div>
+    </div>
+
+    <script>
+        let agentes = [];
+        let agentesAtribuicoes = [];
+
+        async function carregarDados() {
+            const resultDiv = document.getElementById('dados-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Carregando dados...</p>';
+
+            try {
+                // Carregar agentes
+                const agentesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const agentesData = await agentesResponse.json();
+                
+                if (Array.isArray(agentesData) && agentesData.length > 0 && agentesData[0].success && Array.isArray(agentesData[0].data)) {
+                    agentes = agentesData[0].data;
+                } else if (agentesData.success && Array.isArray(agentesData.data)) {
+                    agentes = agentesData.data;
+                }
+
+                // Carregar atribuições
+                const atribuicoesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const atribuicoesData = await atribuicoesResponse.json();
+                
+                if (Array.isArray(atribuicoesData) && atribuicoesData.length > 0) {
+                    // Formato: [{ success: "true", data: { agente_id: 74, usuario_id: 6 } }]
+                    agentesAtribuicoes = atribuicoesData.map(item => item.data).filter(Boolean);
+                } else if (atribuicoesData.data) {
+                    // Formato: { data: [{ agente_id: 74, usuario_id: 6 }] }
+                    agentesAtribuicoes = atribuicoesData.data;
+                }
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Dados carregados com sucesso!</p>
+                    <p class="info">📊 Agentes: ${agentes.length}</p>
+                    <p class="info">📋 Atribuições: ${agentesAtribuicoes.length}</p>
+                    <details>
+                        <summary>Ver Atribuições Processadas</summary>
+                        <pre>${JSON.stringify(agentesAtribuicoes, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        function isAgenteAtribuidoParaUsuario(agenteId, userId) {
+            return agentesAtribuicoes.some(atribuicao => 
+                atribuicao.agente_id === agenteId && atribuicao.usuario_id === userId
+            );
+        }
+
+        function filtrarAgentes(userId, isAdmin = false) {
+            const agentPermissions = {
+                canViewAll: isAdmin,
+                canManage: isAdmin,
+                canViewOwn: true,
+                canAssignAgents: false
+            };
+
+            return agentes.filter((agente) => {
+                // REGRA PRINCIPAL: Se é administrador, sempre mostrar todos os agentes
+                if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                    return true;
+                }
+                
+                // Para usuários não-admin: verificar se o agente está atribuído para eles
+                if (isAgenteAtribuidoParaUsuario(agente.id, userId)) {
+                    return true;
+                }
+                
+                // Caso contrário, não mostrar
+                return false;
+            });
+        }
+
+        function testarUsuarioPadrao() {
+            const resultDiv = document.getElementById('usuario-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando usuário padrão (ID 6)...</p>';
+
+            if (agentes.length === 0 || agentesAtribuicoes.length === 0) {
+                resultDiv.innerHTML = '<p class="error">❌ Carregue os dados primeiro!</p>';
+                return;
+            }
+
+            const userId = 6;
+            const agentesFiltrados = filtrarAgentes(userId, false);
+
+            let resultado = `<p class="info">👤 <strong>Usuário Padrão (ID: ${userId})</strong></p>`;
+            resultado += `<p class="info">📊 Total de agentes: ${agentes.length}</p>`;
+            resultado += `<p class="info">📋 Atribuições: ${agentesAtribuicoes.length}</p>`;
+            resultado += '<hr>';
+
+            agentes.forEach(agente => {
+                const isAtribuido = isAgenteAtribuidoParaUsuario(agente.id, userId);
+                const deveMostrar = isAtribuido;
+                
+                resultado += `<p>🔍 ${agente.nome} (ID: ${agente.id})</p>`;
+                resultado += `<p>   - Atribuído: ${isAtribuido ? '✅' : '❌'}</p>`;
+                resultado += `<p>   - Resultado: ${deveMostrar ? '✅ Mostrar' : '❌ Ocultar'}</p><br>`;
+            });
+
+            resultado += '<hr>';
+            resultado += `<p class="success">✅ Agentes filtrados: ${agentesFiltrados.length} de ${agentes.length}</p>`;
+            
+            if (agentesFiltrados.length > 0) {
+                resultado += `<p class="success">Agentes visíveis:</p>`;
+                agentesFiltrados.forEach(agente => {
+                    resultado += `<p>   - ${agente.nome} (atribuído)</p>`;
+                });
+            } else {
+                resultado += `<p class="error">❌ Nenhum agente visível</p>`;
+            }
+
+            // Verificar se o Zeca está sendo mostrado
+            const zeca = agentesFiltrados.find(agente => agente.nome === 'Zeca');
+            if (zeca) {
+                resultado += `<p class="success">🎉 SUCESSO: Zeca está sendo mostrado!</p>`;
+            } else {
+                resultado += `<p class="error">❌ FALHA: Zeca não está sendo mostrado</p>`;
+            }
+
+            resultDiv.innerHTML = resultado;
+        }
+
+        function testarAdmin() {
+            const resultDiv = document.getElementById('admin-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando administrador (ID 5)...</p>';
+
+            if (agentes.length === 0) {
+                resultDiv.innerHTML = '<p class="error">❌ Carregue os dados primeiro!</p>';
+                return;
+            }
+
+            const userId = 5;
+            const agentesFiltrados = filtrarAgentes(userId, true);
+
+            let resultado = `<p class="info">👤 <strong>Administrador (ID: ${userId})</strong></p>`;
+            resultado += `<p class="info">📊 Total de agentes: ${agentes.length}</p>`;
+            resultado += '<hr>';
+
+            agentes.forEach(agente => {
+                resultado += `<p>🔍 ${agente.nome} (ID: ${agente.id})</p>`;
+                resultado += `<p>   - Resultado: ✅ Mostrar (ADMIN - vê todos)</p><br>`;
+            });
+
+            resultado += '<hr>';
+            resultado += `<p class="success">✅ Agentes filtrados: ${agentesFiltrados.length} de ${agentes.length}</p>`;
+            
+            if (agentesFiltrados.length > 0) {
+                resultado += `<p class="success">Agentes visíveis:</p>`;
+                agentesFiltrados.forEach(agente => {
+                    resultado += `<p>   - ${agente.nome}</p>`;
+                });
+            }
+
+            resultDiv.innerHTML = resultado;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "Teste Agente1 - Webhooks",
+    "description": "Coleção para testar os webhooks do Agente1"
+  },
+  "item": [
+    {
+      "name": "1. Status Agente1 (Antes)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://n8n.code-iq.com.br/webhook/status-agente1?usuario_id=SEU_USER_ID&workflow_id=eBcColwirndBaFZX&action=get_status",
+          "protocol": "https",
+          "host": ["n8n", "code-iq", "com", "br"],
+          "path": ["webhook", "status-agente1"],
+          "query": [
+            {
+              "key": "usuario_id",
+              "value": "SEU_USER_ID",
+              "description": "ID do usuário logado"
+            },
+            {
+              "key": "workflow_id",
+              "value": "eBcColwirndBaFZX",
+              "description": "ID do workflow do agente"
+            },
+            {
+              "key": "action",
+              "value": "get_status",
+              "description": "Ação de buscar status"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Start Agente1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"start\",\n  \"agent_type\": \"eBcColwirndBaFZX\",\n  \"workflow_id\": \"eBcColwirndBaFZX\",\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\",\n  \"usuario_id\": \"SEU_USER_ID\",\n  \"logged_user\": {\n    \"id\": \"SEU_USER_ID\",\n    \"name\": \"SEU_NOME\",\n    \"email\": \"SEU_EMAIL\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://n8n.code-iq.com.br/webhook/start-agente1",
+          "protocol": "https",
+          "host": ["n8n", "code-iq", "com", "br"],
+          "path": ["webhook", "start-agente1"]
+        }
+      }
+    },
+    {
+      "name": "3. Status Agente1 (Durante)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://n8n.code-iq.com.br/webhook/status-agente1?usuario_id=SEU_USER_ID&workflow_id=eBcColwirndBaFZX&action=get_status",
+          "protocol": "https",
+          "host": ["n8n", "code-iq", "com", "br"],
+          "path": ["webhook", "status-agente1"],
+          "query": [
+            {
+              "key": "usuario_id",
+              "value": "SEU_USER_ID"
+            },
+            {
+              "key": "workflow_id",
+              "value": "eBcColwirndBaFZX"
+            },
+            {
+              "key": "action",
+              "value": "get_status"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Stop Agente1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"stop\",\n  \"agent_type\": \"eBcColwirndBaFZX\",\n  \"workflow_id\": \"eBcColwirndBaFZX\",\n  \"execution_id\": \"EXECUTION_ID_DO_START\",\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\",\n  \"usuario_id\": \"SEU_USER_ID\",\n  \"logged_user\": {\n    \"id\": \"SEU_USER_ID\",\n    \"name\": \"SEU_NOME\",\n    \"email\": \"SEU_EMAIL\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://n8n.code-iq.com.br/webhook/stop-agente1",
+          "protocol": "https",
+          "host": ["n8n", "code-iq", "com", "br"],
+          "path": ["webhook", "stop-agente1"]
+        }
+      }
+    },
+    {
+      "name": "5. Status Agente1 (Após)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://n8n.code-iq.com.br/webhook/status-agente1?usuario_id=SEU_USER_ID&workflow_id=eBcColwirndBaFZX&action=get_status",
+          "protocol": "https",
+          "host": ["n8n", "code-iq", "com", "br"],
+          "path": ["webhook", "status-agente1"],
+          "query": [
+            {
+              "key": "usuario_id",
+              "value": "SEU_USER_ID"
+            },
+            {
+              "key": "workflow_id",
+              "value": "eBcColwirndBaFZX"
+            },
+            {
+              "key": "action",
+              "value": "get_status"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

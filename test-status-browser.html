@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhook Status - Execution ID</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste Webhook Status - Execution ID</h1>
+        
+        <div class="test-section">
+            <h3>Teste 1: Webhook Status Genérico</h3>
+            <button onclick="testStatusGeneric()">Testar Status Genérico</button>
+            <div id="result1" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Teste 2: Webhook Status Específico</h3>
+            <button onclick="testStatusSpecific()">Testar Status Específico</button>
+            <div id="result2" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Teste 3: Listar Agentes</h3>
+            <button onclick="testListAgentes()">Listar Agentes</button>
+            <div id="result3" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Função para fazer requisição
+        async function makeRequest(url, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer sess-5-1758561139891' // Substitua pelo seu token
+                    }
+                };
+                
+                if (data && method !== 'GET') {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                return {
+                    status: response.status,
+                    data: result,
+                    success: response.ok
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    data: null,
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        // Teste 1: Status Genérico
+        async function testStatusGeneric() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>🔄 Testando webhook genérico...</p>';
+            
+            const url = 'https://n8n.code-iq.com.br/webhook/status-agente1';
+            const result = await makeRequest(url);
+            
+            let html = `<h4>Resultado do Teste 1:</h4>`;
+            html += `<p><strong>URL:</strong> ${url}</p>`;
+            html += `<p><strong>Status HTTP:</strong> ${result.status}</p>`;
+            html += `<p><strong>Sucesso:</strong> ${result.success ? 'Sim' : 'Não'}</p>`;
+            
+            if (result.error) {
+                html += `<p class="error"><strong>Erro:</strong> ${result.error}</p>`;
+            } else {
+                html += `<pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+                
+                // Analisar execution_id
+                if (result.data) {
+                    const data = Array.isArray(result.data) ? result.data[0] : result.data;
+                    html += `<h4>🔍 Análise de Execution ID:</h4>`;
+                    html += `<p><strong>execution_id:</strong> ${data?.execution_id || 'N/A'}</p>`;
+                    html += `<p><strong>executionId:</strong> ${data?.executionId || 'N/A'}</p>`;
+                    html += `<p><strong>execution_id_ativo:</strong> ${data?.execution_id_ativo || 'N/A'}</p>`;
+                    html += `<p><strong>status:</strong> ${data?.status || 'N/A'}</p>`;
+                    html += `<p><strong>status_atual:</strong> ${data?.status_atual || 'N/A'}</p>`;
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+            resultDiv.className = result.success ? 'result success' : 'result error';
+        }
+        
+        // Teste 2: Status Específico
+        async function testStatusSpecific() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>🔄 Testando webhook específico...</p>';
+            
+            const url = 'https://n8n.code-iq.com.br/webhook/status-59';
+            const result = await makeRequest(url, 'GET');
+            
+            let html = `<h4>Resultado do Teste 2:</h4>`;
+            html += `<p><strong>URL:</strong> ${url}</p>`;
+            html += `<p><strong>Status HTTP:</strong> ${result.status}</p>`;
+            html += `<p><strong>Sucesso:</strong> ${result.success ? 'Sim' : 'Não'}</p>`;
+            
+            if (result.error) {
+                html += `<p class="error"><strong>Erro:</strong> ${result.error}</p>`;
+            } else {
+                html += `<pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+                
+                // Analisar execution_id
+                if (result.data) {
+                    const data = Array.isArray(result.data) ? result.data[0] : result.data;
+                    html += `<h4>🔍 Análise de Execution ID:</h4>`;
+                    html += `<p><strong>execution_id:</strong> ${data?.execution_id || 'N/A'}</p>`;
+                    html += `<p><strong>executionId:</strong> ${data?.executionId || 'N/A'}</p>`;
+                    html += `<p><strong>execution_id_ativo:</strong> ${data?.execution_id_ativo || 'N/A'}</p>`;
+                    html += `<p><strong>status:</strong> ${data?.status || 'N/A'}</p>`;
+                    html += `<p><strong>status_atual:</strong> ${data?.status_atual || 'N/A'}</p>`;
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+            resultDiv.className = result.success ? 'result success' : 'result error';
+        }
+        
+        // Teste 3: Listar Agentes
+        async function testListAgentes() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>🔄 Listando agentes...</p>';
+            
+            const url = 'https://n8n.code-iq.com.br/webhook/list-agentes';
+            const result = await makeRequest(url);
+            
+            let html = `<h4>Resultado do Teste 3:</h4>`;
+            html += `<p><strong>URL:</strong> ${url}</p>`;
+            html += `<p><strong>Status HTTP:</strong> ${result.status}</p>`;
+            html += `<p><strong>Sucesso:</strong> ${result.success ? 'Sim' : 'Não'}</p>`;
+            
+            if (result.error) {
+                html += `<p class="error"><strong>Erro:</strong> ${result.error}</p>`;
+            } else {
+                html += `<pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+                
+                // Analisar dados dos agentes
+                if (result.data && result.data.data) {
+                    const agentes = result.data.data;
+                    html += `<h4>🔍 Análise dos Agentes:</h4>`;
+                    agentes.forEach((agente, index) => {
+                        html += `<p><strong>Agente ${index + 1}:</strong> ${agente.nome} (ID: ${agente.id})</p>`;
+                        html += `<p>Webhook Status: ${agente.webhook_status_url || 'N/A'}</p>`;
+                        html += `<p>Webhook Start: ${agente.webhook_start_url || 'N/A'}</p>`;
+                        html += `<p>Webhook Stop: ${agente.webhook_stop_url || 'N/A'}</p>`;
+                        html += `<p>Webhook Lista: ${agente.webhook_lista_url || 'N/A'}</p>`;
+                        html += `<hr>`;
+                    });
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+            resultDiv.className = result.success ? 'result success' : 'result error';
+        }
+    </script>
+</body>
+</html>

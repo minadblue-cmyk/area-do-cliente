@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Filtro Detalhado</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Filtro Detalhado</h1>
+        
+        <div class="section">
+            <h2>1. Debug Usuário Padrão (ID: 6)</h2>
+            <button onclick="debugUsuarioPadrao()">Debug Usuário Padrão</button>
+            <div id="debug-padrao"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Debug Administrador (ID: 5)</h2>
+            <button onclick="debugAdministrador()">Debug Administrador</button>
+            <div id="debug-admin"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Debug Supervisor (ID: 37)</h2>
+            <button onclick="debugSupervisor()">Debug Supervisor</button>
+            <div id="debug-supervisor"></div>
+        </div>
+    </div>
+
+    <script>
+        async function debugUsuarioPadrao() {
+            const resultDiv = document.getElementById('debug-padrao')
+            resultDiv.innerHTML = '<p class="info">🔄 Debugando usuário padrão...</p>'
+            
+            try {
+                // 1. Simular login do usuário padrão
+                const userData = {
+                    id: "6",
+                    name: "Usuário Elleve Padrão",
+                    email: "rmacedo2005@hotmail.com",
+                    perfil_id: 32,
+                    perfil: "Perfil de Padrão de Usuário Elleve Consorsios",
+                    permissions: ['iniciar_agente', 'visualizar_status_do_agente']
+                }
+                
+                console.log('🔍 UserData:', userData)
+                
+                // 2. Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                console.log('🔍 Agentes encontrados:', agentes)
+                console.log('🔍 Total de agentes:', agentes.length)
+                
+                // 3. Simular lógica de permissões
+                const hasIniciarAgente = userData.permissions.includes('iniciar_agente')
+                const hasVisualizarStatus = userData.permissions.includes('visualizar_status_do_agente')
+                const hasAdministrarOutros = userData.permissions.includes('administrar_agente_de_outros_usuários')
+                
+                const agentPermissions = {
+                    canViewAll: hasAdministrarOutros,
+                    canManage: hasAdministrarOutros,
+                    canViewOwn: hasIniciarAgente || hasVisualizarStatus,
+                    canAssignAgents: userData.permissions.includes('atribuir_agentes_usuarios')
+                }
+                
+                console.log('🔍 Permissões calculadas:', agentPermissions)
+                
+                // 4. Aplicar filtro passo a passo
+                const userId = parseInt(userData.id)
+                console.log('🔍 UserId:', userId)
+                
+                let agentesFiltrados = []
+                
+                console.log('🔍 Aplicando filtro...')
+                
+                agentes.forEach((agente, index) => {
+                    console.log(`🔍 Agente ${index + 1}: ${agente.nome}`)
+                    console.log(`🔍 - usuario_id: ${agente.usuario_id}`)
+                    console.log(`🔍 - userId: ${userId}`)
+                    console.log(`🔍 - Comparação: ${agente.usuario_id} === ${userId} = ${agente.usuario_id === userId}`)
+                    
+                    let shouldShow = false
+                    let reason = ''
+                    
+                    // Se pode ver todos os agentes, mostrar todos
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        shouldShow = true
+                        reason = 'canViewAll/canManage'
+                    }
+                    // Se pode ver apenas seus próprios agentes, filtrar por user_id
+                    else if (agentPermissions.canViewOwn) {
+                        shouldShow = agente.usuario_id === userId
+                        reason = `canViewOwn: ${agente.usuario_id} === ${userId}`
+                    }
+                    // Se tem permissão de atribuição, verificar atribuições específicas
+                    else if (agentPermissions.canAssignAgents) {
+                        shouldShow = agente.atribuido_para_usuario || agente.usuario_id === userId
+                        reason = `canAssignAgents: ${agente.atribuido_para_usuario} || ${agente.usuario_id} === ${userId}`
+                    }
+                    else {
+                        shouldShow = false
+                        reason = 'Sem permissão específica'
+                    }
+                    
+                    console.log(`🔍 - Deve mostrar: ${shouldShow} (${reason})`)
+                    
+                    if (shouldShow) {
+                        agentesFiltrados.push(agente)
+                    }
+                })
+                
+                console.log('🔍 Agentes filtrados finais:', agentesFiltrados)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👤 Debug Usuário Padrão (ID: 6)</h3>
+                    <p><strong>UserData:</strong></p>
+                    <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    
+                    <p><strong>Permissões calculadas:</strong></p>
+                    <ul>
+                        <li>canViewAll: ${agentPermissions.canViewAll}</li>
+                        <li>canManage: ${agentPermissions.canManage}</li>
+                        <li>canViewOwn: ${agentPermissions.canViewOwn}</li>
+                        <li>canAssignAgents: ${agentPermissions.canAssignAgents}</li>
+                    </ul>
+                    
+                    <p><strong>Total de agentes disponíveis:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Análise agente por agente:</h4>
+                    <ul>
+                        ${agentes.map(agente => {
+                            const shouldShow = agente.usuario_id === userId
+                            return `
+                                <li>
+                                    <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                    <br>usuario_id: ${agente.usuario_id}
+                                    <br>userId: ${userId}
+                                    <br>Deve mostrar: ${shouldShow ? '✅ SIM' : '❌ NÃO'}
+                                    <br>Razão: ${shouldShow ? 'usuario_id === userId' : 'usuario_id !== userId'}
+                                </li>
+                            `
+                        }).join('')}
+                    </ul>
+                    
+                    <h4>Agentes que o usuário padrão deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 1 && agentesFiltrados[0].nome === 'João' ? 
+                            '✅ CORRETO: Usuário padrão vê apenas João' : 
+                            '❌ INCORRETO: Usuário padrão está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                console.error('Erro no debug:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function debugAdministrador() {
+            const resultDiv = document.getElementById('debug-admin')
+            resultDiv.innerHTML = '<p class="info">🔄 Debugando administrador...</p>'
+            
+            try {
+                const userData = {
+                    id: "5",
+                    name: "Administrator Code-IQ",
+                    email: "admin@code-iq.com.br",
+                    perfil_id: 28,
+                    perfil: "Administrador",
+                    permissions: ['administrar_agente_de_outros_usuários']
+                }
+                
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                const hasAdministrarOutros = userData.permissions.includes('administrar_agente_de_outros_usuários')
+                
+                const agentPermissions = {
+                    canViewAll: hasAdministrarOutros,
+                    canManage: hasAdministrarOutros,
+                    canViewOwn: false,
+                    canAssignAgents: false
+                }
+                
+                const userId = parseInt(userData.id)
+                const agentesFiltrados = agentes.filter(agente => {
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        return true
+                    }
+                    return agente.usuario_id === userId
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👑 Debug Administrador (ID: 5)</h3>
+                    <p><strong>UserData:</strong></p>
+                    <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    
+                    <p><strong>Permissões calculadas:</strong></p>
+                    <ul>
+                        <li>canViewAll: ${agentPermissions.canViewAll}</li>
+                        <li>canManage: ${agentPermissions.canManage}</li>
+                        <li>canViewOwn: ${agentPermissions.canViewOwn}</li>
+                        <li>canAssignAgents: ${agentPermissions.canAssignAgents}</li>
+                    </ul>
+                    
+                    <p><strong>Total de agentes disponíveis:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o administrador deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesFiltrados.length === 3 ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 3 ? 
+                            '✅ CORRETO: Administrador vê todos os agentes' : 
+                            '❌ INCORRETO: Administrador está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function debugSupervisor() {
+            const resultDiv = document.getElementById('debug-supervisor')
+            resultDiv.innerHTML = '<p class="info">🔄 Debugando supervisor...</p>'
+            
+            try {
+                const userData = {
+                    id: "37",
+                    name: "Supervisor Elleve Consórcios",
+                    email: "minadblue@gmail.com",
+                    perfil_id: 42,
+                    perfil: "Supervisor Elleve Consórcios",
+                    permissions: []
+                }
+                
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                const agentPermissions = {
+                    canViewAll: false,
+                    canManage: false,
+                    canViewOwn: false,
+                    canAssignAgents: false
+                }
+                
+                const userId = parseInt(userData.id)
+                const agentesFiltrados = agentes.filter(agente => {
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        return true
+                    }
+                    if (agentPermissions.canViewOwn) {
+                        return agente.usuario_id === userId
+                    }
+                    if (agentPermissions.canAssignAgents) {
+                        return agente.atribuido_para_usuario || agente.usuario_id === userId
+                    }
+                    return false
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👨‍💼 Debug Supervisor (ID: 37)</h3>
+                    <p><strong>UserData:</strong></p>
+                    <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    
+                    <p><strong>Permissões calculadas:</strong></p>
+                    <ul>
+                        <li>canViewAll: ${agentPermissions.canViewAll}</li>
+                        <li>canManage: ${agentPermissions.canManage}</li>
+                        <li>canViewOwn: ${agentPermissions.canViewOwn}</li>
+                        <li>canAssignAgents: ${agentPermissions.canAssignAgents}</li>
+                    </ul>
+                    
+                    <p><strong>Total de agentes disponíveis:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o supervisor deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesFiltrados.length === 0 ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 0 ? 
+                            '✅ CORRETO: Supervisor não vê nenhum agente' : 
+                            '❌ INCORRETO: Supervisor está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            debugUsuarioPadrao()
+        }
+    </script>
+</body>
+</html>

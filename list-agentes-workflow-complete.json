@@ -1,0 +1,123 @@
+{
+  "name": "Listar Agentes - Completo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "list-agentes",
+        "responseMode": "responseNode",
+        "options": {
+          "cors": {
+            "enabled": true,
+            "allowedOrigins": ["*"],
+            "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+          }
+        }
+      },
+      "id": "webhook-list",
+      "name": "Webhook Listar Agentes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "list-agentes"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "agentes",
+        "options": {
+          "sort": {
+            "sortBy": "created_at",
+            "sortOrder": "DESC"
+          }
+        }
+      },
+      "id": "postgres-select",
+      "name": "PostgreSQL - Buscar Agentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar dados dos agentes\nconst agentes = $input.all();\n\nconsole.log('🔍 Agentes encontrados:', agentes.length);\nconsole.log('🔍 Primeiro agente:', agentes[0]);\n\n// Mapear dados para o formato esperado pelo frontend\nconst agentesFormatados = agentes.map((item, index) => {\n  const agente = item.json;\n  \n  return {\n    id: agente.id || `AGENTE_${index + 1}`,\n    nome: agente.nome || `Agente ${index + 1}`,\n    workflow_id: agente.workflow_id || `workflow-${index + 1}`,\n    webhook_url: agente.webhook_url || `https://n8n.code-iq.com.br/webhook/start-agente${index + 1}`,\n    descricao: agente.descricao || `Agente SDR ${index + 1}`,\n    icone: agente.icone || '🤖',\n    cor: agente.cor || 'bg-blue-500',\n    ativo: agente.ativo !== false,\n    created_at: agente.created_at,\n    updated_at: agente.updated_at\n  };\n});\n\nconsole.log('🔍 Agentes formatados:', agentesFormatados);\n\nreturn {\n  success: true,\n  data: agentesFormatados,\n  total: agentesFormatados.length,\n  message: `${agentesFormatados.length} agentes encontrados`\n};"
+      },
+      "id": "process-data",
+      "name": "Processar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond-success",
+      "name": "Responder Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"data\": [],\n  \"total\": 0,\n  \"message\": \"Erro ao buscar agentes\",\n  \"error\": $json.message || \"Erro desconhecido\"\n} }}"
+      },
+      "id": "respond-error",
+      "name": "Responder Erro",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Listar Agentes": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Buscar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Buscar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "Responder Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "list-agentes-workflow-complete",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

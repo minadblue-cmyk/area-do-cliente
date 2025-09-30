@@ -1,0 +1,54 @@
+{
+  "query_parameters": [
+    {
+      "name": "usuario_id",
+      "value": "={{ $json.agente_id }}",
+      "description": "ID do usuário que está fazendo o upload"
+    },
+    {
+      "name": "nome",
+      "value": "={{ $json.nome }}",
+      "description": "Nome do lead"
+    },
+    {
+      "name": "telefone",
+      "value": "={{ $json.telefone }}",
+      "description": "Telefone do lead"
+    },
+    {
+      "name": "email",
+      "value": "={{ $json.email || '' }}",
+      "description": "Email do lead (opcional)"
+    },
+    {
+      "name": "profissao",
+      "value": "={{ $json.profissao }}",
+      "description": "Profissão do lead"
+    },
+    {
+      "name": "idade",
+      "value": "={{ $json.idade }}",
+      "description": "Idade do lead"
+    },
+    {
+      "name": "estado_civil",
+      "value": "={{ $json.estado_civil }}",
+      "description": "Estado civil do lead"
+    },
+    {
+      "name": "filhos",
+      "value": "={{ $json.filhos }}",
+      "description": "Se tem filhos (boolean)"
+    },
+    {
+      "name": "qtd_filhos",
+      "value": "={{ $json.qtd_filhos }}",
+      "description": "Quantidade de filhos"
+    },
+    {
+      "name": "fonte_prospec",
+      "value": "={{ $json.fonte_prospec }}",
+      "description": "Fonte da prospecção"
+    }
+  ]
+}

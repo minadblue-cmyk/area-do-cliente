@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Atribuição Zeca</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Atribuição Zeca</h1>
+        
+        <div class="section">
+            <h2>1. Carregar Dados</h2>
+            <button onclick="carregarDados()">Carregar Dados</button>
+            <div id="dados-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Debug Atribuição Zeca</h2>
+            <button onclick="debugZeca()">Debug Zeca</button>
+            <div id="debug-result"></div>
+        </div>
+    </div>
+
+    <script>
+        let agentes = [];
+        let agentesAtribuicoes = [];
+
+        async function carregarDados() {
+            const resultDiv = document.getElementById('dados-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Carregando dados...</p>';
+
+            try {
+                // Carregar agentes
+                const agentesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const agentesData = await agentesResponse.json();
+                
+                if (Array.isArray(agentesData) && agentesData.length > 0 && agentesData[0].success && Array.isArray(agentesData[0].data)) {
+                    agentes = agentesData[0].data;
+                } else if (agentesData.success && Array.isArray(agentesData.data)) {
+                    agentes = agentesData.data;
+                }
+
+                // Carregar atribuições
+                const atribuicoesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const atribuicoesData = await atribuicoesResponse.json();
+                
+                if (Array.isArray(atribuicoesData) && atribuicoesData.length > 0) {
+                    // Formato: [{ success: "true", data: { agente_id: 74, usuario_id: 6 } }]
+                    agentesAtribuicoes = atribuicoesData.map(item => item.data).filter(Boolean);
+                } else if (atribuicoesData.data) {
+                    // Formato: { data: [{ agente_id: 74, usuario_id: 6 }] }
+                    agentesAtribuicoes = atribuicoesData.data;
+                }
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Dados carregados!</p>
+                    <p class="info">📊 Agentes: ${agentes.length}</p>
+                    <p class="info">📋 Atribuições: ${agentesAtribuicoes.length}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+
+        function debugZeca() {
+            const resultDiv = document.getElementById('debug-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Debugando atribuição do Zeca...</p>';
+
+            if (agentes.length === 0 || agentesAtribuicoes.length === 0) {
+                resultDiv.innerHTML = '<p class="error">❌ Carregue os dados primeiro!</p>';
+                return;
+            }
+
+            // Encontrar o Zeca
+            const zeca = agentes.find(agente => agente.nome === 'Zeca');
+            if (!zeca) {
+                resultDiv.innerHTML = '<p class="error">❌ Zeca não encontrado!</p>';
+                return;
+            }
+
+            const userId = 6; // Usuário padrão
+            let resultado = `<p class="info">🔍 <strong>DEBUG ZECA (ID: ${zeca.id})</strong></p>`;
+            resultado += `<p class="info">👤 Usuário: ${userId}</p>`;
+            resultado += '<hr>';
+
+            // Mostrar dados do Zeca
+            resultado += `<p class="info">📊 <strong>Dados do Zeca:</strong></p>`;
+            resultado += `<pre>${JSON.stringify(zeca, null, 2)}</pre>`;
+
+            // Mostrar todas as atribuições
+            resultado += `<p class="info">📋 <strong>Todas as atribuições:</strong></p>`;
+            resultado += `<pre>${JSON.stringify(agentesAtribuicoes, null, 2)}</pre>`;
+
+            // Verificar cada atribuição
+            resultado += `<p class="info">🔍 <strong>Verificação de atribuições:</strong></p>`;
+            agentesAtribuicoes.forEach((atribuicao, index) => {
+                resultado += `<p>Atribuição ${index + 1}:</p>`;
+                resultado += `<p>   - agente_id: ${atribuicao.agente_id} (tipo: ${typeof atribuicao.agente_id})</p>`;
+                resultado += `<p>   - usuario_id: ${atribuicao.usuario_id} (tipo: ${typeof atribuicao.usuario_id})</p>`;
+                resultado += `<p>   - Zeca ID: ${zeca.id} (tipo: ${typeof zeca.id})</p>`;
+                resultado += `<p>   - Usuário ID: ${userId} (tipo: ${typeof userId})</p>`;
+                
+                const agenteMatch = atribuicao.agente_id == zeca.id;
+                const usuarioMatch = atribuicao.usuario_id == userId;
+                const ambosMatch = agenteMatch && usuarioMatch;
+                
+                resultado += `<p>   - Agente match: ${agenteMatch ? '✅' : '❌'}</p>`;
+                resultado += `<p>   - Usuário match: ${usuarioMatch ? '✅' : '❌'}</p>`;
+                resultado += `<p>   - Ambos match: ${ambosMatch ? '✅' : '❌'}</p><br>`;
+            });
+
+            // Testar a função
+            resultado += `<p class="info">🧪 <strong>Teste da função:</strong></p>`;
+            const isAtribuido = agentesAtribuicoes.some(atribuicao => 
+                atribuicao.agente_id == zeca.id && atribuicao.usuario_id == userId
+            );
+            resultado += `<p>Resultado: ${isAtribuido ? '✅ Atribuído' : '❌ Não atribuído'}</p>`;
+
+            resultDiv.innerHTML = resultado;
+        }
+    </script>
+</body>
+</html>

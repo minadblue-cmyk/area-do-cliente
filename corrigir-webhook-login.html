@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Webhook Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Webhook Login</h1>
+        
+        <div class="step">
+            <h3>📊 Teste do Webhook Login Atual</h3>
+            <button onclick="testarWebhookLogin()">🧪 Testar Webhook Login</button>
+            <div id="resultado"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🔧 Instruções para Corrigir no n8n</h3>
+            <p>O webhook de login está retornando dados incorretos. Siga estas instruções:</p>
+        </div>
+    </div>
+
+    <script>
+        async function testarWebhookLogin() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Testando webhook de login...</p>';
+            
+            try {
+                // Testar login com usuário ID 6
+                const loginResponse = await fetch('https://n8n.code-iq.com.br/webhook/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'rmacedo2005@hotmail.com',
+                        password: 'F0rm@T10'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('🔐 Resposta do login:', loginData);
+                
+                let html = '<div class="step">';
+                html += '<h3>📋 Resposta Atual do Webhook Login</h3>';
+                html += `<p><strong>Success:</strong> ${loginData.success}</p>`;
+                html += `<p><strong>Message:</strong> ${loginData.message}</p>`;
+                html += `<p><strong>Token:</strong> ${loginData.token}</p>`;
+                html += `<p><strong>Nome:</strong> ${loginData.nome}</p>`;
+                html += `<p><strong>Usuario ID:</strong> ${loginData.usuario_id}</p>`;
+                html += `<p><strong>Email:</strong> ${loginData.email}</p>`;
+                html += `<p><strong>Perfil:</strong> ${loginData.perfil}</p>`;
+                html += `<p><strong>Perfil ID:</strong> ${loginData.perfil_id}</p>`;
+                html += '</div>';
+                
+                // Verificar se os dados estão corretos
+                if (loginData.perfil_id === 32 && loginData.perfil === 'User Elleve Consorsios 1 - Atualizado') {
+                    html += '<div class="step">';
+                    html += '<h3>✅ Dados Corretos</h3>';
+                    html += '<p class="success">O webhook está retornando os dados corretos!</p>';
+                    html += '</div>';
+                } else {
+                    html += '<div class="step">';
+                    html += '<h3>❌ Dados Incorretos</h3>';
+                    html += '<p class="error">O webhook está retornando dados incorretos:</p>';
+                    html += '<ul>';
+                    html += `<li><strong>Perfil ID esperado:</strong> 32 | <strong>Retornado:</strong> ${loginData.perfil_id}</li>`;
+                    html += `<li><strong>Perfil esperado:</strong> "User Elleve Consorsios 1 - Atualizado" | <strong>Retornado:</strong> "${loginData.perfil}"</li>`;
+                    html += '</ul>';
+                    html += '</div>';
+                    
+                    html += '<div class="step">';
+                    html += '<h3>🔧 Como Corrigir no n8n</h3>';
+                    html += '<p>1. Acesse o n8n: <a href="https://n8n.code-iq.com.br" target="_blank">https://n8n.code-iq.com.br</a></p>';
+                    html += '<p>2. Encontre o workflow do webhook-login</p>';
+                    html += '<p>3. Verifique a query SQL que busca os dados do usuário</p>';
+                    html += '<p>4. A query deve incluir o JOIN com a tabela de perfis:</p>';
+                    html += '<div class="code">';
+                    html += 'SELECT u.id as usuario_id, u.nome, u.email, u.perfil_id, p.nome_perfil as perfil\n';
+                    html += 'FROM usuarios u\n';
+                    html += 'LEFT JOIN perfis p ON u.perfil_id = p.id\n';
+                    html += 'WHERE u.email = $1 AND u.senha = $2 AND u.ativo = true';
+                    html += '</div>';
+                    html += '<p>5. Salve e teste o workflow</p>';
+                    html += '</div>';
+                }
+                
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <p class="error">❌ Erro: ${error.message}</p>
+                    <div class="code">${error.stack}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{
+  "name": "List Agentes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "list-agentes",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-list-agentes",
+      "name": "Webhook List Agentes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "list-agentes"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nome, workflow_id, webhook_url, descricao, icone, cor, ativo, created_at, updated_at FROM agentes ORDER BY nome",
+        "options": {}
+      },
+      "id": "buscar-agentes",
+      "name": "Buscar Agentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-consorcio",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar agentes do banco\nconst agentes = $input.all();\n\nconsole.log('📋 Agentes encontrados:', agentes.length);\n\n// Mapear para o formato esperado pelo frontend\nconst agentesFormatados = agentes.map(item => {\n  const data = item.json;\n  \n  return {\n    id: data.id,\n    nome: data.nome,\n    workflow_id: data.workflow_id,\n    webhook_url: data.webhook_url,\n    descricao: data.descricao,\n    icone: data.icone || '🤖',\n    cor: data.cor || 'bg-blue-500',\n    ativo: data.ativo,\n    created_at: data.created_at,\n    updated_at: data.updated_at\n  };\n});\n\nconsole.log('✅ Agentes formatados:', agentesFormatados.length);\nconsole.log('✅ Primeiro agente exemplo:', agentesFormatados[0]);\n\n// Retornar no formato que o frontend espera\nreturn {\n  json: {\n    success: true,\n    message: 'Agentes encontrados',\n    data: agentesFormatados,\n    total: agentesFormatados.length,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "processar-agentes",
+      "name": "Processar Agentes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "responder-agentes",
+      "name": "Responder Agentes",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook List Agentes": {
+      "main": [
+        [
+          {
+            "node": "Buscar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Processar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Responder Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "list-agentes",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Melhorias Visuais</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            display: block;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .demo-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #f9fafb;
+        }
+        .demo-user {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            transition: all 0.2s;
+        }
+        .demo-user.attributed {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .demo-user.not-attributed {
+            background: white;
+            border: 1px solid #e5e7eb;
+        }
+        .demo-user.not-attributed:hover {
+            background: #f9fafb;
+        }
+        .demo-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .demo-user-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .demo-user-icon.attributed {
+            background: #bbf7d0;
+            color: #166534;
+        }
+        .demo-user-icon.not-attributed {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .demo-user-text h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .demo-user-text p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .demo-user.attributed .demo-user-text h4 {
+            color: #166534;
+        }
+        .demo-user.attributed .demo-user-text p {
+            color: #16a34a;
+        }
+        .demo-user.not-attributed .demo-user-text h4 {
+            color: #111827;
+        }
+        .demo-user.not-attributed .demo-user-text p {
+            color: #6b7280;
+        }
+        .demo-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .demo-btn.assign {
+            background: #3b82f6;
+            color: white;
+        }
+        .demo-btn.remove {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Teste - Melhorias Visuais</h1>
+            <p>Verificar se as melhorias de contraste estão funcionando no modal de atribuição</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>📋 Demonstração das Melhorias</h3>
+            <p>Comparação antes e depois das melhorias de contraste:</p>
+            
+            <h4>✅ Usuários Atribuídos (Verde - Melhor Contraste)</h4>
+            <div class="demo-user attributed">
+                <div class="demo-user-info">
+                    <div class="demo-user-icon attributed">✓</div>
+                    <div class="demo-user-text">
+                        <h4>Administrator Code-IQ</h4>
+                        <p>admin@code-iq.com.br</p>
+                    </div>
+                </div>
+                <button class="demo-btn remove">Remover</button>
+            </div>
+
+            <h4>👤 Usuários Não Atribuídos (Cinza - Melhor Contraste)</h4>
+            <div class="demo-user not-attributed">
+                <div class="demo-user-info">
+                    <div class="demo-user-icon not-attributed">👤</div>
+                    <div class="demo-user-text">
+                        <h4>Teste de Dashboard</h4>
+                        <p>rmacedo2005@hotmail.com</p>
+                    </div>
+                </div>
+                <button class="demo-btn assign">Atribuir</button>
+            </div>
+
+            <div class="demo-user not-attributed">
+                <div class="demo-user-info">
+                    <div class="demo-user-icon not-attributed">👤</div>
+                    <div class="demo-user-text">
+                        <h4>Usuário Teste</h4>
+                        <p>minadblue@gmail.com</p>
+                    </div>
+                </div>
+                <button class="demo-btn assign">Atribuir</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Melhorias Implementadas</h3>
+            <ul>
+                <li>✅ <strong>Texto escuro</strong> em fundos claros para melhor legibilidade</li>
+                <li>✅ <strong>Usuários atribuídos</strong> com fundo verde claro e texto verde escuro</li>
+                <li>✅ <strong>Usuários não atribuídos</strong> com fundo branco e texto cinza escuro</li>
+                <li>✅ <strong>Ícones</strong> com melhor contraste (verde escuro/cinza escuro)</li>
+                <li>✅ <strong>Hover effects</strong> para melhor interação</li>
+                <li>✅ <strong>Transições suaves</strong> entre estados</li>
+            </ul>
+        </div>
+
+        <button class="btn btn-success" onclick="testarAplicacao()">
+            🚀 Testar na Aplicação Real
+        </button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function testarAplicacao() {
+            document.getElementById('result').innerHTML = `
+                <div class="result success">
+                    <strong>✅ Melhorias Visuais Implementadas!</strong><br><br>
+                    <strong>🎯 Para testar:</strong><br>
+                    1. Acesse a aplicação em <a href="http://localhost:5173" target="_blank" style="color: #065f46; font-weight: bold;">http://localhost:5173</a><br>
+                    2. Vá para <strong>Configurar Agentes</strong><br>
+                    3. Clique em <strong>"Atribuir"</strong> em qualquer agente<br>
+                    4. Verifique se o contraste está melhor<br><br>
+                    <strong>📋 Melhorias aplicadas:</strong><br>
+                    • Texto escuro em fundos claros<br>
+                    • Verde escuro para usuários atribuídos<br>
+                    • Cinza escuro para usuários não atribuídos<br>
+                    • Melhor contraste nos ícones<br>
+                    • Efeitos hover suaves
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

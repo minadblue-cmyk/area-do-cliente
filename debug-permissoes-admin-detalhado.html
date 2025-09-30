@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Permissões Admin Detalhado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .permission-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        .permission-missing {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Permissões Admin Detalhado</h1>
+        
+        <div class="step">
+            <h3>🧪 Teste Completo de Permissões</h3>
+            <button onclick="testarPermissoesCompletas()">🔍 Testar Permissões Completas</button>
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testarPermissoesCompletas() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Testando permissões completas...</p>';
+            
+            try {
+                // 1. Fazer login
+                console.log('🔐 Fazendo login...');
+                const loginResponse = await fetch('https://n8n.code-iq.com.br/webhook/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@code-iq.com.br',
+                        password: 'F0rm@T10'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('✅ Login:', loginData);
+                
+                if (!loginData.success) {
+                    throw new Error('Login falhou: ' + loginData.message);
+                }
+                
+                // 2. Carregar permissões
+                console.log('🔑 Carregando permissões...');
+                const permissionsResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission');
+                const permissionsData = await permissionsResponse.json();
+                console.log('✅ Permissões:', permissionsData);
+                
+                // 3. Carregar perfis
+                console.log('👥 Carregando perfis...');
+                const profilesResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-profile');
+                const profilesData = await profilesResponse.json();
+                console.log('✅ Perfis:', profilesData);
+                
+                // 4. Encontrar perfil do admin
+                const adminProfile = profilesData.find(p => p.id === 28 || p.nome_perfil === 'Administrador');
+                console.log('🔍 Perfil do admin:', adminProfile);
+                
+                if (!adminProfile) {
+                    throw new Error('Perfil do administrador não encontrado');
+                }
+                
+                // 5. Mapear permissões
+                const permissions = permissionsData.data || permissionsData || [];
+                const userPermissionIds = adminProfile.permissoes.filter(id => id !== null);
+                
+                const userPermissionNames = userPermissionIds.map(id => {
+                    const permission = permissions.find(p => p.id === id);
+                    return permission?.nome;
+                }).filter(Boolean);
+                
+                console.log('🔍 IDs das permissões do admin:', userPermissionIds);
+                console.log('🔍 Nomes das permissões do admin:', userPermissionNames);
+                
+                // 6. Verificar permissões específicas que estão falhando
+                const permissoesProblema = [
+                    'agente_view',
+                    'agente_start', 
+                    'agente_stop',
+                    'dashboard_admin',
+                    'upload_admin',
+                    'agente_admin',
+                    'administrar_agente_de_outros_usuários'
+                ];
+                
+                let html = '<div class="step">';
+                html += '<h3>📊 Resultado do Debug</h3>';
+                html += `<p><strong>Perfil do Admin:</strong> ${adminProfile.nome_perfil} (ID: ${adminProfile.id})</p>`;
+                html += `<p><strong>Total de permissões do admin:</strong> ${userPermissionNames.length}</p>`;
+                html += '</div>';
+                
+                html += '<div class="step">';
+                html += '<h3>🔍 Permissões do Admin (Todas)</h3>';
+                userPermissionNames.forEach(perm => {
+                    html += `<div class="permission-item">✅ ${perm}</div>`;
+                });
+                html += '</div>';
+                
+                html += '<div class="step">';
+                html += '<h3>❌ Permissões que Estão Falhando</h3>';
+                permissoesProblema.forEach(perm => {
+                    const temPermissao = userPermissionNames.includes(perm);
+                    const classe = temPermissao ? 'permission-item' : 'permission-item permission-missing';
+                    const status = temPermissao ? '✅' : '❌';
+                    html += `<div class="${classe}">${status} ${perm}</div>`;
+                });
+                html += '</div>';
+                
+                html += '<div class="step">';
+                html += '<h3>🔍 Permissões Similares Encontradas</h3>';
+                permissoesProblema.forEach(perm => {
+                    const similares = userPermissionNames.filter(p => 
+                        p.toLowerCase().includes(perm.toLowerCase().split('_')[0]) ||
+                        p.toLowerCase().includes('agente') ||
+                        p.toLowerCase().includes('admin') ||
+                        p.toLowerCase().includes('dashboard') ||
+                        p.toLowerCase().includes('upload')
+                    );
+                    if (similares.length > 0) {
+                        html += `<div class="permission-item"><strong>${perm}:</strong> ${similares.join(', ')}</div>`;
+                    }
+                });
+                html += '</div>';
+                
+                html += '<div class="code">';
+                html += '<strong>Permissões Completas do Admin:</strong>\n';
+                html += JSON.stringify(userPermissionNames, null, 2);
+                html += '</div>';
+                
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <p class="error">❌ Erro: ${error.message}</p>
+                    <div class="code">${error.stack}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

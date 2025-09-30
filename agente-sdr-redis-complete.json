@@ -1,0 +1,930 @@
+{
+  "name": "Agente SDR - Redis Control Complete",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-redis-control",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1600,
+        1800
+      ],
+      "id": "webhook-start",
+      "name": "Webhook Start"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "stop",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Para o Agente"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Inicia o Agente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1360,
+        1800
+      ],
+      "id": "switch-action",
+      "name": "Switch Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agente_execucoes SET status = 'stopped', parado_em = NOW(), payload_parada = $1, updated_at = NOW() WHERE execution_id = $2",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($json.body) }}\n={{ $json.body.execution_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1120,
+        1400
+      ],
+      "id": "parar-agente",
+      "name": "Parar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $json.body.execution_id }}",
+        "value": "stopped",
+        "expire": true,
+        "ttl": "=3600"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        1400
+      ],
+      "id": "redis-parar",
+      "name": "Redis - Parar",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n        \"success\": true,\n        \"message\": \"Agente parado com sucesso\",\n        \"execution_id\": \"{{ $json.body.execution_id }}\",\n        \"timestamp\": \"{{ $json.body.timestamp }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -640,
+        1400
+      ],
+      "id": "respond-parar",
+      "name": "Respond Stop"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "agente_execucoes",
+          "mode": "list",
+          "cachedResultName": "agente_execucoes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $execution.id }}",
+            "workflow_id": "={{ $json.body.workflow_id }}",
+            "usuario_id": "={{ $json.body.usuario_id }}",
+            "usuario_nome": "={{ $json.body.logged_user.name }}",
+            "status": "=running",
+            "iniciado_em": "={{ $json.body.timestamp }}",
+            "usuario_email": "={{ $json.body.logged_user.email }}",
+            "payload_inicial": "={{ $json.body }}",
+            "created_at": "={{ $now }}",
+            "updated_at": "={{ $now.toISO() }}",
+            "duracao_segundos": 0
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_id",
+              "displayName": "workflow_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_nome",
+              "displayName": "usuario_nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "iniciado_em",
+              "displayName": "iniciado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "parado_em",
+              "displayName": "parado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_inicial",
+              "displayName": "payload_inicial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_parada",
+              "displayName": "payload_parada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duracao_segundos",
+              "displayName": "duracao_segundos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1120,
+        1800
+      ],
+      "id": "iniciar-agente",
+      "name": "Iniciar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}",
+        "value": "running",
+        "expire": true,
+        "ttl": "=3600"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        1800
+      ],
+      "id": "redis-iniciar",
+      "name": "Redis - Iniciar",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n        \"success\": true,\n        \"message\": \"Agente iniciado com sucesso\",\n        \"execution_id\": \"{{ $execution.id }}\",\n        \"timestamp\": \"{{ $json.body.timestamp }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -640,
+        1800
+      ],
+      "id": "respond-iniciar",
+      "name": "Respond Start"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH pegar AS (\n  SELECT id\n  FROM public.lead\n  WHERE contatado IS NOT TRUE\n    AND (reservado_lote IS NULL\n         OR COALESCE(reservado_em, NOW() - INTERVAL '100 years')\n            < NOW() - INTERVAL '30 minutes')\n  ORDER BY COALESCE(data_ultima_interacao, data_criacao) ASC, id ASC\n  LIMIT 20\n  FOR UPDATE SKIP LOCKED\n)\nUPDATE public.lead l\nSET reservado_por  = $1,\n    reservado_em   = NOW(),\n    reservado_lote = $2\nFROM pegar p\nWHERE l.id = p.id\nRETURNING\n  l.id,\n  l.reservado_lote,\n  l.reservado_por,\n  l.reservado_em;",
+        "options": {
+          "queryReplacement": "={{$workflow.id}}, {{$execution.id}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -400,
+        1800
+      ],
+      "id": "busca-leads",
+      "name": "Busca Leads",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.id, l.client_id, l.nome, l.nome_cliente, l.telefone, l.canal, l.status,\n  l.data_criacao, l.data_ultima_interacao, l.fonte_prospec, l.idade, l.profissao,\n  l.estado_civil, l.filhos, l.qtd_filhos, l.reservado_por, l.reservado_em, l.reservado_lote\nFROM public.lead l\nWHERE l.reservado_lote = $1\nORDER BY COALESCE(l.data_ultima_interacao, l.data_criacao) ASC, l.id ASC;",
+        "options": {
+          "queryBatching": "single",
+          "queryReplacement": "={{$item(0).$json.reservado_lote}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -160,
+        1800
+      ],
+      "id": "buscar-lote",
+      "name": "Buscar Lote",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        80,
+        1800
+      ],
+      "id": "loop-principal",
+      "name": "Loop Principal"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        320,
+        1800
+      ],
+      "id": "redis-status-check",
+      "name": "Redis Status Check",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verificar se agente foi parado via Redis\nconst redisData = $('Redis Status Check').item.json;\nconst statusAtual = redisData.propertyName || redisData.value || 'running';\n\nconsole.log('🔍 Status atual do agente:', statusAtual);\nconsole.log('📊 Dados Redis:', redisData);\n\nif (statusAtual === 'stopped') {\n  console.log('🛑 Agente foi parado pelo frontend');\n  \n  return [{\n    json: {\n      status: 'stopped',\n      motivo: 'Parado pelo usuário via frontend',\n      execution_id: $execution.id,\n      workflow_id: $workflow.id,\n      timestamp: new Date().toISOString(),\n      parar_loop: true\n    }\n  }];\n}\n\n// Se ainda está rodando, continua o fluxo normal\nconsole.log('✅ Agente ainda rodando, continuando loop');\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1800
+      ],
+      "id": "verificar-status",
+      "name": "Verificar Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-status",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "stopped",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        1800
+      ],
+      "id": "check-stopped",
+      "name": "Check if Stopped"
+    },
+    {
+      "parameters": {
+        "amount": "=2",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        1800
+      ],
+      "id": "wait-processamento",
+      "name": "Wait Processamento"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-data",
+              "name": "lead_data",
+              "key": "Lead Data",
+              "value": "={{ $json.json || $json }}",
+              "type": "object"
+            },
+            {
+              "id": "execution-info",
+              "name": "execution_info",
+              "key": "Execution Info", 
+              "value": "={{ { execution_id: $execution.id, workflow_id: $workflow.id } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        1800
+      ],
+      "id": "prepare-data",
+      "name": "Prepare Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.lead_data;\n\n// Saudação por horário (SP)\nfunction saudacaoSP() {\n  const horas = parseInt(new Intl.DateTimeFormat('pt-BR', {\n    timeZone: 'America/Sao_Paulo', hour: 'numeric', hour12: false\n  }).format(new Date()), 10);\n  if (horas >= 5 && horas < 12) return 'Bom dia';\n  if (horas >= 12 && horas < 19) return 'Boa tarde';\n  return 'Boa noite';\n}\n\nconst saudacao = saudacaoSP();\nconst nome = lead.nome_cliente || lead.nome || 'Cliente';\nconst profissao = lead.profissao || 'sua área de atuação';\nconst fonte = lead.fonte_prospec || 'um parceiro';\n\nconst mensagem = `${saudacao}, ${nome}! Sou Cleber Frank da Elleve Consórcios. Recebi seu contato através de ${fonte} e gostaria de falar sobre oportunidades de investimento. Como atua com ${profissao}, acredito que pode se interessar por soluções financeiras sólidas. Posso te explicar rapidamente como funciona, o que acha?`;\n\nconsole.log(`💬 Mensagem gerada para ${nome}: ${mensagem.substring(0, 50)}...`);\n\nreturn [{\n  json: {\n    ...$json,\n    mensagem,\n    telefone_normalizado: lead.telefone?.toString().replace(/\\D/g, '') || '',\n    nome_cliente: nome,\n    profissao_cliente: profissao\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        1800
+      ],
+      "id": "gerar-mensagem",
+      "name": "Gerar Mensagem"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.lead SET status = 'prospectando', data_ultima_interacao = NOW() WHERE id = $1 AND reservado_por = $2 AND reservado_lote = $3 RETURNING id, status, data_ultima_interacao;",
+        "options": {
+          "queryReplacement": "={{ $json.lead_data.id }}\n={{ $json.execution_info.workflow_id }}\n={{ $json.execution_info.execution_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1760,
+        1800
+      ],
+      "id": "atualizar-status",
+      "name": "Atualizar Status Lead",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "=5",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        1800
+      ],
+      "id": "simular-envio",
+      "name": "Simular Envio WhatsApp"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.lead SET contatado = TRUE, status = 'concluido', data_ultima_interacao = NOW(), reservado_por = NULL, reservado_lote = NULL, reservado_em = NULL WHERE id = $1 RETURNING id, status, data_ultima_interacao;",
+        "options": {
+          "queryReplacement": "={{ $json.lead_data.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        1800
+      ],
+      "id": "finalizar-lead",
+      "name": "Finalizar Lead",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agente_execucoes SET status = 'completed', finalizado_em = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, duracao_segundos = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - iniciado_em)) WHERE execution_id = $1 RETURNING id, execution_id, status, finalizado_em, duracao_segundos;",
+        "options": {
+          "queryReplacement": "={{ $execution.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2480,
+        1800
+      ],
+      "id": "finalizar-agente",
+      "name": "Finalizar Agente",
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=agente_status:{{ $workflow.id }}:{{ $execution.id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        1800
+      ],
+      "id": "limpar-redis",
+      "name": "Limpar Redis",
+      "credentials": {
+        "redis": {
+          "id": "TUxH4eXAuVJzv2zw",
+          "name": "Redis Messages"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Agente parado pelo usuário"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        1400
+      ],
+      "id": "stop-execution",
+      "name": "Stop Execution"
+    }
+  ],
+  "connections": {
+    "Webhook Start": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Parar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Iniciar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parar Agente": {
+      "main": [
+        [
+          {
+            "node": "Redis - Parar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis - Parar": {
+      "main": [
+        [
+          {
+            "node": "Respond Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Stop": {
+      "main": [
+        [
+          {
+            "node": "Stop Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iniciar Agente": {
+      "main": [
+        [
+          {
+            "node": "Redis - Iniciar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis - Iniciar": {
+      "main": [
+        [
+          {
+            "node": "Respond Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Start": {
+      "main": [
+        [
+          {
+            "node": "Busca Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Leads": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lote": {
+      "main": [
+        [
+          {
+            "node": "Loop Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Principal": {
+      "main": [
+        [
+          {
+            "node": "Redis Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Redis Status Check": {
+      "main": [
+        [
+          {
+            "node": "Verificar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Status": {
+      "main": [
+        [
+          {
+            "node": "Check if Stopped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Stopped": {
+      "main": [
+        [
+          {
+            "node": "Stop Execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Processamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Processamento": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Gerar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status Lead": {
+      "main": [
+        [
+          {
+            "node": "Simular Envio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular Envio WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Finalizar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar Lead": {
+      "main": [
+        [
+          {
+            "node": "Finalizar Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar Agente": {
+      "main": [
+        [
+          {
+            "node": "Limpar Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Redis": {
+      "main": [
+        [
+          {
+            "node": "Loop Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveExecutionProgress": true
+  },
+  "versionId": "redis-control-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Agentes por Usuário</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .sql-command {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Agentes por Usuário</h1>
+        
+        <div class="step">
+            <h3>📋 Comando SQL para Executar</h3>
+            <p>Execute este comando no seu banco PostgreSQL:</p>
+            <div class="sql-command">
+UPDATE agentes SET usuario_id = 6 WHERE id IN (65, 66);
+            </div>
+            <p class="info">Isso associará os agentes João e Joana ao usuário ID 6 (Teste de Dashboard)</p>
+        </div>
+        
+        <div class="step">
+            <h3>🧪 Testar Correção</h3>
+            <button onclick="testarCorrecao()">🔍 Verificar se a Correção Funcionou</button>
+            <div id="resultado"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🔧 Verificar Webhook de Criação</h3>
+            <p>Após corrigir, verifique se o webhook <code>webhook/create-agente</code> está incluindo o <code>usuario_id</code> do usuário logado.</p>
+            <p class="warning">⚠️ Se não estiver, novos agentes criados também não aparecerão para o usuário correto.</p>
+        </div>
+    </div>
+
+    <script>
+        async function testarCorrecao() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p class="info">🔄 Verificando se a correção funcionou...</p>';
+            
+            try {
+                // 1. Listar agentes novamente
+                const agentsResponse = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes');
+                const agentsData = await agentsResponse.json();
+                
+                let html = '<div class="step">';
+                html += '<h3>🤖 Status dos Agentes Após Correção</h3>';
+                
+                if (agentsData.data && agentsData.data.length > 0) {
+                    agentsData.data.forEach(agent => {
+                        const isUser6 = agent.usuario_id === 6;
+                        const statusClass = isUser6 ? 'success' : 'error';
+                        const statusIcon = isUser6 ? '✅' : '❌';
+                        
+                        html += `<div style="background: ${isUser6 ? '#d4edda' : '#f8d7da'}; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid ${isUser6 ? '#28a745' : '#dc3545'};">`;
+                        html += `<h4>${statusIcon} ${agent.nome} (ID: ${agent.id})</h4>`;
+                        html += `<p><strong>Usuario ID:</strong> ${agent.usuario_id || 'undefined'}</p>`;
+                        html += `<p><strong>Pertence ao usuário 6:</strong> ${isUser6 ? 'Sim' : 'Não'}</p>`;
+                        html += `</div>`;
+                    });
+                    
+                    // Verificar se há agentes do usuário 6
+                    const user6Agents = agentsData.data.filter(a => a.usuario_id === 6);
+                    
+                    if (user6Agents.length > 0) {
+                        html += '<div class="step">';
+                        html += '<h3>✅ Sucesso!</h3>';
+                        html += `<p class="success">Agora o usuário 6 tem ${user6Agents.length} agente(s) associado(s).</p>`;
+                        html += '<p>Os agentes devem aparecer na interface do usuário.</p>';
+                        html += '</div>';
+                    } else {
+                        html += '<div class="step">';
+                        html += '<h3>❌ Ainda não corrigido</h3>';
+                        html += '<p class="error">Os agentes ainda não estão associados ao usuário 6.</p>';
+                        html += '<p>Execute o comando SQL no banco de dados.</p>';
+                        html += '</div>';
+                    }
+                } else {
+                    html += '<p class="warning">⚠️ Nenhum agente encontrado</p>';
+                }
+                
+                html += '</div>';
+                resultado.innerHTML = html;
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <p class="error">❌ Erro: ${error.message}</p>
+                    <div class="code">${error.stack}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

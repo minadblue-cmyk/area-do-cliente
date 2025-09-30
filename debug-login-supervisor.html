@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login Supervisor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Login Supervisor</h1>
+        
+        <div class="section">
+            <h2>1. Simular Login do Supervisor</h2>
+            <button onclick="simularLogin()">Simular Login</button>
+            <div id="login"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verificar Dados Carregados</h2>
+            <button onclick="verificarDados()">Verificar Dados</button>
+            <div id="dados"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Testar Filtro de Agentes</h2>
+            <button onclick="testarFiltro()">Testar Filtro</button>
+            <div id="filtro"></div>
+        </div>
+    </div>
+
+    <script>
+        async function simularLogin() {
+            const resultDiv = document.getElementById('login')
+            resultDiv.innerHTML = '<p class="info">🔄 Simulando login do supervisor...</p>'
+            
+            try {
+                // 1. Fazer login
+                const loginResponse = await fetch('https://n8n.code-iq.com.br/webhook/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'supervisor@teste.com',
+                        password: '123456'
+                    })
+                })
+                
+                const loginData = await loginResponse.json()
+                console.log('Login response:', loginData)
+                
+                if (!loginData.token) {
+                    resultDiv.innerHTML = `<p class="error">❌ Erro no login: ${loginData.message || 'Token não encontrado'}</p>`
+                    return
+                }
+                
+                // 2. Simular carregamento de permissões (como no auth.ts)
+                const permissionsResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const profilesResponse = await fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-profile', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const permissionsData = await permissionsResponse.json()
+                const profilesData = await profilesResponse.json()
+                
+                console.log('Permissions response:', permissionsData)
+                console.log('Profiles response:', profilesData)
+                
+                const permissions = permissionsData.data || permissionsData || []
+                const profiles = profilesData || []
+                
+                // 3. Encontrar perfil do supervisor
+                const userProfile = profiles.find((profile) => 
+                    profile.id === loginData.perfil_id || 
+                    profile.nome_perfil === loginData.perfil
+                )
+                
+                console.log('User profile found:', userProfile)
+                console.log('Login perfil_id:', loginData.perfil_id)
+                console.log('Login perfil:', loginData.perfil)
+                
+                let userPermissions = []
+                if (userProfile) {
+                    const userPermissionIds = userProfile.permissoes.filter((id) => id !== null)
+                    userPermissions = userPermissionIds
+                        .map((id) => {
+                            const permission = permissions.find((p) => p.id === id)
+                            return permission ? permission.nome : null
+                        })
+                        .filter(Boolean)
+                }
+                
+                // 4. Simular userData final
+                const userData = {
+                    id: loginData.usuario_id || '6',
+                    name: loginData.nome,
+                    mail: loginData.email,
+                    perfil: loginData.perfil,
+                    perfil_id: loginData.perfil_id,
+                    permissions: userPermissions
+                }
+                
+                // 5. Salvar no localStorage
+                localStorage.setItem('userData', JSON.stringify(userData))
+                localStorage.setItem('authData', JSON.stringify({ token: loginData.token, user: userData }))
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Login Simulado com Sucesso</h3>
+                    <p><strong>Usuário:</strong> ${userData.name} (ID: ${userData.id})</p>
+                    <p><strong>Perfil:</strong> ${userData.perfil} (ID: ${userData.perfil_id})</p>
+                    <p><strong>Permissões encontradas:</strong> ${userPermissions.length}</p>
+                    
+                    <h4>Permissões do supervisor:</h4>
+                    <ul>
+                        ${userPermissions.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                    
+                    <h4>Perfil encontrado:</h4>
+                    <pre>${JSON.stringify(userProfile, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('Erro no login:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarDados() {
+            const resultDiv = document.getElementById('dados')
+            
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+            const authData = JSON.parse(localStorage.getItem('authData') || '{}')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">📊 Dados Carregados</h3>
+                <p><strong>userData:</strong></p>
+                <pre>${JSON.stringify(userData, null, 2)}</pre>
+                
+                <p><strong>authData:</strong></p>
+                <pre>${JSON.stringify(authData, null, 2)}</pre>
+                
+                <h4>Análise:</h4>
+                <ul>
+                    <li><strong>ID:</strong> ${userData.id || 'N/A'}</li>
+                    <li><strong>Perfil ID:</strong> ${userData.perfil_id || 'N/A'}</li>
+                    <li><strong>Permissões:</strong> ${userData.permissions ? userData.permissions.length : 0}</li>
+                    <li><strong>Token:</strong> ${authData.token ? 'Presente' : 'Ausente'}</li>
+                </ul>
+            `
+        }
+
+        async function testarFiltro() {
+            const resultDiv = document.getElementById('filtro')
+            resultDiv.innerHTML = '<p class="info">🔄 Testando filtro...</p>'
+            
+            try {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+                
+                if (!userData.id) {
+                    resultDiv.innerHTML = '<p class="error">❌ Nenhum usuário logado. Simule o login primeiro.</p>'
+                    return
+                }
+                
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                const agentes = data.data || []
+                
+                // Simular lógica de permissões
+                const hasIniciarAgente = userData.permissions?.includes('iniciar_agente') || false
+                const hasVisualizarStatus = userData.permissions?.includes('visualizar_status_do_agente') || false
+                const hasAdministrarOutros = userData.permissions?.includes('administrar_agente_de_outros_usuários') || false
+                
+                const agentPermissions = {
+                    canViewAll: hasAdministrarOutros,
+                    canManage: hasAdministrarOutros,
+                    canViewOwn: hasIniciarAgente || hasVisualizarStatus,
+                    canAssignAgents: userData.permissions?.includes('atribuir_agentes_usuarios') || false
+                }
+                
+                // Aplicar filtro
+                const userId = parseInt(userData.id)
+                const agentesFiltrados = agentes.filter(agente => {
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        return true
+                    }
+                    if (agentPermissions.canViewOwn) {
+                        return agente.usuario_id === userId
+                    }
+                    if (agentPermissions.canAssignAgents) {
+                        return agente.atribuido_para_usuario || agente.usuario_id === userId
+                    }
+                    return false
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔍 Resultado do Filtro</h3>
+                    <p><strong>Usuário:</strong> ${userData.name} (ID: ${userId})</p>
+                    <p><strong>Permissões:</strong> ${userData.permissions?.join(', ') || 'Nenhuma'}</p>
+                    
+                    <h4>Permissões calculadas:</h4>
+                    <ul>
+                        <li>canViewAll: ${agentPermissions.canViewAll}</li>
+                        <li>canManage: ${agentPermissions.canManage}</li>
+                        <li>canViewOwn: ${agentPermissions.canViewOwn}</li>
+                        <li>canAssignAgents: ${agentPermissions.canAssignAgents}</li>
+                    </ul>
+                    
+                    <p><strong>Total de agentes:</strong> ${agentes.length}</p>
+                    <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                    
+                    <h4>Agentes que o supervisor deve ver:</h4>
+                    <ul>
+                        ${agentesFiltrados.map(agente => `
+                            <li>
+                                <strong>${agente.nome}</strong> (ID: ${agente.id})
+                                <br>Usuário ID: ${agente.usuario_id}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Conclusão:</h4>
+                    <p class="${agentesFiltrados.length === 1 ? 'success' : 'error'}">
+                        ${agentesFiltrados.length === 1 ? '✅ CORRETO: Supervisor vê apenas 1 agente' : '❌ INCORRETO: Supervisor está vendo ' + agentesFiltrados.length + ' agentes'}
+                    </p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            verificarDados()
+        }
+    </script>
+</body>
+</html>

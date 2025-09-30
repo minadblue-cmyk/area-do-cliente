@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhook Listar Atribuições</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Webhook Listar Atribuições</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Informações do Teste</h3>
+            <p><strong>Webhook:</strong> webhook/list-agente-atribuicoes</p>
+            <p><strong>Método:</strong> GET</p>
+            <p><strong>Parâmetro:</strong> usuario_id=6</p>
+            <p><strong>URL:</strong> https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Teste do Webhook</h3>
+            <button onclick="testarWebhook()">Testar Webhook</button>
+            <button onclick="limparResultado()">Limpar</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Logs Detalhados</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logsDiv = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`
+        }
+
+        function limparResultado() {
+            document.getElementById('resultado').innerHTML = ''
+            document.getElementById('logs').innerHTML = ''
+        }
+
+        async function testarWebhook() {
+            log('🚀 Iniciando teste do webhook...')
+            
+            const resultadoDiv = document.getElementById('resultado')
+            resultadoDiv.innerHTML = '<div class="test-section loading">⏳ Testando webhook...</div>'
+            
+            try {
+                log('🔗 Fazendo requisição para o webhook...')
+                
+                const url = 'https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes?usuario_id=6'
+                log(`📡 URL: ${url}`)
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                
+                log(`📊 Status da resposta: ${response.status}`)
+                log(`📊 Status OK: ${response.ok}`)
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+                
+                const data = await response.json()
+                log('✅ Resposta recebida com sucesso!')
+                log(`📊 Dados: ${JSON.stringify(data, null, 2)}`)
+                
+                // Mostrar resultado
+                resultadoDiv.innerHTML = `
+                    <div class="test-section success">
+                        <h4>✅ Webhook Funcionando!</h4>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Success:</strong> ${data.success}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Total de atribuições:</strong> ${data.total || 0}</p>
+                        <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                        
+                        <h5>📋 Dados Retornados:</h5>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                        
+                        <h5>📊 Análise:</h5>
+                        <ul>
+                            <li>✅ Webhook respondendo corretamente</li>
+                            <li>✅ Estrutura JSON válida</li>
+                            <li>✅ Campo 'success' presente</li>
+                            <li>✅ Campo 'data' presente (array)</li>
+                            <li>✅ Campo 'total' presente</li>
+                            <li>${data.data && data.data.length > 0 ? '✅ Atribuições encontradas' : 'ℹ️ Nenhuma atribuição encontrada (normal para primeiro teste)'}</li>
+                        </ul>
+                    </div>
+                `
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`)
+                
+                resultadoDiv.innerHTML = `
+                    <div class="test-section error">
+                        <h4>❌ Erro no Webhook</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Possíveis causas:</strong></p>
+                        <ul>
+                            <li>Webhook não está ativo no n8n</li>
+                            <li>URL incorreta</li>
+                            <li>Problema de CORS</li>
+                            <li>Erro na query SQL</li>
+                        </ul>
+                        <p><strong>Verifique:</strong></p>
+                        <ul>
+                            <li>Se o workflow está ativo no n8n</li>
+                            <li>Se a URL está correta</li>
+                            <li>Se a query SQL está funcionando</li>
+                        </ul>
+                    </div>
+                `
+            }
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            log('📋 Página carregada. Clique em "Testar Webhook" para executar o teste.')
+        }
+    </script>
+</body>
+</html>

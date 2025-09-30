@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Webhooks CORS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .webhook-test { background: #333; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Webhooks CORS</h1>
+        
+        <div class="section">
+            <h2>Testar Webhooks Essenciais</h2>
+            <button onclick="testarTodosWebhooks()">Testar Todos os Webhooks</button>
+            <div id="resultados"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+        const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+
+        const webhooksParaTestar = [
+            { id: 'webhook-login', url: `${N8N_CODE_IQ_URL}/webhook/login`, method: 'POST', data: { email: 'minadblue@gmail.com', senha: '123456' } },
+            { id: 'webhook/list-permission', url: `${N8N_LAVO_URL}/webhook/list-permission`, method: 'GET' },
+            { id: 'webhook/list-profile', url: `${N8N_LAVO_URL}/webhook/list-profile`, method: 'GET' },
+            { id: 'webhook/list-agentes', url: `${N8N_CODE_IQ_URL}/webhook/list-agentes`, method: 'GET' },
+            { id: 'webhook/list-agente-atribuicoes', url: `${N8N_CODE_IQ_URL}/webhook/list-agente-atribuicoes`, method: 'GET' }
+        ]
+
+        async function testarWebhook(webhook) {
+            try {
+                console.log(`🚀 Testando ${webhook.id}: ${webhook.url}`)
+                
+                const response = await fetch(webhook.url, {
+                    method: webhook.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: webhook.data ? JSON.stringify(webhook.data) : undefined,
+                })
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+                
+                const text = await response.text()
+                let data = text
+                
+                try {
+                    data = JSON.parse(text)
+                } catch (e) {
+                    // Manter como texto se não for JSON
+                }
+                
+                return {
+                    sucesso: true,
+                    status: response.status,
+                    data: data
+                }
+                
+            } catch (error) {
+                return {
+                    sucesso: false,
+                    erro: error.message
+                }
+            }
+        }
+
+        async function testarTodosWebhooks() {
+            const resultadosDiv = document.getElementById('resultados')
+            resultadosDiv.innerHTML = '<p class="info">🔄 Testando webhooks...</p>'
+            
+            const resultados = []
+            
+            for (const webhook of webhooksParaTestar) {
+                const resultado = await testarWebhook(webhook)
+                resultados.push({
+                    webhook: webhook.id,
+                    url: webhook.url,
+                    ...resultado
+                })
+            }
+            
+            const sucessos = resultados.filter(r => r.sucesso).length
+            const falhas = resultados.filter(r => !r.sucesso).length
+            
+            resultadosDiv.innerHTML = `
+                <h3 class="${sucessos > 0 ? 'success' : 'error'}">✅ Resultados dos Testes</h3>
+                <p><strong>Sucessos:</strong> ${sucessos}</p>
+                <p><strong>Falhas:</strong> ${falhas}</p>
+                
+                <h4>Detalhes dos Testes:</h4>
+                ${resultados.map(r => `
+                    <div class="webhook-test">
+                        <h5 class="${r.sucesso ? 'success' : 'error'}">
+                            ${r.sucesso ? '✅' : '❌'} ${r.webhook}
+                        </h5>
+                        <p><strong>URL:</strong> ${r.url}</p>
+                        ${r.sucesso ? `
+                            <p><strong>Status:</strong> ${r.status}</p>
+                            <p><strong>Resposta:</strong> ${typeof r.data === 'object' ? JSON.stringify(r.data).substring(0, 200) + '...' : r.data.substring(0, 200) + '...'}</p>
+                        ` : `
+                            <p><strong>Erro:</strong> ${r.erro}</p>
+                        `}
+                    </div>
+                `).join('')}
+                
+                <h4>Resumo:</h4>
+                <ul>
+                    <li><strong>webhook-login:</strong> ${resultados.find(r => r.webhook === 'webhook-login').sucesso ? '✅ OK' : '❌ FALHOU'}</li>
+                    <li><strong>webhook/list-permission:</strong> ${resultados.find(r => r.webhook === 'webhook/list-permission').sucesso ? '✅ OK' : '❌ FALHOU'}</li>
+                    <li><strong>webhook/list-profile:</strong> ${resultados.find(r => r.webhook === 'webhook/list-profile').sucesso ? '✅ OK' : '❌ FALHOU'}</li>
+                    <li><strong>webhook/list-agentes:</strong> ${resultados.find(r => r.webhook === 'webhook/list-agentes').sucesso ? '✅ OK' : '❌ FALHOU'}</li>
+                    <li><strong>webhook/list-agente-atribuicoes:</strong> ${resultados.find(r => r.webhook === 'webhook/list-agente-atribuicoes').sucesso ? '✅ OK' : '❌ FALHOU'}</li>
+                </ul>
+            `
+        }
+
+        // Auto-executar teste
+        window.onload = function() {
+            testarTodosWebhooks()
+        }
+    </script>
+</body>
+</html>

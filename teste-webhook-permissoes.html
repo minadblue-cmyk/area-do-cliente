@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Webhook Permissões</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Webhook Permissões - Área do Cliente</h1>
+        
+        <div class="status info">
+            <strong>📋 Objetivo:</strong> Testar se os webhooks de permissões estão funcionando corretamente.
+        </div>
+
+        <h2>🔗 Testes de Webhook</h2>
+        <button onclick="testarWebhookPermissoes()">🔑 Testar Webhook Permissões</button>
+        <button onclick="testarWebhookPerfis()">👥 Testar Webhook Perfis</button>
+        <button onclick="testarWebhookLogin()">🔐 Testar Webhook Login</button>
+        <button onclick="simularDadosAdmin()">👤 Simular Dados Admin</button>
+
+        <h2>📊 Resultados</h2>
+        <div id="resultados"></div>
+
+        <h2>📋 Log Detalhado</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://n8n.code-iq.com.br/webhook';
+        const N8N_BASE = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook';
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function addResult(html) {
+            const resultados = document.getElementById('resultados');
+            resultados.innerHTML += html;
+        }
+
+        async function testarWebhookPermissoes() {
+            log('🔑 Testando webhook de permissões...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-permission`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    const permissions = data.data || data || [];
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Webhook de permissões funcionando!</strong><br>
+                            <strong>Total de permissões:</strong> ${permissions.length}<br>
+                            <strong>Primeiras 5 permissões:</strong><br>
+                            ${permissions.slice(0, 5).map(p => `ID: ${p.id} - ${p.nome}`).join('<br>')}
+                        </div>
+                    `);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro desconhecido'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookPerfis() {
+            log('👥 Testando webhook de perfis...');
+            
+            try {
+                const response = await fetch(`${N8N_BASE}/list-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    const profiles = data || [];
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Webhook de perfis funcionando!</strong><br>
+                            <strong>Total de perfis:</strong> ${profiles.length}<br>
+                            <strong>Perfis encontrados:</strong><br>
+                            ${profiles.map(p => `ID: ${p.id} - ${p.nome_perfil} (${p.permissoes ? p.permissoes.length : 0} permissões)`).join('<br>')}
+                        </div>
+                    `);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro desconhecido'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        async function testarWebhookLogin() {
+            log('🔐 Testando webhook de login...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'administrador@code-iq.com.br', 
+                        password: 'admin123' 
+                    })
+                });
+
+                const data = await response.json();
+                log(`📡 Status: ${response.status}`);
+                log(`📡 Resposta: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok && data.token) {
+                    addResult(`
+                        <div class="status success">
+                            <strong>✅ Webhook de login funcionando!</strong><br>
+                            <strong>Nome:</strong> ${data.nome}<br>
+                            <strong>Perfil:</strong> ${data.perfil}<br>
+                            <strong>Perfil ID:</strong> ${data.perfil_id}<br>
+                            <strong>Token:</strong> ${data.token ? 'Presente' : 'Ausente'}
+                        </div>
+                    `);
+                } else {
+                    addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${response.status} - ${data.message || 'Erro no login'}</div>`);
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição: ${error.message}`);
+                addResult(`<div class="status danger"><strong>❌ ERRO:</strong> ${error.message}</div>`);
+            }
+        }
+
+        function simularDadosAdmin() {
+            log('👤 Simulando dados do administrador...');
+            
+            const adminData = {
+                id: '1',
+                name: 'Administrator Code-IQ',
+                mail: 'administrador@code-iq.com.br',
+                perfil: 'Administrador',
+                perfil_id: 28
+            };
+            
+            // Armazenar no localStorage
+            localStorage.setItem('area:user_data', JSON.stringify(adminData));
+            localStorage.setItem('area:user', adminData.name);
+            localStorage.setItem('area:jwt', 'token_admin_' + Date.now());
+            
+            addResult(`
+                <div class="status success">
+                    <strong>✅ Dados do administrador simulados!</strong><br>
+                    <strong>Nome:</strong> ${adminData.name}<br>
+                    <strong>Perfil:</strong> ${adminData.perfil}<br>
+                    <strong>Perfil ID:</strong> ${adminData.perfil_id}<br>
+                    <strong>Dados salvos no localStorage</strong>
+                </div>
+            `);
+            
+            log('✅ Dados do administrador salvos no localStorage');
+        }
+
+        // Teste automático ao carregar
+        window.onload = function() {
+            log('🔧 Página de teste carregada');
+            addResult('<div class="status info"><strong>ℹ️ Clique nos botões para testar os webhooks</strong></div>');
+        };
+    </script>
+</body>
+</html>

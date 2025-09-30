@@ -1,0 +1,79 @@
+{
+  "name": "Listar Agentes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "list-agentes",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-list-agentes",
+      "name": "Webhook Listar Agentes",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "runQuery",
+        "query": "SELECT id, nome, workflow_id, webhook_url, descricao, icone, cor, ativo, created_at FROM agente_config ORDER BY created_at DESC",
+        "options": {}
+      },
+      "id": "postgres-query-agentes",
+      "name": "PostgreSQL - Consultar Agentes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"total\": {{ $json.length }},\n  \"data\": {{ $json }},\n  \"message\": \"Agentes encontrados\",\n  \"timestamp\": \"={{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "respond-agentes",
+      "name": "Respond Agentes",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Listar Agentes": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL - Consultar Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL - Consultar Agentes": {
+      "main": [
+        [
+          {
+            "node": "Respond Agentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1"
+}

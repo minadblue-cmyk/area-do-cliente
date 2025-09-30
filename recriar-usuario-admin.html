@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recriar Usuário Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        .warning { background: #fff3e0; color: #ef6c00; }
+        button { padding: 15px 30px; margin: 10px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #1976d2; }
+        .danger { background: #f44336; }
+        .danger:hover { background: #d32f2f; }
+        .form-group { margin: 15px 0; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Recriar Usuário Admin</h1>
+        
+        <div class="log warning">
+            <h3>⚠️ ATENÇÃO:</h3>
+            <p>Este script irá recriar o usuário administrador que foi deletado acidentalmente.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="nome">Nome do Usuário:</label>
+            <input type="text" id="nome" value="Administrator Code-IQ">
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@code-iq.com.br">
+        </div>
+
+        <div class="form-group">
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" value="F0rm@T10">
+        </div>
+
+        <div class="form-group">
+            <label for="perfil_id">Perfil ID:</label>
+            <input type="number" id="perfil_id" value="28">
+        </div>
+
+        <div class="form-group">
+            <label for="empresa_id">Empresa ID:</label>
+            <input type="number" id="empresa_id" value="1">
+        </div>
+
+        <button onclick="verificarUsuarios()">🔍 Verificar Usuários Atuais</button>
+        <button onclick="recriarAdmin()" class="danger">🚀 RECRIAR USUÁRIO ADMIN</button>
+        <button onclick="testarLogin()">🧪 Testar Login</button>
+
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function verificarUsuarios() {
+            log('🔍 Verificando usuários atuais...', 'info');
+            
+            fetch('https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-users', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                log('✅ Usuários encontrados:', 'success');
+                data.forEach(usuario => {
+                    log(`👤 ID: ${usuario.id} - Nome: ${usuario.nome} - Email: ${usuario.email} - Ativo: ${usuario.ativo}`, 'info');
+                });
+            })
+            .catch(error => {
+                log(`❌ Erro ao listar usuários: ${error.message}`, 'error');
+            });
+        }
+
+        function recriarAdmin() {
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const perfil_id = parseInt(document.getElementById('perfil_id').value);
+            const empresa_id = parseInt(document.getElementById('empresa_id').value);
+
+            if (!nome || !email || !senha) {
+                log('❌ Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+
+            log('🚀 Recriando usuário admin...', 'info');
+            log(`📝 Dados: Nome: ${nome}, Email: ${email}, Perfil ID: ${perfil_id}`, 'info');
+            
+            const payload = {
+                nome: nome,
+                email: email,
+                senha: senha,
+                tipo: 'Administrador',
+                ativo: true,
+                empresa_id: empresa_id,
+                plano: 'Premium',
+                perfil_id: perfil_id
+            };
+
+            fetch('https://n8n.code-iq.com.br/webhook/create-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log('✅ Usuário admin criado com sucesso!', 'success');
+                    log('🔍 Verificando se foi criado...', 'info');
+                    
+                    // Aguardar um pouco e verificar
+                    setTimeout(() => {
+                        verificarUsuarios();
+                    }, 2000);
+                } else {
+                    log(`❌ Erro ao criar usuário: ${JSON.stringify(data)}`, 'error');
+                }
+            })
+            .catch(error => {
+                log(`❌ Erro na requisição: ${error.message}`, 'error');
+            });
+        }
+
+        function testarLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            log('🧪 Testando login...', 'info');
+            
+            fetch('https://n8n.code-iq.com.br/webhook/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: senha
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    log('✅ Login bem-sucedido!', 'success');
+                    log(`👤 Usuário: ${data.nome}`, 'info');
+                    log(`🔑 Token: ${data.token.substring(0, 20)}...`, 'info');
+                } else {
+                    log(`❌ Erro no login: ${JSON.stringify(data)}`, 'error');
+                }
+            })
+            .catch(error => {
+                log(`❌ Erro na requisição de login: ${error.message}`, 'error');
+            });
+        }
+
+        // Executar verificação inicial
+        window.onload = function() {
+            log('🚀 Script carregado. Clique em "Verificar Usuários Atuais" para ver o estado atual.', 'info');
+            verificarUsuarios();
+        };
+    </script>
+</body>
+</html>

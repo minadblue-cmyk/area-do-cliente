@@ -1,0 +1,277 @@
+{
+  "name": "Create Agente - Completo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+        }
+      },
+      "id": "webhook-create-agente",
+      "name": "Webhook Create Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-agente-webhook-id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "agentType",
+              "value": "={{ $json.body.agent_type }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.agent_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "icone",
+              "name": "icone",
+              "value": "={{ $json.body.icone || '🤖' }}",
+              "type": "string"
+            },
+            {
+              "id": "cor",
+              "name": "cor",
+              "value": "={{ $json.body.cor || 'bg-blue-500' }}",
+              "type": "string"
+            },
+            {
+              "id": "descricao",
+              "name": "descricao",
+              "value": "={{ $json.body.descricao || 'Agente automatizado para prospecção' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agente_config (nome, workflow_id, webhook_url, descricao, icone, cor, ativo, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "nome",
+                "value": "={{ $json.agentName }}"
+              },
+              {
+                "name": "workflow_id",
+                "value": "={{ $json.agentId }}"
+              },
+              {
+                "name": "webhook_url",
+                "value": "webhook/{{ $json.agentType }}"
+              },
+              {
+                "name": "descricao",
+                "value": "={{ $json.descricao }}"
+              },
+              {
+                "name": "icone",
+                "value": "={{ $json.icone }}"
+              },
+              {
+                "name": "cor",
+                "value": "={{ $json.cor }}"
+              },
+              {
+                "name": "ativo",
+                "value": "true"
+              },
+              {
+                "name": "user_id",
+                "value": "={{ $json.userId }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "insert-agente",
+      "name": "Inserir Agente no Banco",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "GET",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "list-templates",
+      "name": "Listar Templates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Encontrar templates dos 4 workflows essenciais\nconst templates = $input.first().json.data || $input.first().json;\nconst agentName = $('Normalizar Dados').item.json.agentName;\nconst agentType = $('Normalizar Dados').item.json.agentType;\n\nconsole.log('🔍 Procurando templates para:', agentName);\nconsole.log('🔍 Agent Type:', agentType);\n\nif (!Array.isArray(templates)) {\n  console.log('❌ Templates não é um array!');\n  return [];\n}\n\n// Templates essenciais para clonar\nconst essentialTemplates = [\n  'start-agente',\n  'stop-agente', \n  'status-agente',\n  'lista-prospeccao-agente'\n];\n\nconst foundTemplates = [];\n\nfor (const templateName of essentialTemplates) {\n  const template = templates.find(t => \n    t.name && t.name.toLowerCase().includes(templateName.toLowerCase())\n  );\n  \n  if (template) {\n    console.log(`✅ Template encontrado: ${template.name} (ID: ${template.id})`);\n    foundTemplates.push({\n      json: {\n        id: template.id,\n        name: template.name,\n        active: template.active\n      }\n    });\n  } else {\n    console.log(`❌ Template não encontrado: ${templateName}`);\n  }\n}\n\nconsole.log(`📊 Total de templates encontrados: ${foundTemplates.length}`);\nreturn foundTemplates;"
+      },
+      "id": "find-templates",
+      "name": "Encontrar Templates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}/duplicate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "POST",
+        "jsonBody": "={{ {\n  \"name\": $('Normalizar Dados').item.json.agentName + \" - \" + $json.name,\n  \"active\": false\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "clone-workflow",
+      "name": "Clonar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Agente criado com sucesso!\",\n  \"agentId\": \"={{ $('Normalizar Dados').item.json.agentId }}\",\n  \"agentName\": \"={{ $('Normalizar Dados').item.json.agentName }}\",\n  \"workflowsCreated\": {{ $('Encontrar Templates').all().length }},\n  \"timestamp\": \"={{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-success",
+      "name": "Responder Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Create Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Inserir Agente no Banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserir Agente no Banco": {
+      "main": [
+        [
+          {
+            "node": "Listar Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Templates": {
+      "main": [
+        [
+          {
+            "node": "Encontrar Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontrar Templates": {
+      "main": [
+        [
+          {
+            "node": "Clonar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clonar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Responder Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

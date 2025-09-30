@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Permissões Admin Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .agent-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Permissões Admin Upload</h1>
+        
+        <div class="section">
+            <h2>1. Simular Login do Admin</h2>
+            <button onclick="simularLoginAdmin()">Simular Login Admin</button>
+            <div id="login"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Permissões do Admin</h2>
+            <button onclick="testarPermissoes()">Testar Permissões</button>
+            <div id="permissoes"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Simular Carregamento de Agentes</h2>
+            <button onclick="simularCarregamento()">Simular Carregamento</button>
+            <div id="carregamento"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Verificar Console da Aplicação Real</h2>
+            <button onclick="verificarConsoleReal()">Verificar Console Real</button>
+            <div id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        async function simularLoginAdmin() {
+            const resultDiv = document.getElementById('login')
+            resultDiv.innerHTML = '<p class="info">🔄 Simulando login do admin...</p>'
+            
+            try {
+                // Simular dados do admin
+                const adminData = {
+                    id: "5",
+                    name: "Administrator Code-IQ",
+                    email: "admin@teste.com",
+                    perfil_id: 1,
+                    perfil: "Administrador",
+                    permissions: [
+                        "visualizar_dashboard",
+                        "visualizar_pgina_de_upload",
+                        "iniciar_agente",
+                        "visualizar_status_do_agente",
+                        "administrar_agente_de_outros_usuários",
+                        "atribuir_agentes_usuarios"
+                    ]
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">👤 Dados do Admin</h3>
+                    <p><strong>ID:</strong> ${adminData.id}</p>
+                    <p><strong>Nome:</strong> ${adminData.name}</p>
+                    <p><strong>Email:</strong> ${adminData.email}</p>
+                    <p><strong>Perfil ID:</strong> ${adminData.perfil_id}</p>
+                    <p><strong>Perfil:</strong> ${adminData.perfil}</p>
+                    <p><strong>Permissões:</strong> ${adminData.permissions.length}</p>
+                    
+                    <h4>Permissões:</h4>
+                    <ul>
+                        ${adminData.permissions.map(perm => `<li>${perm}</li>`).join('')}
+                    </ul>
+                    
+                    <p class="success">✅ Dados do admin simulados com sucesso</p>
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function testarPermissoes() {
+            const resultDiv = document.getElementById('permissoes')
+            
+            // Simular permissões do admin
+            const adminPermissions = {
+                canViewAll: true,
+                canManage: true,
+                canViewOwn: true,
+                canAssignAgents: true,
+                canAccess: true
+            }
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔐 Permissões do Admin</h3>
+                
+                <div class="agent-card">
+                    <h4>Permissões Calculadas:</h4>
+                    <ul>
+                        <li><strong>canViewAll:</strong> ${adminPermissions.canViewAll} ✅</li>
+                        <li><strong>canManage:</strong> ${adminPermissions.canManage} ✅</li>
+                        <li><strong>canViewOwn:</strong> ${adminPermissions.canViewOwn} ✅</li>
+                        <li><strong>canAssignAgents:</strong> ${adminPermissions.canAssignAgents} ✅</li>
+                        <li><strong>canAccess:</strong> ${adminPermissions.canAccess} ✅</li>
+                    </ul>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Lógica de Filtro:</h4>
+                    <p><strong>Se canViewAll ou canManage:</strong> Mostrar TODOS os agentes</p>
+                    <p class="success">✅ Admin deve ver todos os agentes</p>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Verificação de Acesso:</h4>
+                    <p><strong>canAccess:</strong> ${adminPermissions.canAccess}</p>
+                    <p class="${adminPermissions.canAccess ? 'success' : 'error'}">
+                        ${adminPermissions.canAccess ? '✅ Admin pode acessar agentes' : '❌ Admin não pode acessar agentes'}
+                    </p>
+                </div>
+            `
+        }
+
+        async function simularCarregamento() {
+            const resultDiv = document.getElementById('carregamento')
+            resultDiv.innerHTML = '<p class="info">🔄 Simulando carregamento de agentes...</p>'
+            
+            try {
+                // Simular chamada do webhook
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                
+                const data = await response.json()
+                
+                // Simular parsing
+                let agentesList = []
+                if (Array.isArray(data)) {
+                    agentesList = data
+                } else if (data.data && Array.isArray(data.data)) {
+                    agentesList = data.data
+                } else if (data.success && data.data) {
+                    agentesList = data.data
+                }
+                
+                // Extrair agentes
+                let agentes = []
+                if (Array.isArray(agentesList) && agentesList.length > 0 && agentesList[0].success && Array.isArray(agentesList[0].data)) {
+                    agentes = agentesList[0].data
+                }
+                
+                // Simular filtro
+                const agentesFiltrados = agentes.filter((agente) => {
+                    // Admin vê todos
+                    return true
+                })
+                
+                resultDiv.innerHTML = `
+                    <h3 class="info">🔄 Simulação de Carregamento</h3>
+                    
+                    <div class="agent-card">
+                        <h4>Passo 1: Webhook</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Agentes retornados:</strong> ${agentes.length}</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <h4>Passo 2: Parsing</h4>
+                        <p><strong>Agentes extraídos:</strong> ${agentes.length}</p>
+                        <p class="success">✅ Parsing funcionando</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <h4>Passo 3: Filtro</h4>
+                        <p><strong>Agentes filtrados:</strong> ${agentesFiltrados.length}</p>
+                        <p class="success">✅ Filtro funcionando</p>
+                    </div>
+                    
+                    <div class="agent-card">
+                        <h4>Passo 4: Renderização</h4>
+                        <p><strong>Agentes para renderizar:</strong> ${agentesFiltrados.length}</p>
+                        <p class="${agentesFiltrados.length === 3 ? 'success' : 'error'}">
+                            ${agentesFiltrados.length === 3 ? '✅ Deve mostrar 3 agentes' : '❌ Problema na renderização'}
+                        </p>
+                    </div>
+                    
+                    <h4>Agentes que devem aparecer:</h4>
+                    ${agentesFiltrados.map(agente => `
+                        <div class="agent-card">
+                            <strong>${agente.nome}</strong> (ID: ${agente.id})
+                            <br>Usuário ID: ${agente.usuario_id}
+                            <br>Status: ${agente.status_atual || 'stopped'}
+                        </div>
+                    `).join('')}
+                `
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function verificarConsoleReal() {
+            const resultDiv = document.getElementById('console')
+            
+            resultDiv.innerHTML = `
+                <h3 class="info">🔍 Verificação do Console Real</h3>
+                
+                <div class="agent-card">
+                    <h4>Mensagens que DEVEM aparecer:</h4>
+                    <ol>
+                        <li><code>UploadPage componente carregado</code></li>
+                        <li><code>🔍 Listando agentes...</code></li>
+                        <li><code>📥 Resposta do webhook: {...}</code></li>
+                        <li><code>✅ Agentes encontrados: 3</code></li>
+                        <li><code>🔍 Filtrando agente: Joana (usuario_id: 5)</code></li>
+                        <li><code>✅ Joana: Mostrando (ADMIN - vê todos)</code></li>
+                        <li><code>🔍 Agentes filtrados: 3 de 3</code></li>
+                    </ol>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Se NÃO aparecer as mensagens:</h4>
+                    <ul>
+                        <li>❌ <code>useEffect</code> não está sendo executado</li>
+                        <li>❌ <code>userData</code> não está disponível</li>
+                        <li>❌ <code>listarAgentes()</code> não está sendo chamado</li>
+                        <li>❌ <code>agentPermissions</code> retornando valores incorretos</li>
+                    </ul>
+                </div>
+                
+                <div class="agent-card">
+                    <h4>Próximos passos:</h4>
+                    <ol>
+                        <li>Abra o console da aplicação (F12)</li>
+                        <li>Recarregue a página</li>
+                        <li>Verifique se as mensagens aparecem</li>
+                        <li>Se não aparecer, verifique se o admin está logado</li>
+                        <li>Verifique se as permissões estão corretas</li>
+                    </ol>
+                </div>
+            `
+        }
+
+        // Auto-executar
+        window.onload = function() {
+            simularLoginAdmin()
+            testarPermissoes()
+            simularCarregamento()
+            verificarConsoleReal()
+        }
+    </script>
+</body>
+</html>

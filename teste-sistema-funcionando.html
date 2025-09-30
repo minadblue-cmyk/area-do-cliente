@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Sistema Funcionando</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Sistema Funcionando</h1>
+        
+        <div class="section info">
+            <h3>📋 Teste Rápido:</h3>
+            <button onclick="testarSistema()">Testar Sistema</button>
+            <button onclick="limparCache()">Limpar Cache</button>
+            <button onclick="abrirApp()">Abrir App</button>
+        </div>
+
+        <div id="resultado" class="section" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <pre id="resultado-texto"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function testarSistema() {
+            const resultado = document.getElementById('resultado');
+            const resultadoTexto = document.getElementById('resultado-texto');
+            
+            try {
+                console.log('🔍 Testando sistema...');
+                
+                // 1. Testar login
+                const loginUrl = 'https://n8n.code-iq.com.br/webhook/login';
+                const loginResponse = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@code-iq.com.br',
+                        password: '123456'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Erro no login: ${loginResponse.status}`);
+                }
+                
+                const loginText = await loginResponse.text();
+                console.log('🔍 Login response text:', loginText);
+                
+                let loginData;
+                try {
+                    loginData = JSON.parse(loginText);
+                } catch (e) {
+                    throw new Error(`Erro ao parsear login: ${e.message}. Response: ${loginText}`);
+                }
+                
+                console.log('✅ Login OK:', loginData);
+                
+                // 2. Testar permissões
+                const permissionsUrl = 'https://n8n-lavo-n8n.15gxno.easypanel.host/webhook/list-permission';
+                const permissionsResponse = await fetch(permissionsUrl, { method: 'GET' });
+                
+                if (!permissionsResponse.ok) {
+                    throw new Error(`Erro nas permissões: ${permissionsResponse.status}`);
+                }
+                
+                const permissionsText = await permissionsResponse.text();
+                console.log('🔍 Permissions response text:', permissionsText);
+                
+                let permissionsData;
+                try {
+                    permissionsData = JSON.parse(permissionsText);
+                } catch (e) {
+                    throw new Error(`Erro ao parsear permissões: ${e.message}. Response: ${permissionsText}`);
+                }
+                
+                console.log('✅ Permissões OK:', permissionsData);
+                
+                // 3. Testar perfis
+                const profilesUrl = 'https://n8n.code-iq.com.br/webhook/list-profile';
+                const profilesResponse = await fetch(profilesUrl, { method: 'GET' });
+                
+                if (!profilesResponse.ok) {
+                    throw new Error(`Erro nos perfis: ${profilesResponse.status}`);
+                }
+                
+                const profilesText = await profilesResponse.text();
+                console.log('🔍 Profiles response text:', profilesText);
+                
+                let profilesData;
+                try {
+                    profilesData = JSON.parse(profilesText);
+                } catch (e) {
+                    throw new Error(`Erro ao parsear perfis: ${e.message}. Response: ${profilesText}`);
+                }
+                
+                console.log('✅ Perfis OK:', profilesData);
+                
+                // 4. Verificar perfil do admin
+                const adminProfile = profilesData.find(p => p.id === 28);
+                console.log('🔍 Perfil do admin:', adminProfile);
+                
+                if (adminProfile) {
+                    const adminPermissions = adminProfile.permissoes.filter(id => id !== null);
+                    console.log('🔍 Permissões do admin:', adminPermissions);
+                    
+                    // Mapear para nomes
+                    const permissions = permissionsData.data || permissionsData || [];
+                    const mappedPermissions = adminPermissions
+                        .map(id => permissions.find(p => p.id === id)?.nome)
+                        .filter(Boolean);
+                    
+                    console.log('🔍 Permissões mapeadas:', mappedPermissions);
+                    
+                    const resultado = {
+                        status: 'success',
+                        login: { ok: true, user: loginData.nome },
+                        permissions: { total: permissions.length, mapped: mappedPermissions.length },
+                        adminProfile: { id: adminProfile.id, name: adminProfile.nome_perfil },
+                        mappedPermissions: mappedPermissions
+                    };
+                    
+                    resultado.style.display = 'block';
+                    resultadoTexto.textContent = JSON.stringify(resultado, null, 2);
+                } else {
+                    throw new Error('Perfil do administrador não encontrado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                
+                resultado.style.display = 'block';
+                resultadoTexto.textContent = 'Erro: ' + error.message;
+            }
+        }
+        
+        function limparCache() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                
+                alert('✅ Cache limpo!');
+                console.log('🧹 Cache limpo');
+                
+            } catch (error) {
+                alert('❌ Erro ao limpar cache: ' + error.message);
+            }
+        }
+        
+        function abrirApp() {
+            window.open('http://localhost:5174', '_blank');
+        }
+        
+        // Testar automaticamente
+        window.addEventListener('load', () => {
+            console.log('🔍 Página de teste carregada');
+        });
+    </script>
+</body>
+</html>

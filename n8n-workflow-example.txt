@@ -1,0 +1,98 @@
+# 🔧 Exemplo de Workflow n8n Corrigido
+
+## Fluxo do Webhook /webhook/create-agente
+
+```
+┌─────────────────────┐
+│  Webhook Create     │
+│  Fixed              │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Normalização       │
+│  (Set)              │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Busca Workflow     │
+│  Template           │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Clona Workflow     │
+│  (HTTP Request)     │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Ativa Workflow     │
+│  (HTTP Request)     │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐    ┌─────────────────────┐
+│  Fix Response       │───▶│  Respond to         │
+│  Payload (Set)      │    │  Webhook            │
+└─────────────────────┘    └─────────────────────┘
+```
+
+## Configuração do Nó "Fix Response Payload"
+
+### Tipo: n8n-nodes-base.set
+### Nome: Fix Response Payload
+### Posição: Antes do "Respond to Webhook"
+
+### Assignments:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Assignments                                                │
+├─────────────────────────────────────────────────────────────┤
+│  success: true                                              │
+│  message: "Agente criado com sucesso"                      │
+│  agentId: {{ $json.agent_id }}                             │
+│  agentName: {{ $json.agent_name }}                         │
+│  workflowId: {{ $json.id }}                                │
+│  webhookUrl: webhook/start-{{ $json.agent_type }}          │
+│  timestamp: {{ $now.toISO() }}                             │
+│  executionId: {{ $execution.id }}                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Resultado Final
+
+### Antes (Problema):
+```json
+{
+  "nodes": [...],
+  "connections": {...},
+  "settings": {...},
+  // ... definição completa do workflow
+}
+```
+
+### Depois (Corrigido):
+```json
+{
+  "success": true,
+  "message": "Agente criado com sucesso",
+  "agentId": "TESTE_WEBHOOK_123",
+  "agentName": "Agente Teste Webhook",
+  "workflowId": "p7QT3lFg7lGhNLae",
+  "webhookUrl": "webhook/start-agente-teste-webhook",
+  "timestamp": "2025-09-20T23:21:15.844Z",
+  "executionId": "47957"
+}
+```
+
+## Passos para Implementar
+
+1. **Abrir n8n** → Workflow com webhook create-agente
+2. **Adicionar nó "Set"** antes do "Respond to Webhook"
+3. **Configurar assignments** conforme mostrado acima
+4. **Conectar os nós** na sequência correta
+5. **Testar** com o script de teste
+6. **Verificar** se retorna JSON limpo

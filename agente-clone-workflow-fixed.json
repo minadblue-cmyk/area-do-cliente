@@ -1,0 +1,228 @@
+{
+  "name": "Agente Clone - Fixed",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-agente-fixed",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-create-fixed",
+      "name": "Webhook Create Fixed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar dados do agente\ntry {\n  const body = $input.first().json.body;\n  \n  const agentName = body.agent_name || 'Agente Padrão';\n  const agentType = body.agent_type || 'agentePadrao';\n  const agentId = body.agent_id || 'PADRAO123456789';\n  const userId = body.user_id || '1';\n  \n  console.log('📊 Dados normalizados:', { agentName, agentType, agentId, userId });\n  \n  return {\n    json: {\n      agentName,\n      agentType,\n      agentId,\n      userId\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na normalização:', error.message);\n  return {\n    json: {\n      agentName: 'Agente Padrão',\n      agentType: 'agentePadrao',\n      agentId: 'PADRAO123456789',\n      userId: '1'\n    }\n  };\n}"
+      },
+      "id": "normalize-data-fixed",
+      "name": "Normalizar Dados Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Start\ntry {\n  const data = $input.first().json;\n  \n  const workflowData = {\n    name: `Agente SDR - Start - ${data.agentName}`,\n    nodes: [\n      {\n        id: 'manual-trigger',\n        name: 'Manual Trigger',\n        type: 'n8n-nodes-base.manualTrigger',\n        typeVersion: 1,\n        position: [100, 100],\n        parameters: {}\n      }\n    ],\n    connections: {},\n    active: false,\n    settings: {},\n    tags: ['Agente', data.agentName, 'Start']\n  };\n  \n  console.log('🔧 Workflow Start preparado:', workflowData);\n  \n  return {\n    json: {\n      workflowData,\n      agentName: data.agentName,\n      agentType: data.agentType,\n      agentId: data.agentId,\n      type: 'start'\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação do Start:', error.message);\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      type: 'start'\n    }\n  };\n}"
+      },
+      "id": "prepare-start-fixed",
+      "name": "Preparar Start Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Lista\ntry {\n  const data = $input.first().json;\n  \n  const workflowData = {\n    name: `Agente SDR - Lista - ${data.agentName}`,\n    nodes: [\n      {\n        id: 'manual-trigger',\n        name: 'Manual Trigger',\n        type: 'n8n-nodes-base.manualTrigger',\n        typeVersion: 1,\n        position: [100, 100],\n        parameters: {}\n      }\n    ],\n    connections: {},\n    active: false,\n    settings: {},\n    tags: ['Agente', data.agentName, 'Lista']\n  };\n  \n  console.log('🔧 Workflow Lista preparado:', workflowData);\n  \n  return {\n    json: {\n      workflowData,\n      agentName: data.agentName,\n      agentType: data.agentType,\n      agentId: data.agentId,\n      type: 'lista'\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação da Lista:', error.message);\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      type: 'lista'\n    }\n  };\n}"
+      },
+      "id": "prepare-lista-fixed",
+      "name": "Preparar Lista Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Status\ntry {\n  const data = $input.first().json;\n  \n  const workflowData = {\n    name: `Agente SDR - Status - ${data.agentName}`,\n    nodes: [\n      {\n        id: 'manual-trigger',\n        name: 'Manual Trigger',\n        type: 'n8n-nodes-base.manualTrigger',\n        typeVersion: 1,\n        position: [100, 100],\n        parameters: {}\n      }\n    ],\n    connections: {},\n    active: false,\n    settings: {},\n    tags: ['Agente', data.agentName, 'Status']\n  };\n  \n  console.log('🔧 Workflow Status preparado:', workflowData);\n  \n  return {\n    json: {\n      workflowData,\n      agentName: data.agentName,\n      agentType: data.agentType,\n      agentId: data.agentId,\n      type: 'status'\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação do Status:', error.message);\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      type: 'status'\n    }\n  };\n}"
+      },
+      "id": "prepare-status-fixed",
+      "name": "Preparar Status Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar dados para criação do workflow Stop\ntry {\n  const data = $input.first().json;\n  \n  const workflowData = {\n    name: `Agente SDR - Stop - ${data.agentName}`,\n    nodes: [\n      {\n        id: 'manual-trigger',\n        name: 'Manual Trigger',\n        type: 'n8n-nodes-base.manualTrigger',\n        typeVersion: 1,\n        position: [100, 100],\n        parameters: {}\n      }\n    ],\n    connections: {},\n    active: false,\n    settings: {},\n    tags: ['Agente', data.agentName, 'Stop']\n  };\n  \n  console.log('🔧 Workflow Stop preparado:', workflowData);\n  \n  return {\n    json: {\n      workflowData,\n      agentName: data.agentName,\n      agentType: data.agentType,\n      agentId: data.agentId,\n      type: 'stop'\n    }\n  };\n} catch (error) {\n  console.log('❌ Erro na preparação do Stop:', error.message);\n  return {\n    json: {\n      error: true,\n      message: error.message,\n      type: 'stop'\n    }\n  };\n}"
+      },
+      "id": "prepare-stop-fixed",
+      "name": "Preparar Stop Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ $json.workflowData }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "={{ $credentials.n8nApi.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-workflow-fixed",
+      "name": "Create Workflow Fixed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 350]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidar resultado\ntry {\n  const workflowResult = $input.first().json;\n  const agentData = $node['normalize-data-fixed'].json;\n  \n  const result = {\n    success: true,\n    message: `Agente ${agentData.agentName} criado com sucesso!`,\n    agent: {\n      name: agentData.agentName,\n      type: agentData.agentType,\n      id: agentData.agentId\n    },\n    workflow: {\n      id: workflowResult.id || 'N/A',\n      name: workflowResult.name || 'N/A',\n      success: !!workflowResult.id\n    },\n    timestamp: new Date().toISOString()\n  };\n  \n  console.log('📊 Resultado final:', result);\n  \n  return { json: result };\n} catch (error) {\n  console.log('❌ Erro na consolidação:', error.message);\n  return {\n    json: {\n      success: false,\n      message: `Erro na criação do agente: ${error.message}`,\n      error: error.message,\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "consolidate-result-fixed",
+      "name": "Consolidar Resultado Fixed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-success-fixed",
+      "name": "Respond Success Fixed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 350]
+    }
+  ],
+  "connections": {
+    "Webhook Create Fixed": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados Fixed": {
+      "main": [
+        [
+          {
+            "node": "Preparar Start Fixed",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Lista Fixed",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Status Fixed",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Stop Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Start Fixed": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Lista Fixed": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Status Fixed": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Stop Fixed": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Workflow Fixed": {
+      "main": [
+        [
+          {
+            "node": "Consolidar Resultado Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar Resultado Fixed": {
+      "main": [
+        [
+          {
+            "node": "Respond Success Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-19T16:00:00.000Z",
+  "versionId": "1"
+}
+

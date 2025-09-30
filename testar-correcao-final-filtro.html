@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testar Correção Final do Filtro</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testar Correção Final do Filtro</h1>
+        
+        <div class="section">
+            <h2>1. Simular Login do Usuário Padrão</h2>
+            <button onclick="simularLogin()">Simular Login</button>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Testar Filtro com Atribuições</h2>
+            <button onclick="testarFiltroComAtribuicoes()">Testar Filtro</button>
+            <div id="filtro-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Resultado Esperado</h2>
+            <div id="esperado-result">
+                <p class="info">📋 <strong>RESULTADO ESPERADO:</strong></p>
+                <ul>
+                    <li><strong>Usuário Padrão (ID 6):</strong> Deve ver o <strong>Zeca</strong> (atribuído para ele)</li>
+                    <li><strong>Não deve ver:</strong> Joana (usuario_id: 5, não atribuído)</li>
+                    <li><strong>Não deve ver:</strong> João (usuario_id: 6, criado por ele, mas regra temporária)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userData = null;
+        let agentesAtribuicoes = [];
+
+        async function simularLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Simulando dados do usuário padrão...</p>';
+
+            // Simular dados do usuário padrão diretamente (sem fazer login real)
+            userData = {
+                id: '6',
+                name: 'Usuário Elleve Padrão',
+                email: 'rmacedo2005@hotmail.com',
+                perfil: 'User Elleve Consorsios 1 - Atualizado',
+                perfil_id: 32
+            };
+
+            resultDiv.innerHTML = `
+                <p class="success">✅ Dados do usuário padrão simulados!</p>
+                <pre>${JSON.stringify(userData, null, 2)}</pre>
+                <p class="info">📋 Usando dados do usuário padrão (ID: 6) para teste</p>
+            `;
+        }
+
+        async function loadAgentesAtribuicoes() {
+            try {
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agente-atribuicoes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    agentesAtribuicoes = data;
+                } else if (data.data) {
+                    agentesAtribuicoes = data.data;
+                }
+                console.log('📋 Atribuições carregadas:', agentesAtribuicoes);
+                return agentesAtribuicoes;
+            } catch (error) {
+                console.error('❌ Erro ao carregar atribuições:', error);
+                return [];
+            }
+        }
+
+        function isAgenteAtribuidoParaUsuario(agenteId, userId) {
+            return agentesAtribuicoes.some(atribuicao => 
+                atribuicao.agente_id === agenteId && atribuicao.usuario_id === userId
+            );
+        }
+
+        async function testarFiltroComAtribuicoes() {
+            const resultDiv = document.getElementById('filtro-result');
+            resultDiv.innerHTML = '<p class="info">🔍 Testando filtro com atribuições...</p>';
+
+            if (!userData) {
+                resultDiv.innerHTML = '<p class="error">❌ Faça login primeiro!</p>';
+                return;
+            }
+
+            try {
+                // Carregar atribuições
+                await loadAgentesAtribuicoes();
+
+                // Buscar agentes
+                const response = await fetch('https://n8n.code-iq.com.br/webhook/list-agentes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                let agentes = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].success && Array.isArray(data[0].data)) {
+                    agentes = data[0].data;
+                } else if (data.success && Array.isArray(data.data)) {
+                    agentes = data.data;
+                }
+
+                const userId = parseInt(userData.id);
+                let resultado = `<p class="info">👤 Usuário: ${userData.name} (ID: ${userId})</p>`;
+                resultado += `<p class="info">📊 Total de agentes disponíveis: ${agentes.length}</p>`;
+                resultado += `<p class="info">📋 Atribuições carregadas: ${agentesAtribuicoes.length}</p>`;
+                resultado += '<hr>';
+
+                // Simular permissões do usuário padrão
+                const agentPermissions = {
+                    canViewAll: false,
+                    canManage: false,
+                    canViewOwn: true,
+                    canAssignAgents: false
+                };
+
+                const agentesFiltrados = agentes.filter((agente) => {
+                    resultado += `<p>🔍 Filtrando agente: ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id})</p>`;
+                    
+                    // REGRA PRINCIPAL: Se é administrador, sempre mostrar todos os agentes
+                    if (agentPermissions.canViewAll || agentPermissions.canManage) {
+                        resultado += `<p class="success">   ✅ Mostrando (ADMIN - vê todos)</p>`;
+                        return true;
+                    }
+                    
+                    // Para usuários não-admin: verificar se o agente está atribuído para eles
+                    if (isAgenteAtribuidoParaUsuario(agente.id, userId)) {
+                        resultado += `<p class="success">   ✅ Mostrando (atribuído para o usuário)</p>`;
+                        return true;
+                    }
+                    
+                    // Se o agente foi criado pelo usuário atual (regra temporária para compatibilidade)
+                    if (agente.usuario_id === userId) {
+                        resultado += `<p class="warning">   ⚠️ Mostrando (criado pelo usuário) - REGRA TEMPORÁRIA</p>`;
+                        return true;
+                    }
+                    
+                    // Caso contrário, não mostrar
+                    resultado += `<p class="error">   ❌ Ocultando (não atribuído para o usuário)</p>`;
+                    return false;
+                });
+
+                resultado += '<hr>';
+                resultado += `<p class="info">📊 Agentes filtrados: ${agentesFiltrados.length} de ${agentes.length}</p>`;
+                
+                if (agentesFiltrados.length > 0) {
+                    resultado += `<p class="success">✅ Agentes que o usuário pode ver:</p>`;
+                    agentesFiltrados.forEach(agente => {
+                        const motivo = isAgenteAtribuidoParaUsuario(agente.id, userId) ? 'atribuído' : 'criado pelo usuário';
+                        resultado += `<p>   - ${agente.nome} (ID: ${agente.id}, usuario_id: ${agente.usuario_id}) - ${motivo}</p>`;
+                    });
+                } else {
+                    resultado += `<p class="error">❌ Nenhum agente visível para este usuário</p>`;
+                }
+
+                resultDiv.innerHTML = resultado;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "nodeType": "n8n-nodes-base.set",
+  "parameters": {
+    "assignments": {
+      "assignments": [
+        {
+          "id": "success-flag",
+          "name": "success",
+          "value": "true",
+          "type": "boolean"
+        },
+        {
+          "id": "message",
+          "name": "message",
+          "value": "Agente criado com sucesso",
+          "type": "string"
+        },
+        {
+          "id": "agent-id",
+          "name": "agentId",
+          "value": "={{ $json.agent_id || $('Webhook Create Fixed').item.json.body.agent_id }}",
+          "type": "string"
+        },
+        {
+          "id": "agent-name",
+          "name": "agentName",
+          "value": "={{ $json.agent_name || $('Webhook Create Fixed').item.json.body.agent_name }}",
+          "type": "string"
+        },
+        {
+          "id": "workflow-id",
+          "name": "workflowId",
+          "value": "={{ $json.id || $json.workflow_id }}",
+          "type": "string"
+        },
+        {
+          "id": "webhook-url",
+          "name": "webhookUrl",
+          "value": "=webhook/start-{{ $json.agent_type || $('Webhook Create Fixed').item.json.body.agent_type }}",
+          "type": "string"
+        },
+        {
+          "id": "timestamp",
+          "name": "timestamp",
+          "value": "={{ $now.toISO() }}",
+          "type": "string"
+        },
+        {
+          "id": "execution-id",
+          "name": "executionId",
+          "value": "={{ $execution.id }}",
+          "type": "string"
+        }
+      ]
+    },
+    "options": {}
+  },
+  "typeVersion": 3.4,
+  "position": [800, 400],
+  "id": "fix-response-payload",
+  "name": "Fix Response Payload"
+}

@@ -1,0 +1,197 @@
+{
+  "name": "Edit Profile",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "edit-profile",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-edit-profile",
+      "name": "Webhook Edit Profile",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "edit-profile"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar dados do perfil\nconst profileData = $json;\n\nconsole.log('📝 Dados recebidos para edição:', profileData);\n\n// Validar dados obrigatórios\nif (!profileData.id) {\n  return {\n    json: {\n      success: false,\n      message: 'ID do perfil é obrigatório para edição',\n      error: 'MISSING_PROFILE_ID'\n    }\n  };\n}\n\nif (!profileData.name) {\n  return {\n    json: {\n      success: false,\n      message: 'Nome do perfil é obrigatório',\n      error: 'MISSING_PROFILE_NAME'\n    }\n  };\n}\n\n// Preparar dados normalizados\nconst normalizedData = {\n  id: parseInt(profileData.id),\n  nome_perfil: profileData.name,\n  descricao: profileData.description || '',\n  permissoes: Array.isArray(profileData.permissoes) ? profileData.permissoes.map(p => parseInt(p)) : [],\n  updated_at: new Date().toISOString()\n};\n\nconsole.log('✅ Dados normalizados:', normalizedData);\n\nreturn {\n  json: normalizedData\n};"
+      },
+      "id": "normalizar-dados",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE perfis SET nome_perfil = $1, descricao = $2, updated_at = NOW() WHERE id = $3 RETURNING id, nome_perfil, descricao, created_at, updated_at"
+      },
+      "id": "atualizar-perfil",
+      "name": "Atualizar Perfil",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 200],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM perfil_permissoes WHERE perfil_id = $1"
+      },
+      "id": "limpar-permissoes",
+      "name": "Limpar Permissões Antigas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO perfil_permissoes (perfil_id, permissao_id) VALUES {{ $json.perfil_id }}, {{ $json.permissao_id }})"
+      },
+      "id": "inserir-permissoes",
+      "name": "Inserir Novas Permissões",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar permissões para inserção\nconst profileData = $('Normalizar Dados').item.json;\n\nconsole.log('🔍 Preparando permissões para inserção:', profileData.permissoes);\n\nif (!profileData.permissoes || profileData.permissoes.length === 0) {\n  console.log('⚠️ Nenhuma permissão para inserir');\n  return [];\n}\n\n// Criar array de objetos para inserção em lote\nconst permissoesParaInserir = profileData.permissoes.map(permissaoId => ({\n  json: {\n    perfil_id: profileData.id,\n    permissao_id: permissaoId\n  }\n}));\n\nconsole.log('✅ Permissões preparadas para inserção:', permissoesParaInserir.length);\n\nreturn permissoesParaInserir;"
+      },
+      "id": "preparar-permissoes",
+      "name": "Preparar Permissões",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar resultado da edição\nconst perfilAtualizado = $('Atualizar Perfil').item.json;\nconst permissoesInseridas = $input.all();\n\nconsole.log('✅ Perfil atualizado:', perfilAtualizado);\nconsole.log('✅ Permissões inseridas:', permissoesInseridas.length);\n\n// Buscar os IDs das permissões que foram inseridas\nlet permissaoIds = [];\n\nif (permissoesInseridas && permissoesInseridas.length > 0) {\n  permissaoIds = permissoesInseridas.map(p => {\n    if (p.json && p.json.permissao_id) {\n      return p.json.permissao_id;\n    }\n    return null;\n  }).filter(id => id !== null);\n} else {\n  // Se não há permissões inseridas, buscar do nó \"Normalizar Dados\"\n  const dadosNormalizados = $('Normalizar Dados').item.json;\n  if (dadosNormalizados && dadosNormalizados.permissoes) {\n    permissaoIds = dadosNormalizados.permissoes;\n  }\n}\n\nconsole.log('✅ IDs das permissões:', permissaoIds);\n\nconst resultado = {\n  success: true,\n  message: 'Perfil atualizado com sucesso',\n  data: {\n    id: perfilAtualizado.id,\n    nome_perfil: perfilAtualizado.nome_perfil,\n    descricao: perfilAtualizado.descricao,\n    created_at: perfilAtualizado.created_at,\n    updated_at: perfilAtualizado.updated_at,\n    permissoes: permissaoIds,\n    total_permissoes: permissaoIds.length\n  }\n};\n\nconsole.log('✅ Resultado final:', resultado);\n\nreturn {\n  json: resultado\n};"
+      },
+      "id": "processar-resultado",
+      "name": "Processar Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "responder-edicao",
+      "name": "Responder Edição",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Edit Profile": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Perfil",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limpar Permissões Antigas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Permissões Antigas": {
+      "main": [
+        [
+          {
+            "node": "Preparar Permissões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Permissões": {
+      "main": [
+        [
+          {
+            "node": "Inserir Novas Permissões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Perfil": {
+      "main": [
+        [
+          {
+            "node": "Processar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserir Novas Permissões": {
+      "main": [
+        [
+          {
+            "node": "Processar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Responder Edição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

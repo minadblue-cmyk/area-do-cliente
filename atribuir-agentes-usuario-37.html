@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atribuir Agentes para Usuário 37</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Atribuir Agentes para Usuário 37</h1>
+        
+        <div class="section">
+            <h2>1. Verificar Agentes Disponíveis</h2>
+            <button onclick="verificarAgentes()">Verificar Agentes</button>
+            <div id="agentes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Atribuir Agentes para Usuário 37</h2>
+            <button onclick="atribuirTodosAgentes()">Atribuir Todos os Agentes</button>
+            <div id="atribuir-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Verificar Atribuições Após Ação</h2>
+            <button onclick="verificarAtribuicoes()">Verificar Atribuições</button>
+            <div id="atribuicoes-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Testar Upload Page</h2>
+            <button onclick="testarUploadPage()">Abrir Upload Page</button>
+            <div id="upload-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+        const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+
+        let agentesDisponiveis = []
+
+        async function callWebhook(id, options = {}) {
+            let url = ''
+            
+            if (id.startsWith('webhook/')) {
+                url = `${N8N_CODE_IQ_URL}/${id}`
+            } else if (id.startsWith('webhook-')) {
+                url = `${N8N_LAVO_URL}/${id}`
+            } else if (id.startsWith('http')) {
+                url = id
+            } else {
+                throw new Error(`Webhook não configurado: ${id}`)
+            }
+
+            const config = {
+                method: options.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: options.data ? JSON.stringify(options.data) : undefined,
+            }
+
+            console.log(`🚀 Chamando webhook: ${url}`)
+            console.log(`📦 Dados:`, options.data)
+
+            const response = await fetch(url, config)
+            
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`Erro HTTP: ${response.status} ${response.statusText} - ${errorText}`)
+            }
+
+            const text = await response.text()
+            if (!text) {
+                return { data: null, status: response.status, statusText: response.statusText }
+            }
+
+            try {
+                const data = JSON.parse(text)
+                return { data, status: response.status, statusText: response.statusText }
+            } catch (jsonError) {
+                return { data: text, status: response.status, statusText: response.statusText }
+            }
+        }
+
+        async function verificarAgentes() {
+            const resultDiv = document.getElementById('agentes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando agentes...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agentes', {
+                    method: 'GET'
+                })
+                
+                let agentes = []
+                if (Array.isArray(response.data)) {
+                    agentes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    agentes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                agentesDisponiveis = agentes
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Agentes Encontrados</h3>
+                    <p><strong>Total de agentes:</strong> ${agentes.length}</p>
+                    
+                    <h4>Lista de Agentes:</h4>
+                    <ul>
+                        ${agentes.map(agente => `
+                            <li><strong>${agente.nome}</strong> (ID: ${agente.id}) - Usuario ID: ${agente.usuario_id}</li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Dados Completos:</h4>
+                    <pre>${JSON.stringify(agentes, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar agentes:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function atribuirTodosAgentes() {
+            const resultDiv = document.getElementById('atribuir-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Atribuindo agentes...</p>'
+            
+            if (agentesDisponiveis.length === 0) {
+                resultDiv.innerHTML = '<p class="error">❌ Nenhum agente disponível. Verifique os agentes primeiro.</p>'
+                return
+            }
+            
+            try {
+                const resultados = []
+                
+                for (const agente of agentesDisponiveis) {
+                    try {
+                        console.log(`🔗 Atribuindo agente ${agente.nome} (ID: ${agente.id}) para usuário 37`)
+                        
+                        const response = await callWebhook('webhook/atribuir-agente-usuario', {
+                            method: 'POST',
+                            data: {
+                                agente_id: parseInt(agente.id),
+                                usuario_id: parseInt('37'),
+                                atribuido_por: parseInt('28') // Admin
+                            }
+                        })
+                        
+                        resultados.push({
+                            agente: agente.nome,
+                            id: agente.id,
+                            sucesso: response.data && response.data.success,
+                            resposta: response.data
+                        })
+                        
+                        console.log(`✅ Resposta para ${agente.nome}:`, response.data)
+                        
+                    } catch (error) {
+                        console.error(`❌ Erro ao atribuir ${agente.nome}:`, error)
+                        resultados.push({
+                            agente: agente.nome,
+                            id: agente.id,
+                            sucesso: false,
+                            erro: error.message
+                        })
+                    }
+                }
+                
+                const sucessos = resultados.filter(r => r.sucesso).length
+                const falhas = resultados.filter(r => !r.sucesso).length
+                
+                resultDiv.innerHTML = `
+                    <h3 class="${sucessos > 0 ? 'success' : 'error'}">${sucessos > 0 ? '✅' : '❌'} Atribuição Concluída</h3>
+                    <p><strong>Sucessos:</strong> ${sucessos}</p>
+                    <p><strong>Falhas:</strong> ${falhas}</p>
+                    
+                    <h4>Resultados Detalhados:</h4>
+                    <ul>
+                        ${resultados.map(r => `
+                            <li class="${r.sucesso ? 'success' : 'error'}">
+                                <strong>${r.agente}</strong> (ID: ${r.id}): 
+                                ${r.sucesso ? '✅ Sucesso' : `❌ Erro: ${r.erro || 'Resposta inesperada'}`}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Respostas Completas:</h4>
+                    <pre>${JSON.stringify(resultados, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro geral na atribuição:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        async function verificarAtribuicoes() {
+            const resultDiv = document.getElementById('atribuicoes-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Verificando atribuições...</p>'
+            
+            try {
+                const response = await callWebhook('webhook/list-agente-atribuicoes', {
+                    method: 'GET'
+                })
+                
+                let atribuicoes = []
+                if (Array.isArray(response.data)) {
+                    atribuicoes = response.data.map(item => item.data || item)
+                } else if (response.data && response.data.data) {
+                    atribuicoes = Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+                }
+                
+                const atribuicoesUsuario37 = atribuicoes.filter(attr => attr.usuario_id == 37)
+                
+                resultDiv.innerHTML = `
+                    <h3 class="success">✅ Atribuições Verificadas</h3>
+                    <p><strong>Total de atribuições:</strong> ${atribuicoes.length}</p>
+                    <p><strong>Atribuições para usuário 37:</strong> ${atribuicoesUsuario37.length}</p>
+                    
+                    <h4>Atribuições para Usuário 37:</h4>
+                    <ul>
+                        ${atribuicoesUsuario37.map(attr => `
+                            <li><strong>${attr.agente_nome}</strong> (Agente ID: ${attr.agente_id}) - Atribuído por: ${attr.atribuido_por_nome}</li>
+                        `).join('')}
+                    </ul>
+                    
+                    <h4>Dados Completos das Atribuições:</h4>
+                    <pre>${JSON.stringify(atribuicoesUsuario37, null, 2)}</pre>
+                `
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar atribuições:', error)
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`
+            }
+        }
+
+        function testarUploadPage() {
+            const resultDiv = document.getElementById('upload-result')
+            resultDiv.innerHTML = '<p class="info">🔄 Abrindo página de upload...</p>'
+            
+            // Abrir a página de upload em nova aba
+            window.open('http://localhost:5174/upload', '_blank')
+            
+            resultDiv.innerHTML = `
+                <p class="success">✅ Página de upload aberta em nova aba</p>
+                <p>Verifique se os agentes agora aparecem na página de upload.</p>
+                <p>Se não aparecerem, verifique o console do navegador para logs de debug.</p>
+            `
+        }
+
+        // Auto-executar verificação inicial
+        window.onload = function() {
+            verificarAgentes()
+        }
+    </script>
+</body>
+</html>

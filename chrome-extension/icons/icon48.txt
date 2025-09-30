@@ -1,0 +1,23 @@
+ÍCONE 48x48 - Agente SDR Monitor
+================================
+
+Para criar o ícone PNG:
+
+1. Abra qualquer editor de imagem (Paint, GIMP, Photoshop)
+2. Crie uma imagem 48x48 pixels
+3. Use estas cores:
+   - Fundo: #1a1a1a (preto escuro)
+   - Robô: #3b82f6 (azul)
+   - Detalhes: #ffffff (branco)
+   - Status: #10b981 (verde)
+
+4. Desenhe:
+   - Círculo de fundo com borda azul (raio 21px)
+   - Retângulo azul (robô) - 24x18px
+   - 2 pontos brancos (olhos) - 4px cada
+   - Linha branca (boca) - 9x3px
+   - Linha azul (antena) - 3px de largura
+   - Ponto verde (topo da antena) - 3px
+   - Pequeno círculo verde com ▶ (status) - 6px
+
+5. Salve como icon48.png

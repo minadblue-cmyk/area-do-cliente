@@ -1,0 +1,94 @@
+{
+  "name": "List Permission",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "list-permission",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-list-permission",
+      "name": "Webhook List Permission",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "list-permission"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nome, descricao FROM permissoes ORDER BY id ASC"
+      },
+      "id": "buscar-permissoes",
+      "name": "Buscar Permissões",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processar dados das permissões\nconst permissoes = $input.all();\n\nconsole.log('📋 Permissões encontradas:', permissoes.length);\n\n// Mapear para o formato esperado pelo frontend\nconst permissoesFormatadas = permissoes.map(item => {\n  const data = item.json;\n  return {\n    id: parseInt(data.id),\n    nome: data.nome || data.descricao.toLowerCase().replace(/[^a-z0-9]/g, '_'), // Gerar nome se não existir\n    descricao: data.descricao\n  };\n});\n\nconsole.log('✅ Permissões formatadas:', permissoesFormatadas);\n\nreturn {\n  json: {\n    success: true,\n    message: 'Permissões listadas com sucesso',\n    data: permissoesFormatadas,\n    total: permissoesFormatadas.length\n  }\n};"
+      },
+      "id": "processar-permissoes",
+      "name": "Processar Permissões",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "responder-permissoes",
+      "name": "Responder Permissões",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook List Permission": {
+      "main": [
+        [
+          {
+            "node": "Buscar Permissões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Permissões": {
+      "main": [
+        [
+          {
+            "node": "Processar Permissões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Permissões": {
+      "main": [
+        [
+          {
+            "node": "Responder Permissões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

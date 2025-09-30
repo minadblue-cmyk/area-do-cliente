@@ -1,0 +1,229 @@
+{
+  "name": "Delete Agente - Por Nome",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "delete-agente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+        }
+      },
+      "id": "webhook-delete-agente",
+      "name": "Webhook Delete Agente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "delete-agente-webhook-id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-id",
+              "name": "agentId",
+              "value": "={{ $json.body.id }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-name",
+              "name": "agentName",
+              "value": "={{ $json.body.agent_name }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id",
+              "name": "userId",
+              "value": "={{ $json.body.logged_user?.id || '5' }}",
+              "type": "string"
+            },
+            {
+              "id": "user-name",
+              "name": "userName",
+              "value": "={{ $json.body.logged_user?.name || 'Sistema' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-data",
+      "name": "Normalizar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM agente_config WHERE nome = $1",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "nome",
+                "value": "={{ $json.agentName }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "delete-from-db",
+      "name": "Deletar do Banco",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "NYw7G7xS9MHwNyPW",
+          "name": "Postgres Consorcio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "list-workflows",
+      "name": "Listar Workflows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar workflows do agente específico\nconsole.log('🔍 Input completo:', $input.first().json);\n\nconst workflows = $input.first().json.data || $input.first().json;\nconsole.log('🔍 Workflows encontrados:', workflows.length);\n\nconst agentName = $('Normalizar Dados').item.json.agentName;\nconst agentId = $('Normalizar Dados').item.json.agentId;\n\nconsole.log('🎯 Procurando por agente:', agentName);\nconsole.log('🎯 Agent ID:', agentId);\n\nif (!Array.isArray(workflows)) {\n  console.log('❌ Workflows não é um array!');\n  return [];\n}\n\n// Filtrar workflows que pertencem a este agente\nconst agentWorkflows = workflows.filter(workflow => {\n  const name = workflow.name || '';\n  const matchesName = name.includes(agentName);\n  const matchesId = name.includes(agentId);\n  \n  console.log(`🔍 Workflow \"${name}\": matchesName=${matchesName}, matchesId=${matchesId}`);\n  \n  return matchesName || matchesId;\n});\n\nconsole.log('✅ Workflows encontrados para deletar:', agentWorkflows.length);\nagentWorkflows.forEach(w => console.log('  -', w.name, '(ID:', w.id, ')'));\n\nreturn agentWorkflows.map(workflow => ({\n  json: {\n    id: workflow.id,\n    name: workflow.name,\n    active: workflow.active\n  }\n}));"
+      },
+      "id": "filter-workflows",
+      "name": "Filtrar Workflows do Agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.code-iq.com.br/api/v1/workflows/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "method": "DELETE",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "delete-workflow",
+      "name": "Deletar Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Agente e workflows deletados com sucesso!\",\n  \"agentId\": \"={{ $('Normalizar Dados').item.json.agentId }}\",\n  \"agentName\": \"={{ $('Normalizar Dados').item.json.agentName }}\",\n  \"workflowsDeleted\": {{ $('Filtrar Workflows do Agente').all().length }},\n  \"timestamp\": \"={{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-success",
+      "name": "Responder Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Delete Agente": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dados": {
+      "main": [
+        [
+          {
+            "node": "Deletar do Banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deletar do Banco": {
+      "main": [
+        [
+          {
+            "node": "Listar Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Workflows": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Workflows do Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Workflows do Agente": {
+      "main": [
+        [
+          {
+            "node": "Deletar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deletar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Responder Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
