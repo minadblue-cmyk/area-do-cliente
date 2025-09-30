@@ -147,7 +147,7 @@ export function UserProfiles({ userId, userName, currentProfiles, onClose, onUpd
 
       await callWebhook('webhook/assign-user-profiles', {
         method: 'POST',
-        body: payload
+        data: payload
       })
 
       push({ kind: 'success', message: 'Perfis salvos com sucesso!' })

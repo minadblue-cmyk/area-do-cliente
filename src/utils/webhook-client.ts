@@ -93,7 +93,7 @@ export async function callWebhook<T = any>(id: string, options: CallOptions = {}
     }
     
     // Re-throw com contexto adicional
-    const enhancedError = new Error(error.message || 'Erro na requisição')
+    const enhancedError = new Error(error.message || 'Erro na requisição') as any
     enhancedError.response = error.response
     enhancedError.status = error.response?.status
     throw enhancedError

@@ -123,7 +123,7 @@ export default function Empresas() {
       console.log('Resposta do webhook/list-company:', empresas)
       
       // Verificar se a resposta é HTML (404 do n8n)
-      if (typeof empresas === 'string' && empresas.includes('<!DOCTYPE html>')) {
+      if (typeof empresas === 'string' && (empresas as string).includes('<!DOCTYPE html>')) {
         console.warn('Webhook retornou HTML 404, usando dados mock')
         push({ 
           kind: 'warning', 
@@ -223,7 +223,21 @@ export default function Empresas() {
         cnpj: '', 
         email: '', 
         telefone: '', 
-        endereco: '', 
+        celular: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        inscricao_estadual: '',
+        inscricao_municipal: '',
+        regime_tributario: '',
+        cnae: '',
+        banco: '',
+        agencia: '',
+        conta_corrente: '',
         descricao: '' 
       })
       setShowCreateForm(false)
@@ -315,7 +329,21 @@ export default function Empresas() {
         cnpj: '', 
         email: '', 
         telefone: '', 
-        endereco: '', 
+        celular: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        inscricao_estadual: '',
+        inscricao_municipal: '',
+        regime_tributario: '',
+        cnae: '',
+        banco: '',
+        agencia: '',
+        conta_corrente: '',
         descricao: '' 
       })
       setShowEditForm(false)

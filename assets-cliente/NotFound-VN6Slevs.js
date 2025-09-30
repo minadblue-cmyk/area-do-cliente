@@ -1,0 +1,1 @@
+import{j as e}from"./index-CJnD_gLK.js";function t(){return e.jsxs("div",{className:"card p-8 text-center",children:[e.jsx("h1",{className:"text-xl font-semibold mb-2",children:"Página não encontrada"}),e.jsx("p",{className:"text-zinc-400",children:"Verifique a URL ou use a navegação lateral."})]})}export{t as default};

@@ -16,7 +16,7 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) {
-    config.headers = config.headers ?? {}
+    config.headers = config.headers ?? {} as any
     config.headers.Authorization = `Bearer ${token}`
   }
   
@@ -32,7 +32,7 @@ api.interceptors.response.use(
   (res) => {
     // Verificar se a resposta indica erro de CORS ou servidor
     if (res.status >= 400) {
-      const error = new Error(`HTTP Error ${res.status}: ${res.statusText}`)
+      const error = new Error(`HTTP Error ${res.status}: ${res.statusText}`) as any
       error.response = res
       throw error
     }
@@ -46,7 +46,7 @@ api.interceptors.response.use(
         ? 'Erro de conexão. Verifique se o servidor está acessível e configurado para CORS.' 
         : err.message
       
-      const networkError = new Error(message)
+      const networkError = new Error(message) as any
       networkError.code = err.code
       networkError.originalError = err
       throw networkError

@@ -854,7 +854,7 @@ export default function AgentesConfig() {
                                      {atribuicao.usuario_nome || `Usuário ${atribuicao.usuario_id}`}
                                    </div>
                                    <div className="text-xs text-muted-foreground truncate">
-                                     {atribuicao.usuario_email || 'Sem email'}
+                                     {atribuicao.usuario_id || 'Sem ID'}
                                    </div>
                                  </div>
                                </div>

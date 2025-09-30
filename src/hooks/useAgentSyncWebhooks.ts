@@ -36,6 +36,10 @@ interface AgentData {
   // Status básico de execução (da tabela agente_execucoes)
   status_atual?: string
   execution_id_ativo?: string
+  
+  // Propriedades de usuário
+  usuario_id?: number
+  atribuido_para_usuario?: boolean
 }
 
 export function useAgentSyncWebhooks(config: AgentSyncConfig = { autoSync: true, syncInterval: 30000 }) {
@@ -224,7 +228,7 @@ export function useAgentSyncWebhooks(config: AgentSyncConfig = { autoSync: true,
         })
         
         // Registrar webhooks fora do setState para evitar erro React
-        const currentAgents = useAgentSyncWebhooks.getState?.()?.agents || {}
+        const currentAgents = useAgentSyncWebhooks().agents || {}
         if (!currentAgents[agentId]) {
           const hasSpecific = registerSpecificWebhooks(agent)
           console.log(`✅ [WEBHOOKS] Agente ${agent.nome} configurado com ${hasSpecific ? 'webhooks específicos' : 'webhooks padrão'}`)

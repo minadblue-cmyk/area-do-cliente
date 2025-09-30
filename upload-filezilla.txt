@@ -1,0 +1,29 @@
+INSTRUÇÕES PARA UPLOAD VIA FILEZILLA
+=====================================
+
+1. CONECTAR:
+   - Host: 195.200.3.228
+   - Usuário: u535869980
+   - Senha: F0rm@T1001
+   - Porta: 21
+
+2. NAVEGAR PARA: /public_html/
+
+3. FAZER UPLOAD DOS ARQUIVOS:
+   - index-cliente.html (da pasta local para /public_html/)
+   - favicon-cliente.svg (da pasta local para /public_html/)
+   - vite-cliente.svg (da pasta local para /public_html/)
+   - assets-cliente/ (pasta inteira para /public_html/)
+
+4. ATUALIZAR INDEX PRINCIPAL:
+   - index.html (da pasta Downloads para /public_html/)
+
+5. TESTAR:
+   - https://code-iq.com.br/index-cliente.html
+
+ARQUIVOS PRONTOS PARA UPLOAD:
+- C:\Users\rmace\area-do-cliente\index-cliente.html
+- C:\Users\rmace\area-do-cliente\favicon-cliente.svg
+- C:\Users\rmace\area-do-cliente\vite-cliente.svg
+- C:\Users\rmace\area-do-cliente\assets-cliente\
+- C:\Users\rmace\Downloads\code-iq-starter-site-v6\index.html

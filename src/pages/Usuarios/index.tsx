@@ -510,7 +510,7 @@ export default function Usuarios() {
       console.log('  - empresa_id:', userToEdit.empresa_id, '(tipo:', typeof userToEdit.empresa_id, ')')
       console.log('  - perfil_id:', userToEdit.perfil_id, '(tipo:', typeof userToEdit.perfil_id, ')')
       console.log('  - empresa:', userToEdit.empresa)
-      console.log('  - perfil:', userToEdit.perfil)
+      console.log('  - perfil:', userToEdit.perfis?.[0]?.nome_perfil)
       console.log('  - perfis array:', userToEdit.perfis)
       console.log('🔍 Empresas disponíveis:', empresas.length)
       console.log('🔍 Perfis disponíveis:', perfis.length)
@@ -1262,7 +1262,7 @@ export default function Usuarios() {
       {/* Modal de Perfis do Usuário */}
       {showUserProfiles && selectedUserForProfiles && (
         <UserProfiles
-          userId={selectedUserForProfiles.id}
+          userId={selectedUserForProfiles.id.toString()}
           userName={selectedUserForProfiles.nome}
           currentProfiles={selectedUserForProfiles.perfis || []}
           onClose={closeUserProfiles}
