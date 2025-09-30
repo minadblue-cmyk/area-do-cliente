@@ -1,16 +1,17 @@
 // src/main.tsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import './styles/globals.css'
 import App from './App'
 
-// pega a base que o Vite injeta ("/" no dev, "/area-do-cliente/" no build)
+// Usa a base do Vite: "/" no dev; "/area-do-cliente/" no build
 const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <BrowserRouter basename={base}>
       <App />
     </BrowserRouter>
-  </React.StrictMode>,
+  </StrictMode>,
 )
