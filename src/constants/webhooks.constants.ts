@@ -4,9 +4,9 @@ export interface WebhookCfg {
   url: string;
 }
 
-// URLs base dos serviços
-const N8N_LAVO_URL = 'https://n8n-lavo-n8n.15gxno.easypanel.host'
-const N8N_CODE_IQ_URL = 'https://n8n.code-iq.com.br'
+// URLs base dos serviços - com fallback para ambiente de produção
+const N8N_LAVO_URL = import.meta.env.VITE_N8N_LAVO_URL || 'https://n8n-lavo-n8n.15gxno.easypanel.host'
+const N8N_CODE_IQ_URL = import.meta.env.VITE_N8N_CODE_IQ_URL || 'https://n8n.code-iq.com.br'
 
 // ============================================================================
 // WEBHOOKS ESSENCIAIS - APENAS OS NECESSÁRIOS

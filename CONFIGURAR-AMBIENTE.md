@@ -1,0 +1,12 @@
+﻿# Script para documentar configuraÃ§Ã£o de ambiente
+Write-Host "=== CONFIGURAÃ‡ÃƒO DE VARIÃVEIS DE AMBIENTE ==="
+Write-Host ""
+Write-Host "No EasyPanel, adicione as seguintes variÃ¡veis:"
+Write-Host ""
+Write-Host "1. VÃ¡ em: Ambiente > VariÃ¡veis de Ambiente"
+Write-Host "2. Adicione:"
+Write-Host ""
+Write-Host "TZ=America/Sao_Paulo"
+Write-Host "NODE_ENV=production"
+Write-Host ""
+Write-Host "3. Salve e reimplante a aplicaÃ§Ã£o"
